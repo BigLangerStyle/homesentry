@@ -1,0 +1,119 @@
+"""
+HomeSentry - FastAPI application entry point
+
+This module sets up the FastAPI application with basic endpoints,
+logging configuration, and CORS middleware.
+"""
+import logging
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Configure logging
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+logging.basicConfig(
+    level=LOG_LEVEL,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+# Create FastAPI application instance
+app = FastAPI(
+    title="HomeSentry",
+    description="Home server health monitoring dashboard",
+    version="0.1.0",
+    docs_url="/docs",  # Swagger UI at /docs
+    redoc_url="/redoc",  # ReDoc at /redoc
+)
+
+# Configure CORS middleware (allow all origins for now - security comes in v1.0)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Application startup event handler.
+    Logs startup information and configuration.
+    """
+    logger.info("=" * 60)
+    logger.info("HomeSentry v0.1.0 starting up...")
+    logger.info("=" * 60)
+    logger.info(f"Log level: {LOG_LEVEL}")
+    logger.info(f"Database path: {os.getenv('DATABASE_PATH', '/app/data/homesentry.db')}")
+    logger.info(f"Poll interval: {os.getenv('POLL_INTERVAL', '60')}s")
+    
+    # Check if Discord webhook is configured
+    discord_webhook = os.getenv("DISCORD_WEBHOOK_URL")
+    if discord_webhook and discord_webhook != "https://discord.com/api/webhooks/YOUR_WEBHOOK_HERE":
+        logger.info("Discord webhook: configured ✓")
+    else:
+        logger.warning("Discord webhook: not configured (alerts disabled)")
+    
+    logger.info("Application started successfully!")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """
+    Application shutdown event handler.
+    Logs shutdown information.
+    """
+    logger.info("HomeSentry shutting down...")
+
+
+@app.get("/")
+async def root():
+    """
+    Root endpoint - returns welcome message and basic status.
+    
+    Returns:
+        dict: Welcome message with version and status information
+    """
+    return {
+        "message": "HomeSentry is running",
+        "version": "0.1.0",
+        "status": "healthy",
+        "docs": "/docs",
+        "health_check": "/healthz",
+    }
+
+
+@app.get("/healthz")
+async def health_check():
+    """
+    Health check endpoint for Docker and monitoring systems.
+    
+    This endpoint is used by Docker's HEALTHCHECK directive and
+    can be used by external monitoring systems to verify the
+    application is running correctly.
+    
+    Returns:
+        dict: Simple health status
+    """
+    return {"status": "healthy"}
+
+
+if __name__ == "__main__":
+    # This block allows running the app directly with: python -m app.main
+    # Useful for development/debugging
+    import uvicorn
+    
+    logger.info("Starting development server...")
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,  # Auto-reload on code changes (development only)
+        log_level="info",
+    )
