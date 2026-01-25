@@ -78,10 +78,10 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] .env.example configuration template
 - [x] requirements.txt with dependencies
 - [x] Project directory structure (app/, collectors/, storage/, alerts/)
+- [x] SQLite database schema
 
 ### In Progress (v0.1.0 MVP)
 
-- [ ] SQLite database schema
 - [ ] System collector (CPU, RAM, disk)
 - [ ] Service collector (HTTP checks)
 - [ ] Background scheduler
