@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from app.storage import init_database
+from app.collectors import collect_all_system_metrics
 
 # Load environment variables from .env file
 load_dotenv()
@@ -115,6 +116,25 @@ async def health_check():
         dict: Simple health status
     """
     return {"status": "healthy"}
+
+
+@app.get("/api/collect/system")
+async def manual_collect_system():
+    """
+    Manually trigger system metrics collection (for testing).
+    
+    Collects CPU, memory, and disk metrics and writes them to the database.
+    Useful for testing the system collector before scheduling is implemented.
+    
+    Returns:
+        dict: Collection results with all metrics and status
+    """
+    logger.info("Manual system metrics collection triggered via API")
+    results = await collect_all_system_metrics()
+    return {
+        "message": "System metrics collected successfully",
+        "results": results,
+    }
 
 
 if __name__ == "__main__":

@@ -82,7 +82,7 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 
 ### In Progress (v0.1.0 MVP)
 
-- [ ] System collector (CPU, RAM, disk)
+- [x] System collector (CPU, RAM, disk)
 - [ ] Service collector (HTTP checks)
 - [ ] Background scheduler
 - [ ] Discord alerting module
