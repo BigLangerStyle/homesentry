@@ -10,6 +10,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
+from app.storage import init_database
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -44,7 +46,7 @@ app.add_middleware(
 async def startup_event():
     """
     Application startup event handler.
-    Logs startup information and configuration.
+    Logs startup information and configuration, and initializes the database.
     """
     logger.info("=" * 60)
     logger.info("HomeSentry v0.1.0 starting up...")
@@ -52,6 +54,17 @@ async def startup_event():
     logger.info(f"Log level: {LOG_LEVEL}")
     logger.info(f"Database path: {os.getenv('DATABASE_PATH', '/app/data/homesentry.db')}")
     logger.info(f"Poll interval: {os.getenv('POLL_INTERVAL', '60')}s")
+    
+    # Initialize database
+    try:
+        db_success = await init_database()
+        if db_success:
+            logger.info("Database initialized successfully ✓")
+        else:
+            logger.error("Database initialization failed - check logs above")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}", exc_info=True)
+        # Don't crash - app can still serve endpoints
     
     # Check if Discord webhook is configured
     discord_webhook = os.getenv("DISCORD_WEBHOOK_URL")
