@@ -73,10 +73,14 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] README, CHANGELOG, PROJECT_SUMMARY
 - [x] .gitignore and LICENSE
 - [x] Development environment guidelines
+- [x] FastAPI application skeleton
+- [x] Docker Dockerfile + docker-compose.yml
+- [x] .env.example configuration template
+- [x] requirements.txt with dependencies
+- [x] Project directory structure (app/, collectors/, storage/, alerts/)
 
 ### In Progress (v0.1.0 MVP)
 
-- [ ] FastAPI application skeleton
 - [ ] SQLite database schema
 - [ ] System collector (CPU, RAM, disk)
 - [ ] Service collector (HTTP checks)

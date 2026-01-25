@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  homesentry:
+    # Build from local Dockerfile
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    
+    # Container name for easy reference
+    container_name: homesentry
+    
+    # Port mapping: host:container
+    # Access at http://192.168.1.142:8000 on MediaServer
+    ports:
+      - "8000:8000"
+    
+    # Volume mounts
+    volumes:
+      # Persistent database storage
+      - ../data:/app/data
+      
+      # Read-only access to host system metrics
+      # These are required for collectors to monitor the actual server
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    
+    # Load environment variables from .env file
+    # Create .env from .env.example before running
+    env_file:
+      - ../.env
+    
+    # Restart policy
+    # unless-stopped: restart on crash, but not if manually stopped
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      # Set timezone to match MediaServer (America/Chicago)
+      - TZ=America/Chicago
+    
+    # Network mode (default: bridge)
+    # Bridge mode allows container to reach services on host
+    network_mode: bridge

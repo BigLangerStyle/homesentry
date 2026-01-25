@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive README with architecture overview
 - MIT License
 - Python .gitignore template
+- **FastAPI application skeleton** with health check endpoint (`/healthz`)
+- **Root endpoint** (`/`) with welcome message and status
+- **Docker deployment configuration** (Dockerfile + docker-compose.yml)
+- **Environment-based configuration** (.env.example template)
+- **Python dependency management** (requirements.txt with pinned versions)
+- **Project directory structure** for modular development (collectors, storage, alerts)
+- **Logging configuration** with configurable log levels
+- **CORS middleware** for future frontend development
 
 ### Planned for v0.1.0 MVP
 - FastAPI web server with HTML dashboard
