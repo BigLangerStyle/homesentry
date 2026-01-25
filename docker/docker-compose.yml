@@ -20,6 +20,13 @@ services:
       # Persistent database storage
       - ../data:/app/data
       
+      # Host filesystem access for disk monitoring
+      # Mount host root to access all filesystems
+      - /:/host:ro
+      
+      # Mount RAID array directly for monitoring
+      - /mnt/Array:/mnt/Array:ro
+      
       # Read-only access to host system metrics
       # These are required for collectors to monitor the actual server
       - /proc:/host/proc:ro

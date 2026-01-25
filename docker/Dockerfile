@@ -9,10 +9,12 @@ WORKDIR /app
 # - curl: for health checks
 # - procps: for process monitoring tools
 # - ca-certificates: for HTTPS requests
+# - sqlite3: for database inspection and debugging
 RUN apt-get update && apt-get install -y \
     curl \
     procps \
     ca-certificates \
+    sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python requirements first (for Docker layer caching)
