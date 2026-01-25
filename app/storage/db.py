@@ -55,35 +55,40 @@ async def init_database() -> bool:
     Returns:
         bool: True if successful, False otherwise
     """
+    db = None
     try:
-        async with await get_connection() as db:
-            # Create metrics_samples table
-            await db.execute(CREATE_METRICS_SAMPLES_TABLE)
-            await db.executescript(CREATE_METRICS_INDEXES)
-            logger.debug("Created metrics_samples table")
-            
-            # Create service_status table
-            await db.execute(CREATE_SERVICE_STATUS_TABLE)
-            await db.executescript(CREATE_SERVICE_INDEXES)
-            logger.debug("Created service_status table")
-            
-            # Create events table
-            await db.execute(CREATE_EVENTS_TABLE)
-            await db.executescript(CREATE_EVENTS_INDEXES)
-            logger.debug("Created events table")
-            
-            # Create schema_version table
-            await db.execute(CREATE_SCHEMA_VERSION_TABLE)
-            await db.execute(INSERT_SCHEMA_VERSION, (SCHEMA_VERSION,))
-            logger.debug(f"Initialized schema version: {SCHEMA_VERSION}")
-            
-            await db.commit()
-            logger.info(f"Database initialized successfully (schema v{SCHEMA_VERSION})")
-            return True
-            
+        db = await get_connection()
+        
+        # Create metrics_samples table
+        await db.execute(CREATE_METRICS_SAMPLES_TABLE)
+        await db.executescript(CREATE_METRICS_INDEXES)
+        logger.debug("Created metrics_samples table")
+        
+        # Create service_status table
+        await db.execute(CREATE_SERVICE_STATUS_TABLE)
+        await db.executescript(CREATE_SERVICE_INDEXES)
+        logger.debug("Created service_status table")
+        
+        # Create events table
+        await db.execute(CREATE_EVENTS_TABLE)
+        await db.executescript(CREATE_EVENTS_INDEXES)
+        logger.debug("Created events table")
+        
+        # Create schema_version table
+        await db.execute(CREATE_SCHEMA_VERSION_TABLE)
+        await db.execute(INSERT_SCHEMA_VERSION, (SCHEMA_VERSION,))
+        logger.debug(f"Initialized schema version: {SCHEMA_VERSION}")
+        
+        await db.commit()
+        logger.info(f"Database initialized successfully (schema v{SCHEMA_VERSION})")
+        return True
+        
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}", exc_info=True)
         return False
+    finally:
+        if db:
+            await db.close()
 
 
 async def insert_metric_sample(
@@ -113,23 +118,27 @@ async def insert_metric_sample(
         >>> await insert_metric_sample("disk", "disk_/mnt/Array_free_gb", value_num=1250.5)
         >>> await insert_metric_sample("smart", "drive_/dev/sda_health", value_text="PASSED")
     """
+    db = None
     try:
-        async with await get_connection() as db:
-            await db.execute(
-                """
-                INSERT INTO metrics_samples 
-                (category, name, value_num, value_text, status, details_json)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (category, name, value_num, value_text, status, details_json),
-            )
-            await db.commit()
-            logger.debug(f"Inserted metric: {category}/{name} = {value_num or value_text}")
-            return True
-            
+        db = await get_connection()
+        await db.execute(
+            """
+            INSERT INTO metrics_samples 
+            (category, name, value_num, value_text, status, details_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (category, name, value_num, value_text, status, details_json),
+        )
+        await db.commit()
+        logger.debug(f"Inserted metric: {category}/{name} = {value_num or value_text}")
+        return True
+        
     except Exception as e:
         logger.error(f"Failed to insert metric sample: {e}", exc_info=True)
         return False
+    finally:
+        if db:
+            await db.close()
 
 
 async def insert_service_status(
@@ -157,23 +166,27 @@ async def insert_service_status(
         >>> await insert_service_status("jellyfin", "FAIL", http_code=500, 
         ...                             details_json='{"error": "Connection timeout"}')
     """
+    db = None
     try:
-        async with await get_connection() as db:
-            await db.execute(
-                """
-                INSERT INTO service_status 
-                (service, status, response_ms, http_code, details_json)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (service, status, response_ms, http_code, details_json),
-            )
-            await db.commit()
-            logger.debug(f"Inserted service status: {service} = {status}")
-            return True
-            
+        db = await get_connection()
+        await db.execute(
+            """
+            INSERT INTO service_status 
+            (service, status, response_ms, http_code, details_json)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (service, status, response_ms, http_code, details_json),
+        )
+        await db.commit()
+        logger.debug(f"Inserted service status: {service} = {status}")
+        return True
+        
     except Exception as e:
         logger.error(f"Failed to insert service status: {e}", exc_info=True)
         return False
+    finally:
+        if db:
+            await db.close()
 
 
 async def insert_event(
@@ -202,23 +215,27 @@ async def insert_event(
         >>> await insert_event("disk_/mnt/Array_warn", "WARN", 
         ...                   "Disk usage > 85%", prev_status="OK")
     """
+    db = None
     try:
-        async with await get_connection() as db:
-            await db.execute(
-                """
-                INSERT OR REPLACE INTO events 
-                (event_key, prev_status, new_status, message, notified, notified_ts)
-                VALUES (?, ?, ?, ?, 0, NULL)
-                """,
-                (event_key, prev_status, new_status, message),
-            )
-            await db.commit()
-            logger.debug(f"Inserted event: {event_key} ({prev_status} -> {new_status})")
-            return True
-            
+        db = await get_connection()
+        await db.execute(
+            """
+            INSERT OR REPLACE INTO events 
+            (event_key, prev_status, new_status, message, notified, notified_ts)
+            VALUES (?, ?, ?, ?, 0, NULL)
+            """,
+            (event_key, prev_status, new_status, message),
+        )
+        await db.commit()
+        logger.debug(f"Inserted event: {event_key} ({prev_status} -> {new_status})")
+        return True
+        
     except Exception as e:
         logger.error(f"Failed to insert event: {e}", exc_info=True)
         return False
+    finally:
+        if db:
+            await db.close()
 
 
 async def get_latest_metrics(
@@ -240,32 +257,36 @@ async def get_latest_metrics(
         >>> for metric in metrics:
         ...     print(f"{metric['name']}: {metric['value_num']}")
     """
+    db = None
     try:
-        async with await get_connection() as db:
-            db.row_factory = aiosqlite.Row
-            
-            if category:
-                query = """
-                    SELECT * FROM metrics_samples 
-                    WHERE category = ?
-                    ORDER BY ts DESC 
-                    LIMIT ?
-                """
-                cursor = await db.execute(query, (category, limit))
-            else:
-                query = """
-                    SELECT * FROM metrics_samples 
-                    ORDER BY ts DESC 
-                    LIMIT ?
-                """
-                cursor = await db.execute(query, (limit,))
-            
-            rows = await cursor.fetchall()
-            return [dict(row) for row in rows]
-            
+        db = await get_connection()
+        db.row_factory = aiosqlite.Row
+        
+        if category:
+            query = """
+                SELECT * FROM metrics_samples 
+                WHERE category = ?
+                ORDER BY ts DESC 
+                LIMIT ?
+            """
+            cursor = await db.execute(query, (category, limit))
+        else:
+            query = """
+                SELECT * FROM metrics_samples 
+                ORDER BY ts DESC 
+                LIMIT ?
+            """
+            cursor = await db.execute(query, (limit,))
+        
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+        
     except Exception as e:
         logger.error(f"Failed to get latest metrics: {e}", exc_info=True)
         return []
+    finally:
+        if db:
+            await db.close()
 
 
 async def get_latest_events(limit: int = 50) -> List[Dict[str, Any]]:
@@ -283,22 +304,26 @@ async def get_latest_events(limit: int = 50) -> List[Dict[str, Any]]:
         >>> for event in events:
         ...     print(f"{event['event_key']}: {event['message']}")
     """
+    db = None
     try:
-        async with await get_connection() as db:
-            db.row_factory = aiosqlite.Row
-            
-            query = """
-                SELECT * FROM events 
-                ORDER BY ts DESC 
-                LIMIT ?
-            """
-            cursor = await db.execute(query, (limit,))
-            rows = await cursor.fetchall()
-            return [dict(row) for row in rows]
-            
+        db = await get_connection()
+        db.row_factory = aiosqlite.Row
+        
+        query = """
+            SELECT * FROM events 
+            ORDER BY ts DESC 
+            LIMIT ?
+        """
+        cursor = await db.execute(query, (limit,))
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+        
     except Exception as e:
         logger.error(f"Failed to get latest events: {e}", exc_info=True)
         return []
+    finally:
+        if db:
+            await db.close()
 
 
 async def get_latest_service_status(
@@ -320,29 +345,33 @@ async def get_latest_service_status(
         >>> for status in statuses:
         ...     print(f"{status['service']}: {status['status']} ({status['http_code']})")
     """
+    db = None
     try:
-        async with await get_connection() as db:
-            db.row_factory = aiosqlite.Row
-            
-            if service:
-                query = """
-                    SELECT * FROM service_status 
-                    WHERE service = ?
-                    ORDER BY ts DESC 
-                    LIMIT ?
-                """
-                cursor = await db.execute(query, (service, limit))
-            else:
-                query = """
-                    SELECT * FROM service_status 
-                    ORDER BY ts DESC 
-                    LIMIT ?
-                """
-                cursor = await db.execute(query, (limit,))
-            
-            rows = await cursor.fetchall()
-            return [dict(row) for row in rows]
-            
+        db = await get_connection()
+        db.row_factory = aiosqlite.Row
+        
+        if service:
+            query = """
+                SELECT * FROM service_status 
+                WHERE service = ?
+                ORDER BY ts DESC 
+                LIMIT ?
+            """
+            cursor = await db.execute(query, (service, limit))
+        else:
+            query = """
+                SELECT * FROM service_status 
+                ORDER BY ts DESC 
+                LIMIT ?
+            """
+            cursor = await db.execute(query, (limit,))
+        
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+        
     except Exception as e:
         logger.error(f"Failed to get latest service status: {e}", exc_info=True)
         return []
+    finally:
+        if db:
+            await db.close()
