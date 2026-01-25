@@ -12,7 +12,7 @@
 
 ```bash
 # Navigate to project directory
-cd /path/to/homesentry
+cd ~/git/homesentry
 
 # Copy the example environment file
 cp .env.example .env
@@ -55,9 +55,9 @@ curl http://localhost:8000/
 ### 4. Access the Application
 
 Open your browser and navigate to:
-- **Dashboard:** http://192.168.1.142:8000
-- **API Docs:** http://192.168.1.142:8000/docs
-- **Health Check:** http://192.168.1.142:8000/healthz
+- **Dashboard:** http://192.168.1.8:8000
+- **API Docs:** http://192.168.1.8:8000/docs
+- **Health Check:** http://192.168.1.8:8000/healthz
 
 ## Useful Commands
 
