@@ -106,16 +106,49 @@ def is_real_disk(partition) -> bool:
     """
     Check if partition is a real disk (not virtual/temporary filesystem).
 
-    Filters out tmpfs, devtmpfs, squashfs (snap packages), overlay (Docker),
-    and other pseudo-filesystems that aren't actual storage.
+    Filters out:
+    - Virtual filesystems (tmpfs, devtmpfs, squashfs, overlay, etc.)
+    - Docker bind mounts (individual files like /etc/resolv.conf)
+    - Very small partitions (< 1GB, typically EFI/boot partitions)
+    - /host/* paths when direct mounts exist (prefer /mnt/Array over /host/mnt/Array)
 
     Args:
         partition: psutil.disk_partitions() partition object
 
     Returns:
-        True if partition is a real disk, False otherwise
+        True if partition should be monitored, False otherwise
     """
-    return partition.fstype in REAL_FSTYPES
+    # Filter 1: Must be a real filesystem type
+    if partition.fstype not in REAL_FSTYPES:
+        return False
+    
+    # Filter 2: Skip Docker bind mounts (files, not directories)
+    # These show up as individual files like /etc/resolv.conf, /etc/hostname
+    if partition.mountpoint.startswith("/etc/") and partition.mountpoint.count("/") > 1:
+        return False
+    
+    # Filter 3: Skip very small partitions (< 1GB total)
+    # This excludes EFI boot partitions, recovery partitions, etc.
+    try:
+        usage = psutil.disk_usage(partition.mountpoint)
+        total_gb = usage.total / (1024**3)
+        if total_gb < 1.0:
+            return False
+    except (PermissionError, OSError):
+        # If we can't access it, skip it
+        return False
+    
+    # Filter 4: Skip /host/* paths if we have a direct mount
+    # Prefer /mnt/Array over /host/mnt/Array to avoid duplicates
+    if partition.mountpoint.startswith("/host/"):
+        # Extract the real path (e.g., /host/mnt/Array -> /mnt/Array)
+        real_path = partition.mountpoint.replace("/host", "", 1)
+        # Check if this same path exists as a direct mount
+        all_mounts = [p.mountpoint for p in psutil.disk_partitions()]
+        if real_path in all_mounts and real_path != "/":
+            return False
+    
+    return True
 
 
 # ============================================================================
@@ -305,11 +338,25 @@ async def collect_disk_metrics() -> dict | None:
         disk_results = {}
 
         for partition in partitions:
-            # Skip virtual filesystems
+            # Skip virtual filesystems and unwanted mounts
             if not is_real_disk(partition):
-                logger.debug(
-                    f"Skipping virtual filesystem: {partition.mountpoint} ({partition.fstype})"
-                )
+                # Use debug level for most, info for interesting skips
+                try:
+                    usage = psutil.disk_usage(partition.mountpoint)
+                    total_gb = usage.total / (1024**3)
+                    # Log small partitions at info level to show filtering is working
+                    if total_gb < 1.0 and partition.fstype in REAL_FSTYPES:
+                        logger.info(
+                            f"Skipping small partition: {partition.mountpoint} ({total_gb:.2f}GB, {partition.fstype})"
+                        )
+                    else:
+                        logger.debug(
+                            f"Skipping: {partition.mountpoint} ({partition.fstype})"
+                        )
+                except:
+                    logger.debug(
+                        f"Skipping inaccessible: {partition.mountpoint} ({partition.fstype})"
+                    )
                 continue
 
             try:
