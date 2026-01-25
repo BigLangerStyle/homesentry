@@ -79,20 +79,32 @@ def determine_memory_status(memory_percent: float) -> str:
     return "OK"
 
 
-def determine_disk_status(free_gb: float, percent_used: float) -> str:
+def determine_disk_status(free_gb: float, percent_used: float, total_gb: float = None) -> str:
     """
     Determine disk status based on free space and usage percentage.
 
     Uses dual thresholds: alerts if EITHER free space is low OR usage is high.
-    This catches both large disks with little free space and small disks that are full.
+    For small disks (< 500GB), only percentage thresholds apply to avoid false warnings.
+    For large disks, both percentage and absolute GB thresholds are used.
 
     Args:
         free_gb: Free space in gigabytes
         percent_used: Disk usage percentage (0-100)
+        total_gb: Total disk size in gigabytes (optional, for smart threshold selection)
 
     Returns:
         Status string: "OK", "WARN", or "FAIL"
     """
+    # For small disks (< 500GB), only use percentage thresholds
+    # This prevents false warnings on 100GB boot drives with 50GB free
+    if total_gb is not None and total_gb < 500:
+        if percent_used > DISK_FAIL_PERCENT:
+            return "FAIL"
+        elif percent_used > DISK_WARN_PERCENT:
+            return "WARN"
+        return "OK"
+    
+    # For large disks (>= 500GB), use both percentage AND absolute GB thresholds
     # Critical: < 5% free OR < 10GB free
     if percent_used > DISK_FAIL_PERCENT or free_gb < DISK_FAIL_GB:
         return "FAIL"
@@ -109,6 +121,7 @@ def is_real_disk(partition) -> bool:
     Filters out:
     - Virtual filesystems (tmpfs, devtmpfs, squashfs, overlay, etc.)
     - Docker bind mounts (individual files like /etc/resolv.conf)
+    - Docker volume mounts (/app/data - subdirectory of /host)
     - Very small partitions (< 1GB, typically EFI/boot partitions)
     - /host/* paths when direct mounts exist (prefer /mnt/Array over /host/mnt/Array)
 
@@ -127,7 +140,13 @@ def is_real_disk(partition) -> bool:
     if partition.mountpoint.startswith("/etc/") and partition.mountpoint.count("/") > 1:
         return False
     
-    # Filter 3: Skip very small partitions (< 1GB total)
+    # Filter 3: Skip Docker volume mounts that are subdirectories of monitored paths
+    # /app/data is a bind mount to host:/home/plexor/git/homesentry/data
+    # We already monitor /host, so this is redundant
+    if partition.mountpoint == "/app/data":
+        return False
+    
+    # Filter 4: Skip very small partitions (< 1GB total)
     # This excludes EFI boot partitions, recovery partitions, etc.
     try:
         usage = psutil.disk_usage(partition.mountpoint)
@@ -138,7 +157,7 @@ def is_real_disk(partition) -> bool:
         # If we can't access it, skip it
         return False
     
-    # Filter 4: Skip /host/* paths if we have a direct mount
+    # Filter 5: Skip /host/* paths if we have a direct mount
     # Prefer /mnt/Array over /host/mnt/Array to avoid duplicates
     if partition.mountpoint.startswith("/host/"):
         # Extract the real path (e.g., /host/mnt/Array -> /mnt/Array)
@@ -368,8 +387,8 @@ async def collect_disk_metrics() -> dict | None:
                 free_gb = usage.free / (1024**3)
                 percent_used = usage.percent
 
-                # Determine status
-                status = determine_disk_status(free_gb, percent_used)
+                # Determine status (pass total_gb for smart threshold selection)
+                status = determine_disk_status(free_gb, percent_used, total_gb)
 
                 # Build details
                 details = json.dumps(
