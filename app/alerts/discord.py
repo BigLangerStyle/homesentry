@@ -97,10 +97,11 @@ def send_discord_webhook(webhook_url: str, embed: Dict[str, Any]) -> bool:
 
 async def send_alert_async(webhook_url: str, embed: Dict[str, Any]) -> bool:
     """
-    Send Discord alert asynchronously.
+    Send Discord alert asynchronously with rate limit protection.
     
     This function wraps the synchronous webhook call in an async executor
-    to prevent blocking the main event loop.
+    to prevent blocking the main event loop. It includes a 1-second delay
+    to avoid hitting Discord's rate limit (30 requests per 60 seconds).
     
     Args:
         webhook_url: Discord webhook URL
@@ -109,6 +110,10 @@ async def send_alert_async(webhook_url: str, embed: Dict[str, Any]) -> bool:
     Returns:
         bool: True if successful, False otherwise
     """
+    # Add 1-second delay to prevent rate limiting when multiple alerts fire
+    # Discord allows 30 requests/60s, so 1s delay keeps us well under the limit
+    await asyncio.sleep(1)
+    
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(
         None,
