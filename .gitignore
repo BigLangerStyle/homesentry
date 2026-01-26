@@ -219,3 +219,4 @@ data/
 
 # macOS
 .DS_Store
+*.zip
