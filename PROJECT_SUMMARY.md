@@ -73,19 +73,23 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] README, CHANGELOG, PROJECT_SUMMARY
 - [x] .gitignore and LICENSE
 - [x] Development environment guidelines
+- [x] FastAPI application skeleton
+- [x] Docker Dockerfile + docker-compose.yml
+- [x] .env.example configuration template
+- [x] requirements.txt with dependencies
+- [x] Project directory structure (app/, collectors/, storage/, alerts/)
+- [x] SQLite database schema
 
 ### In Progress (v0.1.0 MVP)
 
-- [ ] FastAPI application skeleton
-- [ ] SQLite database schema
-- [ ] System collector (CPU, RAM, disk)
-- [ ] Service collector (HTTP checks)
-- [ ] Background scheduler
-- [ ] Discord alerting module
-- [ ] Basic HTML dashboard
-- [ ] Docker Dockerfile + docker-compose.yml
-- [ ] .env.example configuration template
-- [ ] requirements.txt with dependencies
+- [x] System collector (CPU, RAM, disk)
+- [x] Service collector (HTTP checks)
+- [x] Background scheduler
+- [x] Discord alerting module
+- [x] Basic HTML dashboard (completed - responsive UI with status cards, metrics table, events list)
+- [x] Docker Dockerfile + docker-compose.yml
+- [x] .env.example configuration template
+- [x] requirements.txt with dependencies
 
 ### Next Up (v0.2.0)
 
@@ -257,19 +261,21 @@ This separation allows development on Windows while deploying to Linux.
 
 ### Dashboard & Status
 
-- `GET /` - HTML dashboard
-- `GET /api/status` - JSON status summary
-- `GET /api/metrics?hours=24` - Time-series metrics
-- `GET /api/events?limit=50` - Recent state changes
-- `GET /healthz` - Liveness check
+- `GET /` - HTML dashboard (visual monitoring interface)
+- `GET /api/dashboard/status` - JSON status summary (current system and service status)
+- `GET /api/dashboard/events?limit=20` - Recent state changes/alerts as JSON
+- `GET /healthz` - Liveness check for Docker health
+- `GET /api/collect/system` - Manual trigger for system metrics collection (testing)
+- `GET /api/collect/services` - Manual trigger for service health checks (testing)
+- `GET /api/test-alert` - Send test Discord alert (webhook validation)
 
 ### Future Endpoints (v1.0+)
 
+- `GET /api/metrics?hours=24` - Historical time-series metrics
 - `GET /api/config` - Get configuration
 - `POST /api/config` - Update configuration
 - `POST /api/collectors/enable/{name}` - Enable collector
 - `POST /api/collectors/disable/{name}` - Disable collector
-- `POST /api/test-alert` - Send test Discord alert
 
 ---
 

@@ -17,14 +17,19 @@ Think of it as your server's guardian angel: quiet when everything's fine, loud 
 
 ### Key Features
 
+✅ **Available Now (v0.1.0):**
 - **System Monitoring** - Real-time CPU, RAM, and disk usage tracking
-- **Storage Health (SMART)** - Hard drive health monitoring with predictive failure detection
-- **RAID Status** - Track RAID array health (mdadm, ZFS, btrfs)
-- **Service Checks** - HTTP health checks for Plex, Jellyfin, and other services
-- **Docker Monitoring** - Container health, restart loops, and resource usage
+- **Service Checks** - HTTP health checks for Plex, Jellyfin, Pi-hole, and other web services
 - **Smart Alerts** - Discord webhooks with state-change detection (no spam!)
-- **Web Dashboard** - Simple, clean UI showing current status at a glance
-- **Historical Data** - SQLite database tracks metrics over time
+- **Web Dashboard** - Clean, responsive UI showing current status at a glance
+- **Autonomous Operation** - Background scheduler runs 24/7, alerts automatically
+- **Historical Data** - SQLite database tracks all metrics over time
+
+🔮 **Coming Soon:**
+- **Storage Health (SMART)** - Hard drive health monitoring with predictive failure detection (v0.2.0)
+- **RAID Status** - Track RAID array health (mdadm, ZFS, btrfs) (v0.2.0)
+- **Docker Monitoring** - Container health, restart loops, and resource usage (v0.2.0)
+- **Historical Charts** - Visualize metrics over time (v1.0.0)
 
 ---
 
@@ -38,6 +43,21 @@ Home servers are amazing, but they require babysitting. Hard drives fail, servic
 - ✅ Running in Docker (no system package conflicts)
 - ✅ Using minimal resources
 - ✅ Being simple to deploy and maintain
+
+---
+
+
+## Privacy & Data Collection
+
+**HomeSentry collects ZERO data from users.**
+
+- ✅ All monitoring data stays on YOUR server in YOUR SQLite database
+- ✅ No phone-home, no telemetry, no analytics
+- ✅ Discord webhook is YOUR webhook (we never see your data)
+- ✅ Open source - audit the code yourself
+- ✅ Designed for self-hosting and complete privacy
+
+Your data never leaves your network unless you configure it to (via Discord alerts, which go directly from your server to Discord).
 
 ---
 
@@ -314,9 +334,10 @@ If you prefer running without Docker:
 - [x] System monitoring (CPU, RAM, disk)
 - [x] Service HTTP checks
 - [x] SQLite storage
-- [x] Basic dashboard
+- [x] Background scheduler (autonomous monitoring)
 - [x] Discord alerts
 - [x] Docker deployment
+- [ ] Basic dashboard UI
 
 ### v0.2.0 (Next)
 - [ ] Docker container monitoring
