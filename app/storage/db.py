@@ -375,3 +375,96 @@ async def get_latest_service_status(
     finally:
         if db:
             await db.close()
+
+
+async def get_latest_event_by_key(event_key: str) -> Optional[Dict[str, Any]]:
+    """
+    Get the most recent event for a given event key.
+    
+    This function is used by the alert rules engine to check previous state
+    and determine if an alert should be sent.
+    
+    Args:
+        event_key: Unique event identifier (e.g., 'service_plex', 'disk_/mnt/array')
+    
+    Returns:
+        Dict with event details if found, None otherwise
+        
+    Example:
+        >>> event = await get_latest_event_by_key("service_plex")
+        >>> if event:
+        ...     print(f"Last status: {event['new_status']}")
+        ...     print(f"Notified: {event['notified']}")
+    """
+    db = None
+    try:
+        db = await get_connection()
+        db.row_factory = aiosqlite.Row
+        
+        cursor = await db.execute(
+            """
+            SELECT event_key, prev_status, new_status, message, 
+                   notified, notified_ts, ts
+            FROM events
+            WHERE event_key = ?
+            ORDER BY ts DESC
+            LIMIT 1
+            """,
+            (event_key,)
+        )
+        row = await cursor.fetchone()
+        
+        if row:
+            return dict(row)
+        return None
+        
+    except Exception as e:
+        logger.error(f"Failed to get latest event for {event_key}: {e}", exc_info=True)
+        return None
+    finally:
+        if db:
+            await db.close()
+
+
+async def update_event_notified(event_key: str) -> bool:
+    """
+    Mark the most recent event as notified.
+    
+    This function is called after successfully sending an alert to track
+    when notifications were sent for cooldown purposes.
+    
+    Args:
+        event_key: Unique event identifier
+    
+    Returns:
+        bool: True if successful, False otherwise
+        
+    Example:
+        >>> success = await update_event_notified("service_plex")
+    """
+    db = None
+    try:
+        db = await get_connection()
+        
+        await db.execute(
+            """
+            UPDATE events
+            SET notified = 1, notified_ts = CURRENT_TIMESTAMP
+            WHERE event_key = ? 
+            AND ts = (
+                SELECT MAX(ts) FROM events WHERE event_key = ?
+            )
+            AND notified = 0
+            """,
+            (event_key, event_key)
+        )
+        await db.commit()
+        logger.debug(f"Marked event {event_key} as notified")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to update event notification status for {event_key}: {e}", exc_info=True)
+        return False
+    finally:
+        if db:
+            await db.close()

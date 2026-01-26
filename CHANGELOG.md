@@ -57,6 +57,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Status determination (OK/WARN/FAIL) based on response
   - Manual collection endpoint `/api/collect/services` for testing
   - Configurable timeout (SERVICE_CHECK_TIMEOUT) and slow threshold (SERVICE_SLOW_THRESHOLD)
+- **Discord webhook alerting system** with intelligent state-change detection
+  - Rich Discord embeds with color-coding and formatted messages
+  - State-change detection (OK → WARN → FAIL transitions)
+  - Alert cooldown periods to prevent notification spam (default: 30 minutes)
+  - Recovery notifications (automatic alerts when issues resolve)
+  - Event tracking and deduplication via events table
+  - Category-specific alert formatting (services, system metrics, disk space)
+  - Test alert endpoint (`/api/test-alert`) for webhook validation
+  - Configurable webhook URL and cooldown via environment variables
+  - Async webhook delivery to prevent blocking
+  - Comprehensive logging for debugging alert delivery
+  - Helper functions for event state tracking (`get_latest_event_by_key`, `update_event_notified`)
 
 ### Planned for v0.1.0 MVP
 - FastAPI web server with HTML dashboard

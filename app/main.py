@@ -157,7 +157,76 @@ async def manual_collect_services():
         "results": results,
     }
 
-
+
+@app.get("/api/test-alert")
+async def test_alert():
+    """
+    Send test alert to Discord (for configuration testing).
+    
+    This endpoint sends a test notification to verify Discord webhook configuration.
+    Use this after setting up your webhook URL to ensure alerts will work properly.
+    
+    Returns:
+        dict: Success status and message
+    """
+    from app.alerts import send_discord_webhook, format_service_alert
+    
+    webhook_url = os.getenv("DISCORD_WEBHOOK_URL", "")
+    
+    if not webhook_url:
+        return {
+            "success": False,
+            "error": "DISCORD_WEBHOOK_URL not configured in .env file"
+        }
+    
+    if webhook_url == "https://discord.com/api/webhooks/YOUR_WEBHOOK_HERE":
+        return {
+            "success": False,
+            "error": "DISCORD_WEBHOOK_URL still has placeholder value - update with real webhook"
+        }
+    
+    # Create test alert embed
+    test_embed = format_service_alert(
+        service_name="test",
+        prev_status="OK",
+        new_status="OK",
+        details={
+            "message": "This is a test alert from HomeSentry",
+            "response_ms": 42.0,
+            "http_code": 200
+        }
+    )
+    
+    # Override title and description for test
+    test_embed["title"] = "🧪 Test Alert - HomeSentry"
+    test_embed["description"] = "If you can see this, Discord alerts are working correctly!"
+    test_embed["fields"] = [
+        {
+            "name": "Status",
+            "value": "✅ Configuration Valid",
+            "inline": True
+        },
+        {
+            "name": "Webhook",
+            "value": "Connected Successfully",
+            "inline": True
+        }
+    ]
+    
+    success = send_discord_webhook(webhook_url, test_embed)
+    
+    if success:
+        logger.info("Test alert sent successfully")
+        return {
+            "success": True,
+            "message": "Test alert sent successfully! Check your Discord channel."
+        }
+    else:
+        return {
+            "success": False,
+            "error": "Failed to send test alert - check logs for details"
+        }
+
 if __name__ == "__main__":
     # This block allows running the app directly with: python -m app.main
     # Useful for development/debugging

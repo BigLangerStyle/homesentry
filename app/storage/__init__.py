@@ -9,6 +9,8 @@ This module provides database operations for HomeSentry:
 - get_latest_metrics() - Query recent metrics
 - get_latest_events() - Query recent events
 - get_latest_service_status() - Query recent service checks
+- get_latest_event_by_key() - Query specific event for state tracking
+- update_event_notified() - Mark event as notified for cooldown tracking
 """
 
 from .db import (
@@ -20,6 +22,8 @@ from .db import (
     get_latest_metrics,
     get_latest_events,
     get_latest_service_status,
+    get_latest_event_by_key,
+    update_event_notified,
 )
 
 __all__ = [
@@ -31,4 +35,6 @@ __all__ = [
     "get_latest_metrics",
     "get_latest_events",
     "get_latest_service_status",
+    "get_latest_event_by_key",
+    "update_event_notified",
 ]
