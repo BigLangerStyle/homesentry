@@ -85,7 +85,7 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] System collector (CPU, RAM, disk)
 - [x] Service collector (HTTP checks)
 - [ ] Background scheduler
-- [ ] Discord alerting module
+- [x] Discord alerting module
 - [ ] Basic HTML dashboard
 - [ ] Docker Dockerfile + docker-compose.yml
 - [ ] .env.example configuration template
