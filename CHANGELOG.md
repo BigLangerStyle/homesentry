@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Response time measurement in milliseconds
   - Status code tracking (2xx, 3xx, 4xx, 5xx)
   - Configurable services via environment variables
-  - Support for Plex, Jellyfin, Pi-hole, Home Assistant, qBittorrent
+  - Support for Plex, Jellyfin, Pi-hole, Home Assistant, qBittorrent, Tautulli
   - Graceful error handling for connection failures and timeouts
   - Concurrent service checks for performance
   - Automatic insertion into service_status table

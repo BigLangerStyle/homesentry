@@ -31,6 +31,7 @@ SERVICES = {
     "pihole": os.getenv("PIHOLE_URL", ""),
     "homeassistant": os.getenv("HOMEASSISTANT_URL", ""),
     "qbittorrent": os.getenv("QBITTORRENT_URL", ""),
+    "tautulli": os.getenv("TAUTULLI_URL", ""),
 }
 
 # Filter out empty URLs (unconfigured services)
