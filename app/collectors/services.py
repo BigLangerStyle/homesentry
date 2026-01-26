@@ -14,6 +14,7 @@ import requests
 from urllib3.exceptions import InsecureRequestWarning
 
 from app.storage import insert_service_status
+from app.alerts import process_alert
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +227,23 @@ async def check_service_health(
         )
     except Exception as e:
         logger.error(f"Failed to insert service status for {name}: {e}")
+    
+    # Process alert (check for state changes and send notifications)
+    try:
+        alert_details = {
+            "url": url,
+            "http_code": result.get("http_code"),
+            "response_ms": result.get("response_ms"),
+            "error": result.get("error")
+        }
+        await process_alert(
+            category="service",
+            name=name,
+            new_status=result["status"],
+            details=alert_details
+        )
+    except Exception as e:
+        logger.error(f"Failed to process alert for {name}: {e}")
     
     return result
 
