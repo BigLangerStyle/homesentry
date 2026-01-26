@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   homesentry:
     # Build from local Dockerfile
@@ -10,10 +8,11 @@ services:
     # Container name for easy reference
     container_name: homesentry
     
-    # Port mapping: host:container
-    # Access at http://192.168.1.142:8000 on MediaServer
-    ports:
-      - "8000:8000"
+    # Network mode: host
+    # Use host network to allow container to access services on the host
+    # This enables monitoring of Plex, Jellyfin, Pi-hole, etc. running on MediaServer
+    # Trade-off: Container shares host network namespace (more access, less isolation)
+    network_mode: host
     
     # Volume mounts
     volumes:
@@ -45,7 +44,3 @@ services:
     environment:
       # Set timezone to match MediaServer (America/Chicago)
       - TZ=America/Chicago
-    
-    # Network mode (default: bridge)
-    # Bridge mode allows container to reach services on host
-    network_mode: bridge
