@@ -1,141 +1,173 @@
-"""
-HomeSentry - FastAPI application entry point
-
-This module sets up the FastAPI application with basic endpoints,
-logging configuration, and CORS middleware.
-"""
-import logging
-import os
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-
-from app.storage import init_database
+"""
+HomeSentry - FastAPI application entry point
+
+This module sets up the FastAPI application with basic endpoints,
+logging configuration, and CORS middleware.
+"""
+import logging
+import os
+import asyncio
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+from app.storage import init_database
 from app.collectors import collect_all_system_metrics, check_all_services
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Configure logging
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-logging.basicConfig(
-    level=LOG_LEVEL,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
-
-# Create FastAPI application instance
-app = FastAPI(
-    title="HomeSentry",
-    description="Home server health monitoring dashboard",
-    version="0.1.0",
-    docs_url="/docs",  # Swagger UI at /docs
-    redoc_url="/redoc",  # ReDoc at /redoc
-)
-
-# Configure CORS middleware (allow all origins for now - security comes in v1.0)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-@app.on_event("startup")
-async def startup_event():
-    """
-    Application startup event handler.
-    Logs startup information and configuration, and initializes the database.
-    """
-    logger.info("=" * 60)
-    logger.info("HomeSentry v0.1.0 starting up...")
-    logger.info("=" * 60)
-    logger.info(f"Log level: {LOG_LEVEL}")
-    logger.info(f"Database path: {os.getenv('DATABASE_PATH', '/app/data/homesentry.db')}")
-    logger.info(f"Poll interval: {os.getenv('POLL_INTERVAL', '60')}s")
-    
-    # Initialize database
-    try:
-        db_success = await init_database()
-        if db_success:
-            logger.info("Database initialized successfully ✓")
-        else:
-            logger.error("Database initialization failed - check logs above")
-    except Exception as e:
-        logger.error(f"Failed to initialize database: {e}", exc_info=True)
-        # Don't crash - app can still serve endpoints
-    
-    # Check if Discord webhook is configured
-    discord_webhook = os.getenv("DISCORD_WEBHOOK_URL")
-    if discord_webhook and discord_webhook != "https://discord.com/api/webhooks/YOUR_WEBHOOK_HERE":
-        logger.info("Discord webhook: configured ✓")
-    else:
-        logger.warning("Discord webhook: not configured (alerts disabled)")
-    
-    logger.info("Application started successfully!")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """
-    Application shutdown event handler.
-    Logs shutdown information.
-    """
-    logger.info("HomeSentry shutting down...")
-
-
-@app.get("/")
-async def root():
-    """
-    Root endpoint - returns welcome message and basic status.
-    
-    Returns:
-        dict: Welcome message with version and status information
-    """
-    return {
-        "message": "HomeSentry is running",
-        "version": "0.1.0",
-        "status": "healthy",
-        "docs": "/docs",
-        "health_check": "/healthz",
-    }
-
-
-@app.get("/healthz")
-async def health_check():
-    """
-    Health check endpoint for Docker and monitoring systems.
-    
-    This endpoint is used by Docker's HEALTHCHECK directive and
-    can be used by external monitoring systems to verify the
-    application is running correctly.
-    
-    Returns:
-        dict: Simple health status
-    """
-    return {"status": "healthy"}
-
-
-@app.get("/api/collect/system")
-async def manual_collect_system():
-    """
-    Manually trigger system metrics collection (for testing).
-    
-    Collects CPU, memory, and disk metrics and writes them to the database.
-    Useful for testing the system collector before scheduling is implemented.
-    
-    Returns:
-        dict: Collection results with all metrics and status
-    """
-    logger.info("Manual system metrics collection triggered via API")
-    results = await collect_all_system_metrics()
-    return {
-        "message": "System metrics collected successfully",
-        "results": results,
-    }
-
+from app.scheduler import run_scheduler
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Configure logging
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+logging.basicConfig(
+    level=LOG_LEVEL,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+# Create FastAPI application instance
+app = FastAPI(
+    title="HomeSentry",
+    description="Home server health monitoring dashboard",
+    version="0.1.0",
+    docs_url="/docs",  # Swagger UI at /docs
+    redoc_url="/redoc",  # ReDoc at /redoc
+)
+
+# Configure CORS middleware (allow all origins for now - security comes in v1.0)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Global task reference for scheduler
+scheduler_task = None
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Application startup event handler.
+    Logs startup information and configuration, initializes the database,
+    and starts the background scheduler for autonomous monitoring.
+    """
+    global scheduler_task
+    
+    logger.info("=" * 60)
+    logger.info("HomeSentry v0.1.0 starting up...")
+    logger.info("=" * 60)
+    logger.info(f"Log level: {LOG_LEVEL}")
+    logger.info(f"Database path: {os.getenv('DATABASE_PATH', '/app/data/homesentry.db')}")
+    logger.info(f"Poll interval: {os.getenv('POLL_INTERVAL', '60')}s")
+    
+    # Initialize database
+    try:
+        db_success = await init_database()
+        if db_success:
+            logger.info("Database initialized successfully ✓")
+        else:
+            logger.error("Database initialization failed - check logs above")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}", exc_info=True)
+        # Don't crash - app can still serve endpoints
+    
+    # Check if Discord webhook is configured
+    discord_webhook = os.getenv("DISCORD_WEBHOOK_URL")
+    if discord_webhook and discord_webhook != "https://discord.com/api/webhooks/YOUR_WEBHOOK_HERE":
+        logger.info("Discord webhook: configured ✓")
+    else:
+        logger.warning("Discord webhook: not configured (alerts disabled)")
+    
+    # Start background scheduler
+    logger.info("Starting background scheduler...")
+    scheduler_task = asyncio.create_task(run_scheduler())
+    logger.info("Scheduler task created ✓")
+    
+    logger.info("=" * 60)
+    logger.info("Application started successfully!")
+    logger.info("=" * 60)
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """
+    Application shutdown event handler.
+    Stops the background scheduler gracefully and logs shutdown information.
+    """
+    global scheduler_task
+    
+    logger.info("=" * 60)
+    logger.info("HomeSentry shutting down...")
+    logger.info("=" * 60)
+    
+    if scheduler_task:
+        logger.info("Stopping scheduler...")
+        scheduler_task.cancel()
+        try:
+            await asyncio.wait_for(scheduler_task, timeout=10)
+            logger.info("Scheduler stopped cleanly ✓")
+        except asyncio.TimeoutError:
+            logger.warning("Scheduler shutdown timed out")
+        except asyncio.CancelledError:
+            logger.info("Scheduler cancelled ✓")
+    
+    logger.info("Shutdown complete")
+
+
+@app.get("/")
+async def root():
+    """
+    Root endpoint - returns welcome message and basic status.
+    
+    Returns:
+        dict: Welcome message with version and status information
+    """
+    return {
+        "message": "HomeSentry is running",
+        "version": "0.1.0",
+        "status": "healthy",
+        "docs": "/docs",
+        "health_check": "/healthz",
+    }
+
+
+@app.get("/healthz")
+async def health_check():
+    """
+    Health check endpoint for Docker and monitoring systems.
+    
+    This endpoint is used by Docker's HEALTHCHECK directive and
+    can be used by external monitoring systems to verify the
+    application is running correctly.
+    
+    Returns:
+        dict: Simple health status
+    """
+    return {"status": "healthy"}
+
+
+@app.get("/api/collect/system")
+async def manual_collect_system():
+    """
+    Manually trigger system metrics collection (for testing).
+    
+    Collects CPU, memory, and disk metrics and writes them to the database.
+    Useful for testing the system collector before scheduling is implemented.
+    
+    Returns:
+        dict: Collection results with all metrics and status
+    """
+    logger.info("Manual system metrics collection triggered via API")
+    results = await collect_all_system_metrics()
+    return {
+        "message": "System metrics collected successfully",
+        "results": results,
+    }
+
 
 
 @app.get("/api/collect/services")
@@ -227,17 +259,17 @@ async def test_alert():
             "error": "Failed to send test alert - check logs for details"
         }
 
-if __name__ == "__main__":
-    # This block allows running the app directly with: python -m app.main
-    # Useful for development/debugging
-    import uvicorn
-    
-    logger.info("Starting development server...")
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,  # Auto-reload on code changes (development only)
-        log_level="info",
-    )
+if __name__ == "__main__":
+    # This block allows running the app directly with: python -m app.main
+    # Useful for development/debugging
+    import uvicorn
+    
+    logger.info("Starting development server...")
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,  # Auto-reload on code changes (development only)
+        log_level="info",
+    )
 
