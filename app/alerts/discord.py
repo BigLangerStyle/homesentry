@@ -13,6 +13,9 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+# Global lock to ensure alerts send sequentially (prevents rate limiting)
+_alert_lock = asyncio.Lock()
+
 # Discord embed colors (RGB as integer)
 COLOR_OK = 65280      # Green (#00FF00)
 COLOR_WARN = 16776960  # Yellow (#FFFF00)
@@ -100,8 +103,9 @@ async def send_alert_async(webhook_url: str, embed: Dict[str, Any]) -> bool:
     Send Discord alert asynchronously with rate limit protection.
     
     This function wraps the synchronous webhook call in an async executor
-    to prevent blocking the main event loop. It includes a 1-second delay
-    to avoid hitting Discord's rate limit (30 requests per 60 seconds).
+    to prevent blocking the main event loop. It uses a global lock to ensure
+    alerts are sent sequentially with a 1-second delay between them, preventing
+    Discord's rate limit (30 requests per 60 seconds) from being hit.
     
     Args:
         webhook_url: Discord webhook URL
@@ -110,18 +114,19 @@ async def send_alert_async(webhook_url: str, embed: Dict[str, Any]) -> bool:
     Returns:
         bool: True if successful, False otherwise
     """
-    # Add 1-second delay to prevent rate limiting when multiple alerts fire
-    # Discord allows 30 requests/60s, so 1s delay keeps us well under the limit
-    await asyncio.sleep(1)
-    
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(
-        None,
-        send_discord_webhook,
-        webhook_url,
-        embed
-    )
-    return result
+    # Use global lock to ensure only one alert sends at a time
+    async with _alert_lock:
+        # Wait 1 second before sending to space out alerts
+        await asyncio.sleep(1)
+        
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None,
+            send_discord_webhook,
+            webhook_url,
+            embed
+        )
+        return result
 
 
 def format_service_alert(
