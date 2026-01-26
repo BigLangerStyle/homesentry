@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0-dev] - 2026-01-25
+## [0.2.0-dev] - 2026-01-26
+
+### Planned for v0.2.0
+- Docker container monitoring (status, health checks, restart counts)
+- SMART drive health checks (via smartctl)
+- RAID status monitoring (mdadm arrays)
+- Enhanced event tracking and state management
+
+### Added
+(Features will be added here as they're completed)
+
+---
+
+## [0.1.0] - 2026-01-25
 
 ### Added
 - Initial project structure and documentation
@@ -98,7 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `/api/dashboard/events` - Recent events as JSON
   - Footer with version info and quick links to API docs
 
-### Completed in v0.1.0-dev
+### Completed in v0.1.0
 - ✅ FastAPI web server with HTML dashboard
 - ✅ System collector (CPU, RAM, disk usage)
 - ✅ Service HTTP health checks (Plex, Jellyfin, etc.)
@@ -112,7 +125,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
-- **v0.1.0-dev** (Current) - Initial setup and MVP development
-- **v0.2.0** (Planned) - Docker monitoring + SMART checks + RAID status
-- **v0.5.0** (Future) - Interactive installer + modular collectors
+- **v0.2.0-dev** (Current) - Docker monitoring, SMART checks, RAID status
+- **v0.1.0** (Released 2026-01-25) - MVP with system monitoring, service checks, Discord alerts, web dashboard
+- **v0.5.0** (Planned) - Interactive installer + modular collectors
 - **v1.0.0** (Future) - Historical charts + authentication + UI polish
