@@ -1,6 +1,6 @@
 # Agent Preferences for HomeSentry Project
 
-## 🚨 CRITICAL: Version Control Rules
+## ðŸš¨ CRITICAL: Version Control Rules
 
 **CURRENT VERSION: 0.1.0-dev**
 
@@ -12,13 +12,13 @@ All features currently listed in `PROJECT_SUMMARY.md` under **"In Progress (v0.1
 
 ### When Adding New Features
 
-#### ✅ CORRECT Approach:
+#### âœ… CORRECT Approach:
 - Keep version at current version in all version-tracking files
 - Add feature to existing version sections in CHANGELOG.md and README.md
 - Mark feature as complete in PROJECT_SUMMARY.md under current version
 - Keep the same date or update to current work date
 
-#### ❌ WRONG Approach:
+#### âŒ WRONG Approach:
 - Creating new version sections without explicit user instruction
 - Incrementing version numbers spontaneously
 - Creating new CHANGELOG entries with new versions
@@ -33,7 +33,7 @@ When adding "SMART monitoring" feature:
 
 ### Added
 - **System monitoring** - CPU, RAM, disk usage (existing)
-- **SMART monitoring** - Hard drive health checks  ← ADD HERE
+- **SMART monitoring** - Hard drive health checks  â† ADD HERE
   - Details about the feature...
 ```
 
@@ -43,7 +43,7 @@ When adding "SMART monitoring" feature:
 
 **Core Features:**
 - **System monitoring** - (existing)
-- **SMART monitoring** - Drive health tracking  ← ADD HERE
+- **SMART monitoring** - Drive health tracking  â† ADD HERE
 ```
 
 ### Current Development Roadmap
@@ -77,7 +77,7 @@ When adding "SMART monitoring" feature:
 
 ---
 
-## 🌳 Git Workflow & Branch Strategy
+## ðŸŒ³ Git Workflow & Branch Strategy
 
 **CRITICAL: This project uses a structured branching workflow for clean history and professional development practices.**
 
@@ -85,15 +85,15 @@ When adding "SMART monitoring" feature:
 
 ```
 main
- ├── release/v0.1.0
- │    ├── feature/fastapi-skeleton
- │    ├── feature/system-collector
- │    ├── feature/discord-alerts
- │    └── fix/database-connection
- ├── release/v0.2.0
- │    ├── feature/smart-monitoring
- │    └── feature/docker-collector
- └── (future releases)
+ â”œâ”€â”€ release/v0.1.0
+ â”‚    â”œâ”€â”€ feature/fastapi-skeleton
+ â”‚    â”œâ”€â”€ feature/system-collector
+ â”‚    â”œâ”€â”€ feature/discord-alerts
+ â”‚    â””â”€â”€ fix/database-connection
+ â”œâ”€â”€ release/v0.2.0
+ â”‚    â”œâ”€â”€ feature/smart-monitoring
+ â”‚    â””â”€â”€ feature/docker-collector
+ â””â”€â”€ (future releases)
 ```
 
 ### Workflow Rules
@@ -214,24 +214,24 @@ When creating a new branch/task, provide a **Task Description** that includes:
 ### Why This Workflow?
 
 **Benefits:**
-- ✅ Clean, organized Git history
-- ✅ Each chat has focused context (no mixing features)
-- ✅ Easy to track what went into each release
-- ✅ Professional workflow (resume/portfolio value)
-- ✅ Easy rollback (revert a PR if needed)
-- ✅ Parallel work possible (multiple feature branches)
+- âœ… Clean, organized Git history
+- âœ… Each chat has focused context (no mixing features)
+- âœ… Easy to track what went into each release
+- âœ… Professional workflow (resume/portfolio value)
+- âœ… Easy rollback (revert a PR if needed)
+- âœ… Parallel work possible (multiple feature branches)
 
 **Example Timeline:**
 ```
 Day 1: Create release/v0.1.0 branch + chat
-Day 2: Create feature/fastapi-skeleton → complete → PR → merge
-Day 3: Create feature/system-collector → complete → PR → merge
-Day 4: Create feature/discord-alerts → complete → PR → merge
-Day 5: Test release branch → merge to main → tag v0.1.0 → ship it!
+Day 2: Create feature/fastapi-skeleton â†’ complete â†’ PR â†’ merge
+Day 3: Create feature/system-collector â†’ complete â†’ PR â†’ merge
+Day 4: Create feature/discord-alerts â†’ complete â†’ PR â†’ merge
+Day 5: Test release branch â†’ merge to main â†’ tag v0.1.0 â†’ ship it!
 ```
 
 
-## 📝 Documentation Update Requirements
+## ðŸ“ Documentation Update Requirements
 
 **CRITICAL: Always update documentation when completing features**
 
@@ -264,7 +264,7 @@ Response after completion:
 
 ---
 
-## 🔧 Line Ending Normalization
+## ðŸ”§ Line Ending Normalization
 
 **CRITICAL WORKFLOW OPTIMIZATION:**
 
@@ -274,14 +274,14 @@ Handle line ending conversions automatically for Git-tracked files to prevent "L
 
 **When READING uploaded files:**
 1. Check if files are Git-tracked (not in `.gitignore`)
-2. Convert CRLF → LF for clean internal processing:
+2. Convert CRLF â†’ LF for clean internal processing:
    ```bash
    dos2unix <filename> 2>/dev/null || sed -i 's/\r$//' <filename>
    ```
 
 **When PRESENTING files back to user:**
 1. Check if files are Git-tracked (not in `.gitignore`)
-2. Convert LF → CRLF to match Windows Git config:
+2. Convert LF â†’ CRLF to match Windows Git config:
    ```bash
    unix2dos <filename> 2>/dev/null || sed -i 's/$/\r/' <filename>
    ```
@@ -305,17 +305,157 @@ Handle line ending conversions automatically for Git-tracked files to prevent "L
 - Any other source files not in .gitignore
 
 ---
+
+
+---
+
+## 🔄 CRITICAL: Complete Development to Deployment Workflow
+
+**This is the ACTUAL workflow - follow this exactly every time:**
+
+### Step 1: Claude Makes Changes (In Claude's Environment)
+
+Claude works in `/home/claude/` to:
+1. Create/modify source files
+2. Update documentation (CHANGELOG.md, PROJECT_SUMMARY.md, etc.)
+3. Convert all Git-tracked files to CRLF line endings
+4. Copy files to `/mnt/user-data/outputs/`
+
+### Step 2: Claude Presents Files (End of Task)
+
+Claude uses `present_files` tool to share:
+- All modified source files (e.g., `app/collectors/services.py`)
+- All modified documentation files (e.g., `CHANGELOG.md`)
+- All modified configuration files (e.g., `docker-compose.yml`, `.env.example`)
+
+**IMPORTANT:** Files are named clearly with their repo path in the description.
+
+### Step 3: Claude Provides Git Commit Command
+
+Claude suggests a commit message following conventional commits format:
+```bash
+git commit -m "feat: Brief description
+
+- Bullet point of what was added/changed
+- Another detail
+- Fix or improvement made"
+```
+
+### Step 4: User Downloads and Commits (On Windows Workstation - Cursor)
+
+User:
+1. Downloads files from Claude's outputs
+2. Copies files to correct locations in local repo (following paths Claude specified)
+3. Uses git commands in Cursor terminal:
+   ```bash
+   git add <files>
+   git commit -m "<message Claude provided>"
+   git push origin <branch-name>
+   ```
+
+### Step 5: User Deploys to Server (On Linux MediaServer)
+
+User SSHs to MediaServer and:
+```bash
+# Pull latest code
+cd ~/git/homesentry
+git pull origin <branch-name>
+
+# Update .env if needed (first time or when .env.example changed)
+cp .env.example .env
+nano .env  # Edit to add Discord webhook, etc.
+
+# Rebuild and restart
+docker compose -f docker/docker-compose.yml down
+docker compose -f docker/docker-compose.yml up --build -d
+
+# Check logs
+docker compose -f docker/docker-compose.yml logs -f
+```
+
+### Step 6: User Tests (On Linux MediaServer)
+
+User runs test commands Claude provides, such as:
+```bash
+# Test API endpoints
+curl http://192.168.1.8:8000/api/collect/services | jq
+
+# Check database
+docker exec -it homesentry sh
+sqlite3 /app/data/homesentry.db
+# ... run queries ...
+.quit
+exit
+```
+
+---
+
+## ⚠️ What Claude Should NOT Do
+
+- ❌ Do NOT run git commands (`git init`, `git add`, `git commit`, `git push`)
+- ❌ Do NOT assume files are committed just because they're presented
+- ❌ Do NOT ask "should I commit this?" - just present files and suggest commit message
+- ❌ Do NOT give instructions for steps the user hasn't reached yet
+- ❌ Do NOT ask user to test before they've deployed to the server
+
+## ✅ What Claude SHOULD Do
+
+- ✅ Present all modified files clearly with repo paths
+- ✅ Provide a ready-to-use git commit message
+- ✅ Provide deployment commands for MediaServer
+- ✅ Provide test commands to verify functionality
+- ✅ Wait for user feedback after they've tested
+
+---
+
+## 📋 Standard Response Template (End of Task)
+
+When a feature is complete, Claude should respond like this:
+
+```
+[Brief summary of what was implemented]
+
+Files ready for commit:
+1. app/collectors/example.py - [what it does]
+2. app/main.py - [what changed]
+3. .env.example - [what was added]
+4. CHANGELOG.md - [documented changes]
+5. PROJECT_SUMMARY.md - [marked complete]
+
+Git commit command:
+```bash
+git commit -m "feat: Description
+
+- Detail 1
+- Detail 2"
+```
+
+After you commit and push, deploy on MediaServer with:
+```bash
+cd ~/git/homesentry
+git pull
+docker compose -f docker/docker-compose.yml up --build -d
+```
+
+Then test with:
+```bash
+[test commands specific to feature]
+```
+```
+
+This makes it clear Claude's job ends at presenting files, and the user handles everything after that.
+
 
 ## File Presentation Preferences
 
 When presenting modified source files for Git commits:
 
-### ❌ DON'T:
+### âŒ DON'T:
 - Present files in a folder structure that requires "opening"
 - Group files in a way that makes them hard to download individually
 - Use generic names when there might be ambiguity
 
-### ✅ DO:
+### âœ… DO:
 - Present each file individually using `present_files` with one file at a time
 - Use clear paths that show where files belong
 - Include brief notes about where each file goes in the repo
@@ -342,43 +482,43 @@ Each file presented separately with context about what changed.
 
 ```
 homesentry/
-├── .agent/
-│   ├── project-preferences.md
-│   └── workflows/          (if needed)
-├── app/
-│   ├── main.py            (FastAPI application)
-│   ├── collectors/        (monitoring modules)
-│   │   ├── __init__.py
-│   │   ├── system.py      (CPU, RAM, disk)
-│   │   ├── smart.py       (drive health)
-│   │   ├── docker.py      (container monitoring)
-│   │   ├── services.py    (HTTP health checks)
-│   │   └── raid.py        (RAID status)
-│   ├── storage/           (database)
-│   │   ├── __init__.py
-│   │   ├── db.py          (SQLite setup)
-│   │   └── models.py      (schema definitions)
-│   ├── alerts/            (notifications)
-│   │   ├── __init__.py
-│   │   ├── discord.py     (webhook integration)
-│   │   └── rules.py       (alerting logic)
-│   ├── templates/         (HTML templates)
-│   │   └── dashboard.html
-│   └── static/            (CSS, JS)
-│       └── styles.css
-├── docker/
-│   ├── Dockerfile
-│   └── docker-compose.yml
-├── scripts/
-│   └── setup.sh           (future: interactive installer)
-├── tests/
-│   └── (unit tests)
-├── .env.example           (configuration template)
-├── .gitignore
-├── README.md
-├── CHANGELOG.md
-├── PROJECT_SUMMARY.md
-└── requirements.txt
+â”œâ”€â”€ .agent/
+â”‚   â”œâ”€â”€ project-preferences.md
+â”‚   â””â”€â”€ workflows/          (if needed)
+â”œâ”€â”€ app/
+â”‚   â”œâ”€â”€ main.py            (FastAPI application)
+â”‚   â”œâ”€â”€ collectors/        (monitoring modules)
+â”‚   â”‚   â”œâ”€â”€ __init__.py
+â”‚   â”‚   â”œâ”€â”€ system.py      (CPU, RAM, disk)
+â”‚   â”‚   â”œâ”€â”€ smart.py       (drive health)
+â”‚   â”‚   â”œâ”€â”€ docker.py      (container monitoring)
+â”‚   â”‚   â”œâ”€â”€ services.py    (HTTP health checks)
+â”‚   â”‚   â””â”€â”€ raid.py        (RAID status)
+â”‚   â”œâ”€â”€ storage/           (database)
+â”‚   â”‚   â”œâ”€â”€ __init__.py
+â”‚   â”‚   â”œâ”€â”€ db.py          (SQLite setup)
+â”‚   â”‚   â””â”€â”€ models.py      (schema definitions)
+â”‚   â”œâ”€â”€ alerts/            (notifications)
+â”‚   â”‚   â”œâ”€â”€ __init__.py
+â”‚   â”‚   â”œâ”€â”€ discord.py     (webhook integration)
+â”‚   â”‚   â””â”€â”€ rules.py       (alerting logic)
+â”‚   â”œâ”€â”€ templates/         (HTML templates)
+â”‚   â”‚   â””â”€â”€ dashboard.html
+â”‚   â””â”€â”€ static/            (CSS, JS)
+â”‚       â””â”€â”€ styles.css
+â”œâ”€â”€ docker/
+â”‚   â”œâ”€â”€ Dockerfile
+â”‚   â””â”€â”€ docker-compose.yml
+â”œâ”€â”€ scripts/
+â”‚   â””â”€â”€ setup.sh           (future: interactive installer)
+â”œâ”€â”€ tests/
+â”‚   â””â”€â”€ (unit tests)
+â”œâ”€â”€ .env.example           (configuration template)
+â”œâ”€â”€ .gitignore
+â”œâ”€â”€ README.md
+â”œâ”€â”€ CHANGELOG.md
+â”œâ”€â”€ PROJECT_SUMMARY.md
+â””â”€â”€ requirements.txt
 ```
 
 ---
@@ -469,7 +609,7 @@ HomeSentry is designed to run in Docker for:
 
 ---
 
-## 🚫 Git Management
+## ðŸš« Git Management
 
 **CRITICAL: User manages Git separately in Cursor**
 
