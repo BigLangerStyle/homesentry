@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeSentry Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <!-- Auto-refresh every 60 seconds -->
+    <meta http-equiv="refresh" content="60">
+</head>
+<body>
+    <header>
+        <h1>🐕‍🦺 HomeSentry</h1>
+        <p>Server Health Monitoring Dashboard</p>
+    </header>
+    
+    <main>
+        <!-- Status Overview Section -->
+        <section class="status-overview">
+            <h2>Status Overview</h2>
+            <div class="status-grid">
+                <!-- System Status Cards -->
+                {% if system_status.cpu.value != "N/A" %}
+                <div class="status-card {{ system_status.cpu.status.lower() }}">
+                    <div class="status-indicator"></div>
+                    <div class="status-content">
+                        <h3>CPU</h3>
+                        <p class="status-value">{{ system_status.cpu.value }}</p>
+                        <p class="status-label">{{ system_status.cpu.status }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if system_status.memory.value != "N/A" %}
+                <div class="status-card {{ system_status.memory.status.lower() }}">
+                    <div class="status-indicator"></div>
+                    <div class="status-content">
+                        <h3>Memory</h3>
+                        <p class="status-value">{{ system_status.memory.value }}</p>
+                        <p class="status-label">{{ system_status.memory.status }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Disk Status Cards -->
+                {% for disk in system_status.disk %}
+                <div class="status-card {{ disk.status.lower() }}">
+                    <div class="status-indicator"></div>
+                    <div class="status-content">
+                        <h3>Disk: {{ disk.mountpoint }}</h3>
+                        <p class="status-value">{{ disk.value }}</p>
+                        <p class="status-label">{{ disk.status }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Service Status Cards -->
+                {% for service_name, service_data in service_status.items() %}
+                <div class="status-card {{ service_data.status.lower() }}">
+                    <div class="status-indicator"></div>
+                    <div class="status-content">
+                        <h3>{{ service_name|title }}</h3>
+                        <p class="status-value">
+                            {% if service_data.response_ms %}
+                                {{ "%.0f"|format(service_data.response_ms) }}ms
+                            {% else %}
+                                --
+                            {% endif %}
+                        </p>
+                        <p class="status-label">{{ service_data.status }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- No Data State -->
+                {% if system_status.cpu.value == "N/A" and system_status.memory.value == "N/A" and service_status|length == 0 %}
+                <div class="status-card unknown">
+                    <div class="status-indicator"></div>
+                    <div class="status-content">
+                        <h3>No Data</h3>
+                        <p class="status-value">--</p>
+                        <p class="status-label">Waiting for first collection...</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+        
+        <!-- Recent Metrics Section -->
+        <section class="recent-metrics">
+            <h2>Recent Metrics</h2>
+            {% if latest_metrics|length > 0 %}
+            <div class="metrics-table-container">
+                <table class="metrics-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Metric</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for metric in latest_metrics %}
+                        <tr class="metric-row {{ metric.status.lower() }}">
+                            <td><span class="category-badge">{{ metric.category }}</span></td>
+                            <td>{{ metric.name }}</td>
+                            <td>
+                                {% if metric.value_num is not none %}
+                                    {{ "%.1f"|format(metric.value_num) }}{% if 'percent' in metric.name %}%{% endif %}
+                                {% elif metric.value_text %}
+                                    {{ metric.value_text }}
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </td>
+                            <td><span class="status-badge {{ metric.status.lower() }}">{{ metric.status }}</span></td>
+                            <td class="timestamp">{{ metric.ts }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-data">No metrics collected yet. The scheduler will collect data every {{ poll_interval }} seconds.</p>
+            {% endif %}
+        </section>
+        
+        <!-- Recent Events Section -->
+        <section class="recent-events">
+            <h2>Recent Alerts</h2>
+            {% if recent_events|length > 0 %}
+            <ul class="events-list">
+                {% for event in recent_events %}
+                <li class="event-item {{ event.new_status.lower() }}">
+                    <span class="event-indicator">
+                        {% if event.new_status == 'OK' %}
+                            <span class="status-icon ok">🟢</span>
+                        {% elif event.new_status == 'WARN' %}
+                            <span class="status-icon warn">🟡</span>
+                        {% else %}
+                            <span class="status-icon fail">🔴</span>
+                        {% endif %}
+                    </span>
+                    <div class="event-content">
+                        <span class="event-message">{{ event.message }}</span>
+                        {% if event.prev_status %}
+                        <span class="event-transition">{{ event.prev_status }} → {{ event.new_status }}</span>
+                        {% endif %}
+                    </div>
+                    <span class="event-time">{{ event.ts }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="no-data">No alerts yet. Events will appear here when status changes occur.</p>
+            {% endif %}
+        </section>
+    </main>
+    
+    <footer>
+        <p>HomeSentry v0.1.0 | Last updated: {{ last_updated }} | 
+        <a href="/docs" target="_blank">API Docs</a> | 
+        <a href="/healthz" target="_blank">Health Check</a></p>
+    </footer>
+</body>
+</html>

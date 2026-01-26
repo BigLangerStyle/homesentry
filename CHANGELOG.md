@@ -80,15 +80,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Initial collection runs immediately on startup
   - Collection cycle logging with duration tracking
   - Warning when collections approach poll interval duration
+- **Web dashboard UI** for visual monitoring and real-time status
+  - Clean, responsive HTML interface using Jinja2 templates
+  - Real-time status overview with color-coded indicators (green/yellow/red)
+  - System metrics display (CPU, RAM, disk usage with percentages)
+  - Service health status display (Plex, Jellyfin, etc. with response times)
+  - Recent metrics table showing last 10 data points
+  - Recent events/alerts list showing last 20 state changes
+  - Mobile-friendly responsive layout (works on phones, tablets, desktop)
+  - Auto-refresh every 60 seconds (meta refresh tag)
+  - Professional CSS styling with modern color scheme
+  - No-data states handled gracefully
+  - Static file serving for CSS assets
+  - Dashboard route (`/`) renders HTML instead of JSON
+  - JSON API endpoints for programmatic access:
+    - `/api/dashboard/status` - Current status as JSON
+    - `/api/dashboard/events` - Recent events as JSON
+  - Footer with version info and quick links to API docs
 
-### Planned for v0.1.0 MVP
-- FastAPI web server with HTML dashboard
-- System collector (CPU, RAM, disk usage)
-- Service HTTP health checks (Plex, Jellyfin)
-- SQLite database schema
-- Discord webhook alerting
-- Docker deployment configuration
-- Basic HTML/CSS dashboard UI
+### Completed in v0.1.0-dev
+- ✅ FastAPI web server with HTML dashboard
+- ✅ System collector (CPU, RAM, disk usage)
+- ✅ Service HTTP health checks (Plex, Jellyfin, etc.)
+- ✅ SQLite database schema
+- ✅ Discord webhook alerting
+- ✅ Background scheduler for autonomous monitoring
+- ✅ Docker deployment configuration
+- ✅ Web dashboard UI with responsive design
 
 ---
 

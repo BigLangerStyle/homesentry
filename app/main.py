@@ -7,11 +7,21 @@ logging configuration, and CORS middleware.
 import logging
 import os
 import asyncio
-from fastapi import FastAPI
+from datetime import datetime
+from typing import Dict, Any, List
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 
-from app.storage import init_database
+from app.storage import (
+    init_database,
+    get_latest_metrics,
+    get_latest_service_status,
+    get_latest_events,
+)
 from app.collectors import collect_all_system_metrics, check_all_services
 from app.scheduler import run_scheduler
 
@@ -43,6 +53,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files (CSS, JS, images)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+# Setup Jinja2 templates
+templates = Jinja2Templates(directory="app/templates")
 
 # Global task reference for scheduler
 scheduler_task = None
@@ -118,21 +134,198 @@ async def shutdown_event():
     logger.info("Shutdown complete")
 
 
-@app.get("/")
-async def root():
+# Helper functions for dashboard data processing
+def process_system_status(metrics: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Root endpoint - returns welcome message and basic status.
+    Extract latest system metrics for dashboard display.
+    
+    Args:
+        metrics: List of metric samples from database
+        
+    Returns:
+        Dict with processed system status (CPU, memory, disk)
+    """
+    status = {
+        "cpu": {"value": "N/A", "status": "UNKNOWN"},
+        "memory": {"value": "N/A", "status": "UNKNOWN"},
+        "disk": []
+    }
+    
+    for metric in metrics:
+        if metric["category"] == "system":
+            if "cpu_percent" in metric["name"]:
+                status["cpu"] = {
+                    "value": f"{metric['value_num']:.1f}%",
+                    "status": metric["status"]
+                }
+            elif "memory_percent" in metric["name"]:
+                status["memory"] = {
+                    "value": f"{metric['value_num']:.1f}%",
+                    "status": metric["status"]
+                }
+        elif metric["category"] == "disk":
+            # Extract mountpoint from name like "disk_/mnt/Array_percent"
+            name = metric["name"].replace("disk_", "").replace("_percent", "")
+            status["disk"].append({
+                "mountpoint": name,
+                "value": f"{metric['value_num']:.1f}%",
+                "status": metric["status"]
+            })
+    
+    return status
+
+
+def process_service_status(services: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    """
+    Extract latest service status for dashboard display.
+    
+    Args:
+        services: List of service status checks from database
+        
+    Returns:
+        Dict mapping service names to their latest status
+    """
+    status = {}
+    
+    # Get the latest status for each unique service
+    seen_services = set()
+    for service in services:
+        service_name = service["service"]
+        if service_name not in seen_services:
+            status[service_name] = {
+                "status": service["status"],
+                "response_ms": service["response_ms"],
+                "http_code": service["http_code"]
+            }
+            seen_services.add(service_name)
+    
+    return status
+
+
+@app.get("/", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    """
+    Render the main dashboard with current system status and recent alerts.
+    
+    This endpoint replaces the old JSON root endpoint with a visual HTML dashboard.
+    It queries the latest metrics, service status, and events from the database
+    and renders them using the Jinja2 template.
+    
+    Args:
+        request: FastAPI request object (required for Jinja2 templating)
+        
+    Returns:
+        HTMLResponse: Rendered dashboard HTML
+    """
+    # Get poll interval for display
+    poll_interval = os.getenv("POLL_INTERVAL", "60")
+    
+    # Query latest data from database
+    try:
+        # Get latest metrics (last 20 to find most recent of each type)
+        latest_metrics_raw = await get_latest_metrics(limit=20)
+        
+        # Get latest service status (last 20 to find most recent of each service)
+        latest_services_raw = await get_latest_service_status(limit=20)
+        
+        # Get recent events for alerts section
+        recent_events = await get_latest_events(limit=20)
+        
+    except Exception as e:
+        logger.error(f"Dashboard data query failed: {e}", exc_info=True)
+        # Provide empty data on error - dashboard will show "no data" state
+        latest_metrics_raw = []
+        latest_services_raw = []
+        recent_events = []
+    
+    # Process data for dashboard display
+    system_status = process_system_status(latest_metrics_raw)
+    service_status = process_service_status(latest_services_raw)
+    
+    # Limit metrics displayed in the table to 10 most recent
+    latest_metrics = latest_metrics_raw[:10] if latest_metrics_raw else []
+    
+    # Render dashboard template
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {
+            "request": request,
+            "system_status": system_status,
+            "service_status": service_status,
+            "latest_metrics": latest_metrics,
+            "recent_events": recent_events,
+            "poll_interval": poll_interval,
+            "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+    )
+
+
+@app.get("/api/dashboard/status")
+async def dashboard_status_api():
+    """
+    Get current system and service status as JSON.
+    
+    This API endpoint provides the same data as the visual dashboard but in JSON format,
+    useful for programmatic access or building custom dashboards.
     
     Returns:
-        dict: Welcome message with version and status information
+        dict: Current status of all monitored systems and services
     """
-    return {
-        "message": "HomeSentry is running",
-        "version": "0.1.0",
-        "status": "healthy",
-        "docs": "/docs",
-        "health_check": "/healthz",
-    }
+    try:
+        latest_metrics_raw = await get_latest_metrics(limit=20)
+        latest_services_raw = await get_latest_service_status(limit=20)
+        
+        system_status = process_system_status(latest_metrics_raw)
+        service_status = process_service_status(latest_services_raw)
+        
+        return {
+            "system": system_status,
+            "services": service_status,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Dashboard status API failed: {e}", exc_info=True)
+        return {
+            "error": "Failed to retrieve status",
+            "system": {"cpu": {"value": "N/A", "status": "UNKNOWN"}, "memory": {"value": "N/A", "status": "UNKNOWN"}, "disk": []},
+            "services": {},
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.get("/api/dashboard/events")
+async def dashboard_events_api(limit: int = 20):
+    """
+    Get recent events/alerts as JSON.
+    
+    This API endpoint provides recent alert events in JSON format for programmatic access.
+    
+    Args:
+        limit: Maximum number of events to return (default: 20, max: 100)
+        
+    Returns:
+        dict: List of recent events with metadata
+    """
+    # Clamp limit to reasonable range
+    limit = max(1, min(limit, 100))
+    
+    try:
+        recent_events = await get_latest_events(limit=limit)
+        return {
+            "events": recent_events,
+            "count": len(recent_events),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Dashboard events API failed: {e}", exc_info=True)
+        return {
+            "error": "Failed to retrieve events",
+            "events": [],
+            "count": 0,
+            "timestamp": datetime.now().isoformat()
+        }
 
 
 @app.get("/healthz")
