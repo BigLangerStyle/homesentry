@@ -7,16 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.0-dev] - 2026-01-26
+### Planned for v0.3.0
+- Plugin architecture for app-specific monitoring modules
+- Curated modules for Home Assistant, qBittorrent, Plex, Pi-hole, Jellyfin
+- Enhanced dashboard UI with app module displays
+- Module documentation and development guide
 
-### Planned for v0.2.0
-- Docker container monitoring (status, health checks, restart counts)
-- SMART drive health checks (via smartctl)
-- RAID status monitoring (mdadm arrays)
-- Enhanced event tracking and state management
+---
+
+## [0.2.0] - 2026-01-27
+
+### Summary
+Major infrastructure monitoring release focused on Docker-native observability and critical server health tracking. This release adds comprehensive container monitoring, drive health tracking, and RAID array monitoring - providing complete visibility into home lab infrastructure health.
 
 ### Added
-(Features will be added here as they're completed)
+- **Docker container monitoring** via Docker API
+  - Container status tracking (running, stopped, paused, etc.)
+  - Health check status monitoring (healthy, unhealthy, starting, none)
+  - Restart count tracking to detect crash-looping containers
+  - CPU and memory usage per container
+  - Automatic state-change detection and alerting
+  - Manual collection endpoint (`/api/collect/docker`)
+  - Integrated with background scheduler for autonomous monitoring
+  - Read-only Docker socket mount for secure access
+- **SMART drive health monitoring** via smartctl from smartmontools
+  - Overall SMART health status tracking (PASSED/FAILED)
+  - Drive temperature monitoring with configurable thresholds
+  - Reallocated sectors detection (early warning of drive failure)
+  - Pending sectors monitoring (sectors waiting to be reallocated)
+  - Uncorrectable sectors tracking
+  - Power-on hours tracking for drive age analysis
+  - Multi-drive concurrent collection for performance
+  - Automatic state-change detection and alerting for all critical metrics
+  - Manual collection endpoint (`/api/collect/smart`)
+  - Integrated with background scheduler (less frequent - every 10 minutes)
+  - CAP_SYS_RAWIO capability in Docker for raw device access
+  - Configurable drive list and temperature thresholds via environment variables
+  - smartmontools installed in Docker container
+- **RAID array monitoring** via /proc/mdstat (mdadm software RAID)
+  - Array health status tracking (clean, degraded, rebuilding, failed)
+  - Individual disk status monitoring within arrays (active, failed, spare)
+  - Active vs expected disk count tracking
+  - Rebuild progress monitoring with speed and ETA
+  - Automatic array discovery or manual configuration
+  - CRITICAL alerts for array degradation (highest priority)
+  - Warning alerts for rebuild progress with periodic updates
+  - Success alerts when array is restored to healthy state
+  - Manual collection endpoint (`/api/collect/raid`)
+  - Integrated with background scheduler (every 2 minutes - more urgent than SMART)
+  - File-based parsing (no root privileges required)
+  - Configurable array list and poll interval via environment variables
+
+### Technical Improvements
+- Enhanced scheduler with multi-frequency collection cycles (Docker: 60s, RAID: 2min, SMART: 10min)
+- Async subprocess execution for system monitoring tools
+- Robust regex-based parsing for SMART and RAID data
+- File-based monitoring (no root privileges required for RAID)
+- Comprehensive error handling and graceful degradation
+
+### Deployment Changes
+- Docker socket mounted for container monitoring (`/var/run/docker.sock:ro`)
+- Device mounts for SMART monitoring (`/dev/sda`, `/dev/sdb`, `/dev/sdc`, `/dev/sdd`)
+- CAP_SYS_RAWIO capability for raw device access
+- smartmontools installed in Docker container
+
+### Configuration
+- 10 new environment variables for Docker, SMART, and RAID configuration
+- Poll interval configuration per collector type
+- Threshold configuration for temperature and resource usage
+- Device and array list configuration
+
+### Completed in v0.2.0
+- ✅ Docker container monitoring (status, health, restarts, resources)
+- ✅ SMART drive health monitoring (health status, temperature, sectors, alerts)
+- ✅ RAID array monitoring (array health, disk tracking, rebuild progress, alerts)
+- ✅ Enhanced scheduler with multi-frequency collection
+- ✅ Critical infrastructure alerting system
+
 
 ---
 
@@ -125,7 +192,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
-- **v0.2.0-dev** (Current) - Docker monitoring, SMART checks, RAID status
+- **v0.3.0** (Planned) - Plugin architecture, app-specific modules (HA, qBittorrent, Plex, Pi-hole, Jellyfin)
+- **v0.2.0** (Released 2026-01-27) - Docker monitoring, SMART health checks, RAID array monitoring
 - **v0.1.0** (Released 2026-01-25) - MVP with system monitoring, service checks, Discord alerts, web dashboard
-- **v0.5.0** (Planned) - Interactive installer + modular collectors
-- **v1.0.0** (Future) - Historical charts + authentication + UI polish
+- **v0.5.0** (Future) - Interactive installer, configuration UI
+- **v1.0.0** (Future) - Historical charts, authentication, UI polish

@@ -17,18 +17,20 @@ Think of it as your server's guardian angel: quiet when everything's fine, loud 
 
 ### Key Features
 
-✅ **Available Now (v0.1.0):**
+✅ **Available Now (v0.2.0):**
 - **System Monitoring** - Real-time CPU, RAM, and disk usage tracking
 - **Service Checks** - HTTP health checks for Plex, Jellyfin, Pi-hole, and other web services
+- **Docker Monitoring** - Container health, restart counts, and resource usage
+- **SMART Health** - Hard drive health monitoring with predictive failure detection
+- **RAID Status** - Track RAID array health, disk status, and rebuild progress
 - **Smart Alerts** - Discord webhooks with state-change detection (no spam!)
 - **Web Dashboard** - Clean, responsive UI showing current status at a glance
 - **Autonomous Operation** - Background scheduler runs 24/7, alerts automatically
 - **Historical Data** - SQLite database tracks all metrics over time
 
 🔮 **Coming Soon:**
-- **Storage Health (SMART)** - Hard drive health monitoring with predictive failure detection (v0.2.0)
-- **RAID Status** - Track RAID array health (mdadm, ZFS, btrfs) (v0.2.0)
-- **Docker Monitoring** - Container health, restart loops, and resource usage (v0.2.0)
+- **Plugin Architecture** - App-specific monitoring modules (Home Assistant, Plex, qBittorrent, etc.) (v0.3.0)
+- **Configuration UI** - Web-based configuration and module management (v0.5.0)
 - **Historical Charts** - Visualize metrics over time (v1.0.0)
 
 ---

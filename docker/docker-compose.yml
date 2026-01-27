@@ -26,10 +26,22 @@ services:
       # Mount RAID array directly for monitoring
       - /mnt/Array:/mnt/Array:ro
       
+      # Docker socket for container monitoring
+      # Read-only access to Docker daemon
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      
       # Read-only access to host system metrics
       # These are required for collectors to monitor the actual server
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
+    
+    # Device mounts for SMART monitoring
+    # Mount all drives that need SMART monitoring
+    devices:
+      - /dev/sda:/dev/sda:r
+      - /dev/sdb:/dev/sdb:r
+      - /dev/sdc:/dev/sdc:r
+      - /dev/sdd:/dev/sdd:r
     
     # Load environment variables from .env file
     # Create .env from .env.example before running
@@ -44,3 +56,8 @@ services:
     environment:
       # Set timezone to match MediaServer (America/Chicago)
       - TZ=America/Chicago
+    
+    # Linux capabilities
+    # SYS_RAWIO: Required for smartctl to access raw device data for SMART monitoring
+    cap_add:
+      - SYS_RAWIO

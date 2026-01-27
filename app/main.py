@@ -22,7 +22,12 @@ from app.storage import (
     get_latest_service_status,
     get_latest_events,
 )
-from app.collectors import collect_all_system_metrics, check_all_services
+from app.collectors import (
+    collect_all_system_metrics,
+    check_all_services,
+    collect_all_smart_metrics,
+    collect_all_raid_metrics,
+)
 from app.scheduler import run_scheduler
 
 # Load environment variables from .env file
@@ -382,6 +387,65 @@ async def manual_collect_services():
         "results": results,
     }
 
+@app.get("/api/collect/docker")
+async def manual_collect_docker():
+    """
+    Manually trigger Docker container metrics collection (for testing).
+    
+    Collects container status, health checks, restart counts, and resource usage
+    for all Docker containers on the host system. Writes results to the database.
+    Useful for testing the Docker collector before scheduling is implemented.
+    
+    Returns:
+        dict: Collection results with all container metrics and status
+    """
+    from app.collectors import collect_all_docker_metrics
+    
+    logger.info("Manual Docker metrics collection triggered via API")
+    results = await collect_all_docker_metrics()
+    return {
+        "message": "Docker metrics collected successfully",
+        "results": results,
+    }
+
+@app.get("/api/collect/smart")
+async def manual_collect_smart():
+    """
+    Manually trigger SMART drive health metrics collection (for testing).
+    
+    Collects SMART health status, temperature, and critical attributes
+    (reallocated sectors, pending sectors, power-on hours) for all configured
+    drives. Writes results to the database.
+    Useful for testing the SMART collector before scheduling is implemented.
+    
+    Returns:
+        dict: Collection results with all drive SMART metrics and status
+    """
+    logger.info("Manual SMART metrics collection triggered via API")
+    results = await collect_all_smart_metrics()
+    return {
+        "message": "SMART metrics collected successfully",
+        "results": results,
+    }
+
+@app.get("/api/collect/raid")
+async def manual_collect_raid():
+    """
+    Manually trigger RAID array metrics collection (for testing).
+    
+    Collects RAID array status, disk health, and rebuild progress for all
+    configured mdadm arrays. Writes results to the database.
+    Useful for testing the RAID collector before scheduling is implemented.
+    
+    Returns:
+        dict: Collection results with all RAID array metrics and status
+    """
+    logger.info("Manual RAID metrics collection triggered via API")
+    results = await collect_all_raid_metrics()
+    return {
+        "message": "RAID metrics collected successfully",
+        "results": results,
+    }
 
 @app.get("/api/test-alert")
 async def test_alert():

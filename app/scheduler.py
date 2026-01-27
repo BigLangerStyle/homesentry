@@ -19,7 +19,10 @@ from typing import Dict, Any
 
 from app.collectors import (
     collect_all_system_metrics,
-    check_all_services
+    check_all_services,
+    collect_all_docker_metrics,
+    collect_all_smart_metrics,
+    collect_all_raid_metrics,
 )
 from app.alerts import process_alert
 
@@ -27,7 +30,8 @@ logger = logging.getLogger(__name__)
 
 # Configuration - read from environment variables
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))
-SMART_POLL_INTERVAL = int(os.getenv("SMART_POLL_INTERVAL", "600"))  # Future use
+SMART_POLL_INTERVAL = int(os.getenv("SMART_POLL_INTERVAL", "600"))
+RAID_POLL_INTERVAL = int(os.getenv("RAID_POLL_INTERVAL", "120"))  # 2 minutes default
 
 # Validate intervals (minimum 10 seconds to prevent hammering)
 if POLL_INTERVAL < 10:
@@ -37,6 +41,10 @@ if POLL_INTERVAL < 10:
 if SMART_POLL_INTERVAL < 60:
     logger.warning(f"SMART_POLL_INTERVAL too low ({SMART_POLL_INTERVAL}s), using 60s minimum")
     SMART_POLL_INTERVAL = 60
+
+if RAID_POLL_INTERVAL < 60:
+    logger.warning(f"RAID_POLL_INTERVAL too low ({RAID_POLL_INTERVAL}s), using 60s minimum")
+    RAID_POLL_INTERVAL = 60
 
 
 async def collect_system_with_alerts() -> Dict[str, Any]:
@@ -105,6 +113,52 @@ async def collect_services_with_alerts() -> Dict[str, Any]:
     return results
 
 
+async def collect_docker_with_alerts() -> Dict[str, Any]:
+    """
+    Collect Docker container metrics and process alerts for any status changes.
+    
+    This function:
+    1. Collects container status, health, restarts, and resource usage
+    2. Writes results to the database
+    3. Processes alerts for each container that has a status change
+    
+    Returns:
+        Dict[str, Any]: Collection results with all container metrics
+    
+    Raises:
+        Exception: May raise exceptions which should be caught by caller
+    """
+    results = await collect_all_docker_metrics()
+    
+    # Alerts are processed inside collect_all_docker_metrics for each container
+    # No additional alert processing needed here
+    
+    return results
+
+
+async def collect_smart_with_alerts() -> Dict[str, Any]:
+    """
+    Collect SMART drive health metrics and process alerts for any status changes.
+    
+    This function:
+    1. Collects SMART health, temperature, and critical attributes for all drives
+    2. Writes results to the database
+    3. Processes alerts for drives with status changes
+    
+    Returns:
+        Dict[str, Any]: Collection results with all drive SMART data
+    
+    Raises:
+        Exception: May raise exceptions which should be caught by caller
+    """
+    results = await collect_all_smart_metrics()
+    
+    # Alerts are processed inside collect_all_smart_metrics for each drive
+    # No additional alert processing needed here
+    
+    return results
+
+
 async def collect_and_alert() -> None:
     """
     Run all collectors and process alerts.
@@ -112,6 +166,8 @@ async def collect_and_alert() -> None:
     This orchestrates the full collection cycle:
     1. Collect system metrics (CPU, RAM, disk) with alerting
     2. Collect service health checks with alerting
+    3. Collect Docker container metrics with alerting
+    4. Collect SMART drive metrics (less frequently) with alerting
     
     Each collector runs independently - if one fails, the others still run.
     Errors are logged but don't stop the collection cycle.
@@ -129,6 +185,43 @@ async def collect_and_alert() -> None:
         logger.debug(f"Service collection completed: {len(service_results)} services")
     except Exception as e:
         logger.error(f"Service collection failed: {e}", exc_info=True)
+    
+    # Collect Docker container metrics with alerts
+    try:
+        docker_results = await collect_docker_with_alerts()
+        logger.debug(f"Docker collection completed: {len(docker_results)} containers")
+    except Exception as e:
+        logger.error(f"Docker collection failed: {e}", exc_info=True)
+
+
+async def collect_smart_cycle() -> None:
+    """
+    Run SMART collector (less frequently than other collectors).
+    
+    SMART data doesn't change rapidly, so we collect it less frequently
+    to avoid unnecessary disk activity. This function is called separately
+    from the main collection cycle.
+    """
+    try:
+        smart_results = await collect_smart_with_alerts()
+        logger.debug(f"SMART collection completed: {len(smart_results)} drives")
+    except Exception as e:
+        logger.error(f"SMART collection failed: {e}", exc_info=True)
+
+
+async def collect_raid_cycle() -> None:
+    """
+    Run RAID collector (more frequently than SMART, less than system).
+    
+    RAID array status can change quickly (drive failure), so we collect
+    more frequently than SMART but less than system metrics. This provides
+    early warning of array degradation.
+    """
+    try:
+        raid_results = await collect_all_raid_metrics()
+        logger.debug(f"RAID collection completed: {len(raid_results)} arrays")
+    except Exception as e:
+        logger.error(f"RAID collection failed: {e}", exc_info=True)
 
 
 async def run_scheduler() -> None:
@@ -148,14 +241,24 @@ async def run_scheduler() -> None:
     logger.info("=" * 60)
     logger.info("Scheduler started - autonomous monitoring active")
     logger.info(f"Poll interval: {POLL_INTERVAL} seconds")
-    logger.info(f"SMART interval: {SMART_POLL_INTERVAL} seconds (not yet used)")
+    logger.info(f"SMART interval: {SMART_POLL_INTERVAL} seconds")
+    logger.info(f"RAID interval: {RAID_POLL_INTERVAL} seconds")
     logger.info("=" * 60)
+    
+    # Calculate how many cycles to wait between SMART and RAID collections
+    # Example: POLL_INTERVAL=60s, SMART_POLL_INTERVAL=600s -> collect every 10 cycles
+    smart_cycle_interval = max(1, SMART_POLL_INTERVAL // POLL_INTERVAL)
+    raid_cycle_interval = max(1, RAID_POLL_INTERVAL // POLL_INTERVAL)
+    logger.info(f"SMART collection will run every {smart_cycle_interval} cycles")
+    logger.info(f"RAID collection will run every {raid_cycle_interval} cycles")
     
     # Perform initial collection immediately (don't wait for first interval)
     logger.info("Performing initial collection...")
     try:
         start_time = datetime.now()
         await collect_and_alert()
+        await collect_smart_cycle()  # Also collect SMART data on startup
+        await collect_raid_cycle()   # Also collect RAID data on startup
         elapsed = (datetime.now() - start_time).total_seconds()
         logger.info(f"Initial collection completed in {elapsed:.2f}s")
     except Exception as e:
@@ -174,8 +277,18 @@ async def run_scheduler() -> None:
             logger.info(f"Collection cycle #{cycle_count} started")
             start_time = datetime.now()
             
-            # Run collectors and process alerts
+            # Run regular collectors and process alerts
             await collect_and_alert()
+            
+            # Run SMART collection every Nth cycle
+            if cycle_count % smart_cycle_interval == 0:
+                logger.info(f"Running SMART collection (cycle #{cycle_count})")
+                await collect_smart_cycle()
+            
+            # Run RAID collection every Nth cycle
+            if cycle_count % raid_cycle_interval == 0:
+                logger.info(f"Running RAID collection (cycle #{cycle_count})")
+                await collect_raid_cycle()
             
             # Calculate elapsed time
             elapsed = (datetime.now() - start_time).total_seconds()
