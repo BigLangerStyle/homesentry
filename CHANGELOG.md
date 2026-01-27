@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0-dev] - 2026-01-27
+
+### Summary
+Application-layer monitoring release introducing plugin architecture for app-specific monitoring modules. This release transforms HomeSentry into a Docker-native monitoring platform with deep integrations for popular home lab applications.
+
 ### Planned for v0.3.0
-- Plugin architecture for app-specific monitoring modules
-- Curated modules for Home Assistant, qBittorrent, Plex, Pi-hole, Jellyfin
-- Enhanced dashboard UI with app module displays
-- Module documentation and development guide
+- **Plugin architecture foundation** - Modular system for app-specific monitoring
+- **Curated app modules** - Home Assistant, qBittorrent, Plex, Pi-hole, Jellyfin
+- **Enhanced dashboard UI** - App-specific metrics display with visual hierarchy
+- **Module documentation** - Plugin development guide and API reference
+
+### Added
+(Features will be added here as they're completed)
 
 ---
 
@@ -48,34 +56,24 @@ Major infrastructure monitoring release focused on Docker-native observability a
   - Array health status tracking (clean, degraded, rebuilding, failed)
   - Individual disk status monitoring within arrays (active, failed, spare)
   - Active vs expected disk count tracking
-  - Rebuild progress monitoring with speed and ETA
-  - Automatic array discovery or manual configuration
-  - CRITICAL alerts for array degradation (highest priority)
-  - Warning alerts for rebuild progress with periodic updates
-  - Success alerts when array is restored to healthy state
+  - Rebuild progress monitoring with percentage and ETA
+  - Multi-array support for systems with multiple RAID volumes
+  - Automatic state-change detection and alerting for critical status changes
   - Manual collection endpoint (`/api/collect/raid`)
-  - Integrated with background scheduler (every 2 minutes - more urgent than SMART)
-  - File-based parsing (no root privileges required)
-  - Configurable array list and poll interval via environment variables
-
-### Technical Improvements
-- Enhanced scheduler with multi-frequency collection cycles (Docker: 60s, RAID: 2min, SMART: 10min)
-- Async subprocess execution for system monitoring tools
-- Robust regex-based parsing for SMART and RAID data
-- File-based monitoring (no root privileges required for RAID)
-- Comprehensive error handling and graceful degradation
-
-### Deployment Changes
-- Docker socket mounted for container monitoring (`/var/run/docker.sock:ro`)
-- Device mounts for SMART monitoring (`/dev/sda`, `/dev/sdb`, `/dev/sdc`, `/dev/sdd`)
-- CAP_SYS_RAWIO capability for raw device access
-- smartmontools installed in Docker container
-
-### Configuration
-- 10 new environment variables for Docker, SMART, and RAID configuration
-- Poll interval configuration per collector type
-- Threshold configuration for temperature and resource usage
-- Device and array list configuration
+  - Integrated with background scheduler
+  - Read-only mount of /proc for array status access
+- **Enhanced scheduler** with multi-frequency collection
+  - Different poll intervals for different collector types
+  - System/Docker: Every 60 seconds (configurable via POLL_INTERVAL)
+  - SMART: Every 10 minutes (configurable via SMART_POLL_INTERVAL)
+  - Services/RAID: Every 60 seconds (same as system)
+  - Intelligent next-run calculation based on collector-specific intervals
+- **Critical infrastructure alerting**
+  - State-change alerts for Docker containers (healthy → unhealthy, running → stopped)
+  - SMART health alerts for drive failures and temperature warnings
+  - RAID degradation and rebuild alerts
+  - Sector count increase alerts (reallocated, pending, uncorrectable)
+  - Integrated with existing Discord webhook system
 
 ### Completed in v0.2.0
 - ✅ Docker container monitoring (status, health, restarts, resources)
@@ -84,10 +82,12 @@ Major infrastructure monitoring release focused on Docker-native observability a
 - ✅ Enhanced scheduler with multi-frequency collection
 - ✅ Critical infrastructure alerting system
 
-
 ---
 
 ## [0.1.0] - 2026-01-25
+
+### Summary
+Initial release establishing the foundation for HomeSentry with system monitoring, service health checks, Discord alerting, and web dashboard.
 
 ### Added
 - Initial project structure and documentation
@@ -111,12 +111,6 @@ Major infrastructure monitoring release focused on Docker-native observability a
 - **Database initialization** on application startup
 - **Async database operations** using aiosqlite
 - **Helper functions** for inserting and querying metrics, service status, and events
-  - `insert_metric_sample()` - Insert metric data
-  - `insert_service_status()` - Insert service health check
-  - `insert_event()` - Insert state-change event
-  - `get_latest_metrics()` - Query recent metrics
-  - `get_latest_events()` - Query recent events
-  - `get_latest_service_status()` - Query recent service checks
 - **System metrics collector** for monitoring server resources
   - CPU usage percentage (per-core and average)
   - Memory usage (total, available, used, percentage)
@@ -148,7 +142,7 @@ Major infrastructure monitoring release focused on Docker-native observability a
   - Configurable webhook URL and cooldown via environment variables
   - Async webhook delivery to prevent blocking
   - Comprehensive logging for debugging alert delivery
-  - Helper functions for event state tracking (`get_latest_event_by_key`, `update_event_notified`)
+  - Helper functions for event state tracking
 - **Background scheduler** for autonomous monitoring
   - Automatic collection of system metrics and service health checks
   - Configurable polling interval (default: 60 seconds)
@@ -173,9 +167,7 @@ Major infrastructure monitoring release focused on Docker-native observability a
   - No-data states handled gracefully
   - Static file serving for CSS assets
   - Dashboard route (`/`) renders HTML instead of JSON
-  - JSON API endpoints for programmatic access:
-    - `/api/dashboard/status` - Current status as JSON
-    - `/api/dashboard/events` - Recent events as JSON
+  - JSON API endpoints for programmatic access
   - Footer with version info and quick links to API docs
 
 ### Completed in v0.1.0
@@ -192,8 +184,8 @@ Major infrastructure monitoring release focused on Docker-native observability a
 
 ## Version History Summary
 
-- **v0.3.0** (Planned) - Plugin architecture, app-specific modules (HA, qBittorrent, Plex, Pi-hole, Jellyfin)
-- **v0.2.0** (Released 2026-01-27) - Docker monitoring, SMART health checks, RAID array monitoring
-- **v0.1.0** (Released 2026-01-25) - MVP with system monitoring, service checks, Discord alerts, web dashboard
+- **v0.3.0-dev** (Current) - Plugin architecture and app-specific modules
+- **v0.2.0** (Released 2026-01-27) - Infrastructure monitoring (Docker, SMART, RAID)
+- **v0.1.0** (Released 2026-01-25) - MVP with system monitoring, service checks, Discord alerts
 - **v0.5.0** (Future) - Interactive installer, configuration UI
-- **v1.0.0** (Future) - Historical charts, authentication, UI polish
+- **v1.0.0** (Future) - Historical charts, authentication, production polish
