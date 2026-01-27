@@ -22,7 +22,12 @@ from app.storage import (
     get_latest_service_status,
     get_latest_events,
 )
-from app.collectors import collect_all_system_metrics, check_all_services, collect_all_smart_metrics
+from app.collectors import (
+    collect_all_system_metrics,
+    check_all_services,
+    collect_all_smart_metrics,
+    collect_all_raid_metrics,
+)
 from app.scheduler import run_scheduler
 
 # Load environment variables from .env file
@@ -420,6 +425,25 @@ async def manual_collect_smart():
     results = await collect_all_smart_metrics()
     return {
         "message": "SMART metrics collected successfully",
+        "results": results,
+    }
+
+@app.get("/api/collect/raid")
+async def manual_collect_raid():
+    """
+    Manually trigger RAID array metrics collection (for testing).
+    
+    Collects RAID array status, disk health, and rebuild progress for all
+    configured mdadm arrays. Writes results to the database.
+    Useful for testing the RAID collector before scheduling is implemented.
+    
+    Returns:
+        dict: Collection results with all RAID array metrics and status
+    """
+    logger.info("Manual RAID metrics collection triggered via API")
+    results = await collect_all_raid_metrics()
+    return {
+        "message": "RAID metrics collected successfully",
         "results": results,
     }
 

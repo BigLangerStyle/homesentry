@@ -21,7 +21,8 @@ from app.collectors import (
     collect_all_system_metrics,
     check_all_services,
     collect_all_docker_metrics,
-    collect_all_smart_metrics
+    collect_all_smart_metrics,
+    collect_all_raid_metrics,
 )
 from app.alerts import process_alert
 
@@ -29,7 +30,8 @@ logger = logging.getLogger(__name__)
 
 # Configuration - read from environment variables
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))
-SMART_POLL_INTERVAL = int(os.getenv("SMART_POLL_INTERVAL", "600"))  # Future use
+SMART_POLL_INTERVAL = int(os.getenv("SMART_POLL_INTERVAL", "600"))
+RAID_POLL_INTERVAL = int(os.getenv("RAID_POLL_INTERVAL", "120"))  # 2 minutes default
 
 # Validate intervals (minimum 10 seconds to prevent hammering)
 if POLL_INTERVAL < 10:
@@ -39,6 +41,10 @@ if POLL_INTERVAL < 10:
 if SMART_POLL_INTERVAL < 60:
     logger.warning(f"SMART_POLL_INTERVAL too low ({SMART_POLL_INTERVAL}s), using 60s minimum")
     SMART_POLL_INTERVAL = 60
+
+if RAID_POLL_INTERVAL < 60:
+    logger.warning(f"RAID_POLL_INTERVAL too low ({RAID_POLL_INTERVAL}s), using 60s minimum")
+    RAID_POLL_INTERVAL = 60
 
 
 async def collect_system_with_alerts() -> Dict[str, Any]:
@@ -203,6 +209,21 @@ async def collect_smart_cycle() -> None:
         logger.error(f"SMART collection failed: {e}", exc_info=True)
 
 
+async def collect_raid_cycle() -> None:
+    """
+    Run RAID collector (more frequently than SMART, less than system).
+    
+    RAID array status can change quickly (drive failure), so we collect
+    more frequently than SMART but less than system metrics. This provides
+    early warning of array degradation.
+    """
+    try:
+        raid_results = await collect_all_raid_metrics()
+        logger.debug(f"RAID collection completed: {len(raid_results)} arrays")
+    except Exception as e:
+        logger.error(f"RAID collection failed: {e}", exc_info=True)
+
+
 async def run_scheduler() -> None:
     """
     Main scheduler loop - runs forever until cancelled.
@@ -221,12 +242,15 @@ async def run_scheduler() -> None:
     logger.info("Scheduler started - autonomous monitoring active")
     logger.info(f"Poll interval: {POLL_INTERVAL} seconds")
     logger.info(f"SMART interval: {SMART_POLL_INTERVAL} seconds")
+    logger.info(f"RAID interval: {RAID_POLL_INTERVAL} seconds")
     logger.info("=" * 60)
     
-    # Calculate how many cycles to wait between SMART collections
+    # Calculate how many cycles to wait between SMART and RAID collections
     # Example: POLL_INTERVAL=60s, SMART_POLL_INTERVAL=600s -> collect every 10 cycles
     smart_cycle_interval = max(1, SMART_POLL_INTERVAL // POLL_INTERVAL)
+    raid_cycle_interval = max(1, RAID_POLL_INTERVAL // POLL_INTERVAL)
     logger.info(f"SMART collection will run every {smart_cycle_interval} cycles")
+    logger.info(f"RAID collection will run every {raid_cycle_interval} cycles")
     
     # Perform initial collection immediately (don't wait for first interval)
     logger.info("Performing initial collection...")
@@ -234,6 +258,7 @@ async def run_scheduler() -> None:
         start_time = datetime.now()
         await collect_and_alert()
         await collect_smart_cycle()  # Also collect SMART data on startup
+        await collect_raid_cycle()   # Also collect RAID data on startup
         elapsed = (datetime.now() - start_time).total_seconds()
         logger.info(f"Initial collection completed in {elapsed:.2f}s")
     except Exception as e:
@@ -259,6 +284,11 @@ async def run_scheduler() -> None:
             if cycle_count % smart_cycle_interval == 0:
                 logger.info(f"Running SMART collection (cycle #{cycle_count})")
                 await collect_smart_cycle()
+            
+            # Run RAID collection every Nth cycle
+            if cycle_count % raid_cycle_interval == 0:
+                logger.info(f"Running RAID collection (cycle #{cycle_count})")
+                await collect_raid_cycle()
             
             # Calculate elapsed time
             elapsed = (datetime.now() - start_time).total_seconds()

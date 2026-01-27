@@ -6,8 +6,6 @@ Active collectors:
 - services.py - HTTP health checks
 - docker.py - Container monitoring
 - smart.py - Drive health monitoring
-
-Future collectors:
 - raid.py - RAID array status
 """
 
@@ -27,6 +25,9 @@ from .docker import (
 from .smart import (
     collect_all_smart_metrics,
 )
+from .raid import (
+    collect_all_raid_metrics,
+)
 
 __all__ = [
     "collect_cpu_metrics",
@@ -37,4 +38,5 @@ __all__ = [
     "check_all_services",
     "collect_all_docker_metrics",
     "collect_all_smart_metrics",
+    "collect_all_raid_metrics",
 ]
