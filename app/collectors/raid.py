@@ -310,11 +310,11 @@ async def store_raid_metrics(array: Dict[str, Any]) -> None:
     
     # Store array health metric
     await insert_metric_sample(
-        collector="raid",
-        metric_name="array_health",
-        metric_value=1 if overall_status == 'OK' else 0,
+        category="raid",
+        name=f"array_{array_name}_health",
+        value_num=1 if overall_status == 'OK' else 0,
         status=overall_status,
-        metadata=json.dumps({
+        details_json=json.dumps({
             "array_name": array_name,
             "raid_level": array['raid_level'],
             "array_state": array['array_state'],
@@ -326,11 +326,11 @@ async def store_raid_metrics(array: Dict[str, Any]) -> None:
     # Store active disk count (critical metric!)
     disk_status = 'OK' if array['active_devices'] == array['total_devices'] else 'FAIL'
     await insert_metric_sample(
-        collector="raid",
-        metric_name="active_disks",
-        metric_value=array['active_devices'],
+        category="raid",
+        name=f"array_{array_name}_active_disks",
+        value_num=array['active_devices'],
         status=disk_status,
-        metadata=json.dumps({
+        details_json=json.dumps({
             "array_name": array_name,
             "total_devices": array['total_devices'],
             "failed_devices": array['failed_devices'],
@@ -341,11 +341,11 @@ async def store_raid_metrics(array: Dict[str, Any]) -> None:
     # Store rebuild progress if rebuilding
     if array['rebuild_progress'] is not None:
         await insert_metric_sample(
-            collector="raid",
-            metric_name="rebuild_progress",
-            metric_value=array['rebuild_progress'],
+            category="raid",
+            name=f"array_{array_name}_rebuild_progress",
+            value_num=array['rebuild_progress'],
             status='WARN',  # Rebuilding is a warning state
-            metadata=json.dumps({
+            details_json=json.dumps({
                 "array_name": array_name,
                 "rebuild_speed": array['rebuild_speed'],
                 "rebuild_eta_minutes": array['rebuild_eta_minutes']
