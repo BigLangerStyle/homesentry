@@ -16,7 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced event tracking and state management
 
 ### Added
-(Features will be added here as they're completed)
+- **Docker container monitoring** via Docker API
+  - Container status tracking (running, stopped, paused, etc.)
+  - Health check status monitoring (healthy, unhealthy, starting, none)
+  - Restart count tracking to detect crash-looping containers
+  - CPU and memory usage per container
+  - Automatic state-change detection and alerting
+  - Manual collection endpoint (`/api/collect/docker`)
+  - Integrated with background scheduler for autonomous monitoring
+  - Read-only Docker socket mount for secure access
+
 
 ---
 

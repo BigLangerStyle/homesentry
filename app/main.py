@@ -382,6 +382,26 @@ async def manual_collect_services():
         "results": results,
     }
 
+@app.get("/api/collect/docker")
+async def manual_collect_docker():
+    """
+    Manually trigger Docker container metrics collection (for testing).
+    
+    Collects container status, health checks, restart counts, and resource usage
+    for all Docker containers on the host system. Writes results to the database.
+    Useful for testing the Docker collector before scheduling is implemented.
+    
+    Returns:
+        dict: Collection results with all container metrics and status
+    """
+    from app.collectors import collect_all_docker_metrics
+    
+    logger.info("Manual Docker metrics collection triggered via API")
+    results = await collect_all_docker_metrics()
+    return {
+        "message": "Docker metrics collected successfully",
+        "results": results,
+    }
 
 @app.get("/api/test-alert")
 async def test_alert():
