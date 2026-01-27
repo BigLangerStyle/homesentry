@@ -48,3 +48,8 @@ services:
     environment:
       # Set timezone to match MediaServer (America/Chicago)
       - TZ=America/Chicago
+    
+    # Linux capabilities
+    # SYS_RAWIO: Required for smartctl to access raw device data for SMART monitoring
+    cap_add:
+      - SYS_RAWIO

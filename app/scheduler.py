@@ -20,7 +20,8 @@ from typing import Dict, Any
 from app.collectors import (
     collect_all_system_metrics,
     check_all_services,
-    collect_all_docker_metrics
+    collect_all_docker_metrics,
+    collect_all_smart_metrics
 )
 from app.alerts import process_alert
 
@@ -129,6 +130,29 @@ async def collect_docker_with_alerts() -> Dict[str, Any]:
     return results
 
 
+async def collect_smart_with_alerts() -> Dict[str, Any]:
+    """
+    Collect SMART drive health metrics and process alerts for any status changes.
+    
+    This function:
+    1. Collects SMART health, temperature, and critical attributes for all drives
+    2. Writes results to the database
+    3. Processes alerts for drives with status changes
+    
+    Returns:
+        Dict[str, Any]: Collection results with all drive SMART data
+    
+    Raises:
+        Exception: May raise exceptions which should be caught by caller
+    """
+    results = await collect_all_smart_metrics()
+    
+    # Alerts are processed inside collect_all_smart_metrics for each drive
+    # No additional alert processing needed here
+    
+    return results
+
+
 async def collect_and_alert() -> None:
     """
     Run all collectors and process alerts.
@@ -137,6 +161,7 @@ async def collect_and_alert() -> None:
     1. Collect system metrics (CPU, RAM, disk) with alerting
     2. Collect service health checks with alerting
     3. Collect Docker container metrics with alerting
+    4. Collect SMART drive metrics (less frequently) with alerting
     
     Each collector runs independently - if one fails, the others still run.
     Errors are logged but don't stop the collection cycle.
@@ -163,6 +188,21 @@ async def collect_and_alert() -> None:
         logger.error(f"Docker collection failed: {e}", exc_info=True)
 
 
+async def collect_smart_cycle() -> None:
+    """
+    Run SMART collector (less frequently than other collectors).
+    
+    SMART data doesn't change rapidly, so we collect it less frequently
+    to avoid unnecessary disk activity. This function is called separately
+    from the main collection cycle.
+    """
+    try:
+        smart_results = await collect_smart_with_alerts()
+        logger.debug(f"SMART collection completed: {len(smart_results)} drives")
+    except Exception as e:
+        logger.error(f"SMART collection failed: {e}", exc_info=True)
+
+
 async def run_scheduler() -> None:
     """
     Main scheduler loop - runs forever until cancelled.
@@ -180,14 +220,20 @@ async def run_scheduler() -> None:
     logger.info("=" * 60)
     logger.info("Scheduler started - autonomous monitoring active")
     logger.info(f"Poll interval: {POLL_INTERVAL} seconds")
-    logger.info(f"SMART interval: {SMART_POLL_INTERVAL} seconds (not yet used)")
+    logger.info(f"SMART interval: {SMART_POLL_INTERVAL} seconds")
     logger.info("=" * 60)
+    
+    # Calculate how many cycles to wait between SMART collections
+    # Example: POLL_INTERVAL=60s, SMART_POLL_INTERVAL=600s -> collect every 10 cycles
+    smart_cycle_interval = max(1, SMART_POLL_INTERVAL // POLL_INTERVAL)
+    logger.info(f"SMART collection will run every {smart_cycle_interval} cycles")
     
     # Perform initial collection immediately (don't wait for first interval)
     logger.info("Performing initial collection...")
     try:
         start_time = datetime.now()
         await collect_and_alert()
+        await collect_smart_cycle()  # Also collect SMART data on startup
         elapsed = (datetime.now() - start_time).total_seconds()
         logger.info(f"Initial collection completed in {elapsed:.2f}s")
     except Exception as e:
@@ -206,8 +252,13 @@ async def run_scheduler() -> None:
             logger.info(f"Collection cycle #{cycle_count} started")
             start_time = datetime.now()
             
-            # Run collectors and process alerts
+            # Run regular collectors and process alerts
             await collect_and_alert()
+            
+            # Run SMART collection every Nth cycle
+            if cycle_count % smart_cycle_interval == 0:
+                logger.info(f"Running SMART collection (cycle #{cycle_count})")
+                await collect_smart_cycle()
             
             # Calculate elapsed time
             elapsed = (datetime.now() - start_time).total_seconds()

@@ -5,9 +5,9 @@ Active collectors:
 - system.py - CPU, RAM, disk usage
 - services.py - HTTP health checks
 - docker.py - Container monitoring
+- smart.py - Drive health monitoring
 
 Future collectors:
-- smart.py - Drive health monitoring
 - raid.py - RAID array status
 """
 
@@ -24,6 +24,9 @@ from .services import (
 from .docker import (
     collect_all_docker_metrics,
 )
+from .smart import (
+    collect_all_smart_metrics,
+)
 
 __all__ = [
     "collect_cpu_metrics",
@@ -33,4 +36,5 @@ __all__ = [
     "check_service_health",
     "check_all_services",
     "collect_all_docker_metrics",
+    "collect_all_smart_metrics",
 ]

@@ -22,7 +22,7 @@ from app.storage import (
     get_latest_service_status,
     get_latest_events,
 )
-from app.collectors import collect_all_system_metrics, check_all_services
+from app.collectors import collect_all_system_metrics, check_all_services, collect_all_smart_metrics
 from app.scheduler import run_scheduler
 
 # Load environment variables from .env file
@@ -400,6 +400,26 @@ async def manual_collect_docker():
     results = await collect_all_docker_metrics()
     return {
         "message": "Docker metrics collected successfully",
+        "results": results,
+    }
+
+@app.get("/api/collect/smart")
+async def manual_collect_smart():
+    """
+    Manually trigger SMART drive health metrics collection (for testing).
+    
+    Collects SMART health status, temperature, and critical attributes
+    (reallocated sectors, pending sectors, power-on hours) for all configured
+    drives. Writes results to the database.
+    Useful for testing the SMART collector before scheduling is implemented.
+    
+    Returns:
+        dict: Collection results with all drive SMART metrics and status
+    """
+    logger.info("Manual SMART metrics collection triggered via API")
+    results = await collect_all_smart_metrics()
+    return {
+        "message": "SMART metrics collected successfully",
         "results": results,
     }
 
