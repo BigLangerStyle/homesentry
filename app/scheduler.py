@@ -19,7 +19,8 @@ from typing import Dict, Any
 
 from app.collectors import (
     collect_all_system_metrics,
-    check_all_services
+    check_all_services,
+    collect_all_docker_metrics
 )
 from app.alerts import process_alert
 
@@ -105,6 +106,29 @@ async def collect_services_with_alerts() -> Dict[str, Any]:
     return results
 
 
+async def collect_docker_with_alerts() -> Dict[str, Any]:
+    """
+    Collect Docker container metrics and process alerts for any status changes.
+    
+    This function:
+    1. Collects container status, health, restarts, and resource usage
+    2. Writes results to the database
+    3. Processes alerts for each container that has a status change
+    
+    Returns:
+        Dict[str, Any]: Collection results with all container metrics
+    
+    Raises:
+        Exception: May raise exceptions which should be caught by caller
+    """
+    results = await collect_all_docker_metrics()
+    
+    # Alerts are processed inside collect_all_docker_metrics for each container
+    # No additional alert processing needed here
+    
+    return results
+
+
 async def collect_and_alert() -> None:
     """
     Run all collectors and process alerts.
@@ -112,6 +136,7 @@ async def collect_and_alert() -> None:
     This orchestrates the full collection cycle:
     1. Collect system metrics (CPU, RAM, disk) with alerting
     2. Collect service health checks with alerting
+    3. Collect Docker container metrics with alerting
     
     Each collector runs independently - if one fails, the others still run.
     Errors are logged but don't stop the collection cycle.
@@ -129,6 +154,13 @@ async def collect_and_alert() -> None:
         logger.debug(f"Service collection completed: {len(service_results)} services")
     except Exception as e:
         logger.error(f"Service collection failed: {e}", exc_info=True)
+    
+    # Collect Docker container metrics with alerts
+    try:
+        docker_results = await collect_docker_with_alerts()
+        logger.debug(f"Docker collection completed: {len(docker_results)} containers")
+    except Exception as e:
+        logger.error(f"Docker collection failed: {e}", exc_info=True)
 
 
 async def run_scheduler() -> None:
