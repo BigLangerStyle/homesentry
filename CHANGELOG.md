@@ -25,6 +25,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Manual collection endpoint (`/api/collect/docker`)
   - Integrated with background scheduler for autonomous monitoring
   - Read-only Docker socket mount for secure access
+- **SMART drive health monitoring** via smartctl from smartmontools
+  - Overall SMART health status tracking (PASSED/FAILED)
+  - Drive temperature monitoring with configurable thresholds
+  - Reallocated sectors detection (early warning of drive failure)
+  - Pending sectors monitoring (sectors waiting to be reallocated)
+  - Uncorrectable sectors tracking
+  - Power-on hours tracking for drive age analysis
+  - Multi-drive concurrent collection for performance
+  - Automatic state-change detection and alerting for all critical metrics
+  - Manual collection endpoint (`/api/collect/smart`)
+  - Integrated with background scheduler (less frequent - every 10 minutes)
+  - CAP_SYS_RAWIO capability in Docker for raw device access
+  - Configurable drive list and temperature thresholds via environment variables
+  - smartmontools installed in Docker container
 
 
 ---

@@ -152,7 +152,7 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 ### In Progress (v0.2.0)
 
 - [x] Docker container monitoring (completed - status, health, restarts, resources)
-- [ ] SMART drive health checks
+- [x] SMART drive health checks (completed - health status, temperature, reallocated sectors, alerts)
 - [ ] RAID status monitoring
 - [ ] Enhanced event tracking
 
@@ -213,10 +213,6 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 ### Next Up (v0.2.0)
 
 
-
-- [ ] Docker container monitoring
-
-- [ ] SMART drive health checks
 
 - [ ] RAID status monitoring (mdadm, ZFS, btrfs)
 
