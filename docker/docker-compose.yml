@@ -35,6 +35,14 @@ services:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
     
+    # Device mounts for SMART monitoring
+    # Mount all drives that need SMART monitoring
+    devices:
+      - /dev/sda:/dev/sda:r
+      - /dev/sdb:/dev/sdb:r
+      - /dev/sdc:/dev/sdc:r
+      - /dev/sdd:/dev/sdd:r
+    
     # Load environment variables from .env file
     # Create .env from .env.example before running
     env_file:
