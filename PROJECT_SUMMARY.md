@@ -1,23 +1,10 @@
 # HomeSentry - Project Summary
 
-
-
-**Version:** 0.2.0-dev
-
-**Status:** In Active Development  
-
-**Last Updated:** January 26, 2026
-
-**Target Platform:** Linux (Ubuntu/Debian) + Docker  
-
-**Primary Language:** Python 3.11+  
-
-**Version:** 0.2.0-dev  
-**Status:** In Active Development  
-**Last Updated:** January 26, 2026  
+**Version:** 0.2.0  
+**Status:** Production Ready  
+**Last Updated:** January 27, 2026  
 **Target Platform:** Linux (Ubuntu/Debian) + Docker  
 **Primary Language:** Python 3.11+  
-
 
 ---
 
@@ -149,12 +136,24 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Web dashboard UI
 - [x] Docker Dockerfile + docker-compose.yml
 
-### In Progress (v0.2.0)
+### Completed (v0.2.0) - Infrastructure Monitoring Release
 
-- [x] Docker container monitoring (completed - status, health, restarts, resources)
-- [x] SMART drive health checks (completed - health status, temperature, reallocated sectors, alerts)
-- [x] RAID status monitoring (completed - array health, disk tracking, rebuild progress, alerts)
-- [ ] Enhanced event tracking
+- [x] Docker container monitoring (status, health, restarts, resources)
+- [x] SMART drive health checks (health status, temperature, reallocated sectors, alerts)
+- [x] RAID status monitoring (array health, disk tracking, rebuild progress, alerts)
+- [x] Enhanced scheduler with multi-frequency collection
+- [x] Critical infrastructure alerting
+
+### In Progress (v0.3.0)
+
+- [ ] Plugin architecture foundation (AppModule base class, module discovery)
+- [ ] Home Assistant monitoring module
+- [ ] qBittorrent monitoring module
+- [ ] Plex monitoring module
+- [ ] Pi-hole monitoring module
+- [ ] Jellyfin monitoring module
+- [ ] Dashboard UI updates for app modules
+- [ ] Module development documentation
 
 ### Next Up (v0.5.0)
 
