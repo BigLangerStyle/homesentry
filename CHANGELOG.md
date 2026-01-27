@@ -39,6 +39,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CAP_SYS_RAWIO capability in Docker for raw device access
   - Configurable drive list and temperature thresholds via environment variables
   - smartmontools installed in Docker container
+- **RAID array monitoring** via /proc/mdstat (mdadm software RAID)
+  - Array health status tracking (clean, degraded, rebuilding, failed)
+  - Individual disk status monitoring within arrays (active, failed, spare)
+  - Active vs expected disk count tracking
+  - Rebuild progress monitoring with speed and ETA
+  - Automatic array discovery or manual configuration
+  - CRITICAL alerts for array degradation (highest priority)
+  - Warning alerts for rebuild progress with periodic updates
+  - Success alerts when array is restored to healthy state
+  - Manual collection endpoint (`/api/collect/raid`)
+  - Integrated with background scheduler (every 2 minutes - more urgent than SMART)
+  - File-based parsing (no root privileges required)
+  - Configurable array list and poll interval via environment variables
 
 
 ---
