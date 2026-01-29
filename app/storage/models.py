@@ -4,10 +4,10 @@ Database schema definitions for HomeSentry
 This module contains SQL schema definitions for all database tables.
 Tables are designed to store metrics, service status, and state-change events.
 
-Schema Version: 0.1.0
+Schema Version: 0.3.0
 """
 
-SCHEMA_VERSION = "0.1.0"
+SCHEMA_VERSION = "0.3.0"
 
 # =============================================================================
 # Metrics Samples Table
@@ -89,7 +89,8 @@ CREATE TABLE IF NOT EXISTS events (
     new_status TEXT NOT NULL,
     message TEXT NOT NULL,
     notified BOOLEAN NOT NULL DEFAULT 0,
-    notified_ts DATETIME
+    notified_ts DATETIME,
+    maintenance_suppressed BOOLEAN NOT NULL DEFAULT 0
 );
 """
 
@@ -116,3 +117,42 @@ CREATE TABLE IF NOT EXISTS schema_version (
 INSERT_SCHEMA_VERSION = """
 INSERT OR IGNORE INTO schema_version (version) VALUES (?);
 """
+
+# =============================================================================
+# Schema Migrations
+# =============================================================================
+
+async def migrate_to_v030(db):
+    """
+    Migrate database from v0.1.0 to v0.3.0.
+    
+    Adds maintenance_suppressed column to events table to track alerts
+    that were suppressed due to maintenance windows.
+    
+    Args:
+        db: aiosqlite database connection
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Check if column already exists
+        cursor = await db.execute("PRAGMA table_info(events)")
+        columns = await cursor.fetchall()
+        column_names = [col[1] for col in columns]
+        
+        if "maintenance_suppressed" not in column_names:
+            logger.info("Adding maintenance_suppressed column to events table")
+            await db.execute("""
+                ALTER TABLE events 
+                ADD COLUMN maintenance_suppressed BOOLEAN NOT NULL DEFAULT 0
+            """)
+            await db.commit()
+            logger.info("Successfully migrated to schema v0.3.0")
+        else:
+            logger.debug("Column maintenance_suppressed already exists, skipping migration")
+            
+    except Exception as e:
+        logger.error(f"Failed to migrate to v0.3.0: {e}", exc_info=True)
+        raise
+
