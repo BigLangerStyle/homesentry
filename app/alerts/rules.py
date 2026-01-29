@@ -17,6 +17,7 @@ from app.alerts.discord import (
     format_system_alert,
     format_disk_alert
 )
+from app.alerts.maintenance import should_suppress_alert
 
 logger = logging.getLogger(__name__)
 
@@ -248,6 +249,23 @@ async def process_alert(
     if not await should_alert(event_key, prev_status, new_status, last_notified_ts):
         return False
     
+    # Check if alert should be suppressed due to maintenance window
+    suppress, reason = should_suppress_alert(category, name, new_status)
+    
+    if suppress:
+        logger.info(f"Alert suppressed for {event_key}: {reason}")
+        
+        # Still log to database but mark as maintenance-suppressed
+        message = f"{name}: {prev_status or 'Unknown'} → {new_status}"
+        await insert_event(
+            event_key=event_key,
+            prev_status=prev_status,
+            new_status=new_status,
+            message=message,
+            maintenance_suppressed=True
+        )
+        return False  # Don't send to Discord
+    
     # Format alert message based on category
     if category == "service":
         embed = format_service_alert(name, prev_status, new_status, details)
@@ -261,13 +279,14 @@ async def process_alert(
         success = await send_alert_async(DISCORD_WEBHOOK_URL, embed)
         
         if success:
-            # Insert event record
+            # Insert event record (not maintenance-suppressed)
             message = embed.get("title", "Alert")
             await insert_event(
                 event_key=event_key,
                 prev_status=prev_status,
                 new_status=new_status,
-                message=message
+                message=message,
+                maintenance_suppressed=False
             )
             
             # Mark as notified

@@ -19,7 +19,19 @@ Application-layer monitoring release introducing plugin architecture for app-spe
 - **Module documentation** - Plugin development guide and API reference
 
 ### Added
-(Features will be added here as they're completed)
+- **Maintenance windows** for scheduled downtime alert suppression
+  - Per-service maintenance schedules via environment variables
+  - Global maintenance window for router reboots or system-wide maintenance
+  - Time-based alert suppression (alerts logged but not sent to Discord)
+  - Day-of-week filtering for weekly maintenance schedules
+  - Database tracking of maintenance-suppressed alerts via new `maintenance_suppressed` column
+  - Recovery alerts sent after maintenance window ends
+  - Critical infrastructure alerts (SMART, RAID) exempt from suppression
+  - Support for midnight-spanning maintenance windows (e.g., 23:45-00:15)
+  - Configurable via .env with HH:MM-HH:MM format
+  - Service names are case-insensitive for flexible configuration
+  - Detailed logging of suppression reasons for debugging
+  - Schema migration from v0.1.0 to v0.3.0 for existing databases
 
 ---
 
