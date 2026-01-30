@@ -148,7 +148,7 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 
 - [x] Maintenance windows for scheduled downtime (alert suppression during planned events)
 - [x] Sleep schedule with morning summary digest (complete silence during sleep hours)
-- [ ] Plugin architecture foundation (AppModule base class, module discovery)
+- [x] Plugin architecture foundation (AppModule base class, module discovery)
 - [ ] Home Assistant monitoring module
 - [ ] qBittorrent monitoring module
 - [ ] Plex monitoring module

@@ -48,6 +48,27 @@ Application-layer monitoring release introducing plugin architecture for app-spe
   - Automatic morning digest delivery via scheduler at wake time
   - Schema migration from v0.3.0 to v0.3.1 for sleep schedule support
 
+- **Plugin architecture foundation** for app-specific monitoring
+  - AppModule base class with minimal interface (detect, collect, validate_config)
+  - Automatic module discovery from `app/collectors/modules/` directory
+  - Container-to-module matching via configurable detect() method
+  - Hard limit enforcement (10 metrics max, 3 API calls max, 15 config options max per module)
+  - Error isolation ensures module failures don't crash the system
+  - Simple dict-based configuration from environment variables
+  - Configuration pattern: `{APP_NAME}_{SETTING_NAME}` (e.g., `HOMEASSISTANT_API_URL`)
+  - Integration with existing `metrics_samples` table (category='app')
+  - Scheduler integration for automatic module execution alongside other collectors
+  - Alert processing for app-specific metrics with configurable thresholds
+  - Manual trigger endpoints for testing and debugging
+  - Module validation helpers and comprehensive error handling
+  - Foundation enables Home Assistant, qBittorrent, Plex, Pi-hole, Jellyfin modules
+  - Clear example module template included in base.py docstring
+  - No manual registration required - drop Python file in modules/ directory
+  - API endpoints: `/api/modules`, `/api/modules/{app_name}`, `/api/collect/modules`
+  - Module metadata includes display names, container mappings, and configuration limits
+  - Future-ready for install UI to enumerate available modules
+  - Enables community module contributions with clear, simple plugin API
+
 ---
 
 ## [0.2.0] - 2026-01-27
