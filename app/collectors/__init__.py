@@ -7,6 +7,7 @@ Active collectors:
 - docker.py - Container monitoring
 - smart.py - Drive health monitoring
 - raid.py - RAID array status
+- modules/ - App-specific monitoring plugins
 """
 
 from .system import (
@@ -28,6 +29,9 @@ from .smart import (
 from .raid import (
     collect_all_raid_metrics,
 )
+from .modules.module_runner import (
+    collect_all_app_metrics,
+)
 
 __all__ = [
     "collect_cpu_metrics",
@@ -39,4 +43,5 @@ __all__ = [
     "collect_all_docker_metrics",
     "collect_all_smart_metrics",
     "collect_all_raid_metrics",
+    "collect_all_app_metrics",
 ]
