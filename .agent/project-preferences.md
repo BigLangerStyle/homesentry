@@ -1,6 +1,6 @@
 # Agent Preferences for HomeSentry Project
 
-## ðŸš¨ CRITICAL: Version Control Rules
+## Ã°Å¸Å¡Â¨ CRITICAL: Version Control Rules
 
 **CURRENT VERSION: 0.3.0-dev**
 
@@ -12,13 +12,13 @@ All features currently listed in `PROJECT_SUMMARY.md` under **"In Progress (v0.3
 
 ### When Adding New Features
 
-#### âœ… CORRECT Approach:
+#### Ã¢Å“â€¦ CORRECT Approach:
 - Keep version at current version in all version-tracking files
 - Add feature to existing version sections in CHANGELOG.md and README.md
 - Mark feature as complete in PROJECT_SUMMARY.md under current version
 - Keep the same date or update to current work date
 
-#### âŒ WRONG Approach:
+#### Ã¢ÂÅ’ WRONG Approach:
 - Creating new version sections without explicit user instruction
 - Incrementing version numbers spontaneously
 - Creating new CHANGELOG entries with new versions
@@ -33,7 +33,7 @@ When adding "SMART monitoring" feature:
 
 ### Added
 - **System monitoring** - CPU, RAM, disk usage (existing)
-- **SMART monitoring** - Hard drive health checks  â† ADD HERE
+- **SMART monitoring** - Hard drive health checks  Ã¢â€ Â ADD HERE
   - Details about the feature...
 ```
 
@@ -43,7 +43,7 @@ When adding "SMART monitoring" feature:
 
 **Core Features:**
 - **System monitoring** - (existing)
-- **SMART monitoring** - Drive health tracking  â† ADD HERE
+- **SMART monitoring** - Drive health tracking  Ã¢â€ Â ADD HERE
 ```
 
 ### Current Development Roadmap
@@ -90,7 +90,7 @@ When adding "SMART monitoring" feature:
 
 ---
 
-## ðŸŒ³ Git Workflow & Branch Strategy
+## Ã°Å¸Å’Â³ Git Workflow & Branch Strategy
 
 **CRITICAL: This project uses a structured branching workflow for clean history and professional development practices.**
 
@@ -98,15 +98,15 @@ When adding "SMART monitoring" feature:
 
 ```
 main
- â”œâ”€â”€ release/v0.1.0
- â”‚    â”œâ”€â”€ feature/fastapi-skeleton
- â”‚    â”œâ”€â”€ feature/system-collector
- â”‚    â”œâ”€â”€ feature/discord-alerts
- â”‚    â””â”€â”€ fix/database-connection
- â”œâ”€â”€ release/v0.2.0
- â”‚    â”œâ”€â”€ feature/smart-monitoring
- â”‚    â””â”€â”€ feature/docker-collector
- â””â”€â”€ (future releases)
+ Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ release/v0.1.0
+ Ã¢â€â€š    Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ feature/fastapi-skeleton
+ Ã¢â€â€š    Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ feature/system-collector
+ Ã¢â€â€š    Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ feature/discord-alerts
+ Ã¢â€â€š    Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ fix/database-connection
+ Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ release/v0.2.0
+ Ã¢â€â€š    Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ feature/smart-monitoring
+ Ã¢â€â€š    Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ feature/docker-collector
+ Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ (future releases)
 ```
 
 ### Workflow Rules
@@ -227,24 +227,24 @@ When creating a new branch/task, provide a **Task Description** that includes:
 ### Why This Workflow?
 
 **Benefits:**
-- âœ… Clean, organized Git history
-- âœ… Each chat has focused context (no mixing features)
-- âœ… Easy to track what went into each release
-- âœ… Professional workflow (resume/portfolio value)
-- âœ… Easy rollback (revert a PR if needed)
-- âœ… Parallel work possible (multiple feature branches)
+- Ã¢Å“â€¦ Clean, organized Git history
+- Ã¢Å“â€¦ Each chat has focused context (no mixing features)
+- Ã¢Å“â€¦ Easy to track what went into each release
+- Ã¢Å“â€¦ Professional workflow (resume/portfolio value)
+- Ã¢Å“â€¦ Easy rollback (revert a PR if needed)
+- Ã¢Å“â€¦ Parallel work possible (multiple feature branches)
 
 **Example Timeline:**
 ```
 Day 1: Create release/v0.1.0 branch + chat
-Day 2: Create feature/fastapi-skeleton â†’ complete â†’ PR â†’ merge
-Day 3: Create feature/system-collector â†’ complete â†’ PR â†’ merge
-Day 4: Create feature/discord-alerts â†’ complete â†’ PR â†’ merge
-Day 5: Test release branch â†’ merge to main â†’ tag v0.1.0 â†’ ship it!
+Day 2: Create feature/fastapi-skeleton Ã¢â€ â€™ complete Ã¢â€ â€™ PR Ã¢â€ â€™ merge
+Day 3: Create feature/system-collector Ã¢â€ â€™ complete Ã¢â€ â€™ PR Ã¢â€ â€™ merge
+Day 4: Create feature/discord-alerts Ã¢â€ â€™ complete Ã¢â€ â€™ PR Ã¢â€ â€™ merge
+Day 5: Test release branch Ã¢â€ â€™ merge to main Ã¢â€ â€™ tag v0.1.0 Ã¢â€ â€™ ship it!
 ```
 
 
-## ðŸ“ Documentation Update Requirements
+## Ã°Å¸â€œÂ Documentation Update Requirements
 
 **CRITICAL: Always update documentation when completing features**
 
@@ -277,7 +277,7 @@ Response after completion:
 
 ---
 
-## ðŸ”§ Line Ending Normalization
+## Ã°Å¸â€Â§ Line Ending Normalization
 
 **CRITICAL WORKFLOW OPTIMIZATION:**
 
@@ -287,14 +287,14 @@ Handle line ending conversions automatically for Git-tracked files to prevent "L
 
 **When READING uploaded files:**
 1. Check if files are Git-tracked (not in `.gitignore`)
-2. Convert CRLF â†’ LF for clean internal processing:
+2. Convert CRLF Ã¢â€ â€™ LF for clean internal processing:
    ```bash
    dos2unix <filename> 2>/dev/null || sed -i 's/\r$//' <filename>
    ```
 
 **When PRESENTING files back to user:**
 1. Check if files are Git-tracked (not in `.gitignore`)
-2. Convert LF â†’ CRLF to match Windows Git config:
+2. Convert LF Ã¢â€ â€™ CRLF to match Windows Git config:
    ```bash
    unix2dos <filename> 2>/dev/null || sed -i 's/$/\r/' <filename>
    ```
@@ -322,7 +322,7 @@ Handle line ending conversions automatically for Git-tracked files to prevent "L
 
 ---
 
-## 🔄 CRITICAL: Complete Development to Deployment Workflow
+## ðŸ”„ CRITICAL: Complete Development to Deployment Workflow
 
 **This is the ACTUAL workflow - follow this exactly every time:**
 
@@ -403,25 +403,25 @@ exit
 
 ---
 
-## ⚠️ What Claude Should NOT Do
+## âš ï¸ What Claude Should NOT Do
 
-- ❌ Do NOT run git commands (`git init`, `git add`, `git commit`, `git push`)
-- ❌ Do NOT assume files are committed just because they're presented
-- ❌ Do NOT ask "should I commit this?" - just present files and suggest commit message
-- ❌ Do NOT give instructions for steps the user hasn't reached yet
-- ❌ Do NOT ask user to test before they've deployed to the server
+- âŒ Do NOT run git commands (`git init`, `git add`, `git commit`, `git push`)
+- âŒ Do NOT assume files are committed just because they're presented
+- âŒ Do NOT ask "should I commit this?" - just present files and suggest commit message
+- âŒ Do NOT give instructions for steps the user hasn't reached yet
+- âŒ Do NOT ask user to test before they've deployed to the server
 
-## ✅ What Claude SHOULD Do
+## âœ… What Claude SHOULD Do
 
-- ✅ Present all modified files clearly with repo paths
-- ✅ Provide a ready-to-use git commit message
-- ✅ Provide deployment commands for MediaServer
-- ✅ Provide test commands to verify functionality
-- ✅ Wait for user feedback after they've tested
+- âœ… Present all modified files clearly with repo paths
+- âœ… Provide a ready-to-use git commit message
+- âœ… Provide deployment commands for MediaServer
+- âœ… Provide test commands to verify functionality
+- âœ… Wait for user feedback after they've tested
 
 ---
 
-## 📋 Standard Response Template (End of Task)
+## ðŸ“‹ Standard Response Template (End of Task)
 
 When a feature is complete, Claude should respond like this:
 
@@ -463,12 +463,12 @@ This makes it clear Claude's job ends at presenting files, and the user handles 
 
 When presenting modified source files for Git commits:
 
-### âŒ DON'T:
+### Ã¢ÂÅ’ DON'T:
 - Present files in a folder structure that requires "opening"
 - Group files in a way that makes them hard to download individually
 - Use generic names when there might be ambiguity
 
-### âœ… DO:
+### Ã¢Å“â€¦ DO:
 - Present each file individually using `present_files` with one file at a time
 - Use clear paths that show where files belong
 - Include brief notes about where each file goes in the repo
@@ -495,43 +495,43 @@ Each file presented separately with context about what changed.
 
 ```
 homesentry/
-â”œâ”€â”€ .agent/
-â”‚   â”œâ”€â”€ project-preferences.md
-â”‚   â””â”€â”€ workflows/          (if needed)
-â”œâ”€â”€ app/
-â”‚   â”œâ”€â”€ main.py            (FastAPI application)
-â”‚   â”œâ”€â”€ collectors/        (monitoring modules)
-â”‚   â”‚   â”œâ”€â”€ __init__.py
-â”‚   â”‚   â”œâ”€â”€ system.py      (CPU, RAM, disk)
-â”‚   â”‚   â”œâ”€â”€ smart.py       (drive health)
-â”‚   â”‚   â”œâ”€â”€ docker.py      (container monitoring)
-â”‚   â”‚   â”œâ”€â”€ services.py    (HTTP health checks)
-â”‚   â”‚   â””â”€â”€ raid.py        (RAID status)
-â”‚   â”œâ”€â”€ storage/           (database)
-â”‚   â”‚   â”œâ”€â”€ __init__.py
-â”‚   â”‚   â”œâ”€â”€ db.py          (SQLite setup)
-â”‚   â”‚   â””â”€â”€ models.py      (schema definitions)
-â”‚   â”œâ”€â”€ alerts/            (notifications)
-â”‚   â”‚   â”œâ”€â”€ __init__.py
-â”‚   â”‚   â”œâ”€â”€ discord.py     (webhook integration)
-â”‚   â”‚   â””â”€â”€ rules.py       (alerting logic)
-â”‚   â”œâ”€â”€ templates/         (HTML templates)
-â”‚   â”‚   â””â”€â”€ dashboard.html
-â”‚   â””â”€â”€ static/            (CSS, JS)
-â”‚       â””â”€â”€ styles.css
-â”œâ”€â”€ docker/
-â”‚   â”œâ”€â”€ Dockerfile
-â”‚   â””â”€â”€ docker-compose.yml
-â”œâ”€â”€ scripts/
-â”‚   â””â”€â”€ setup.sh           (future: interactive installer)
-â”œâ”€â”€ tests/
-â”‚   â””â”€â”€ (unit tests)
-â”œâ”€â”€ .env.example           (configuration template)
-â”œâ”€â”€ .gitignore
-â”œâ”€â”€ README.md
-â”œâ”€â”€ CHANGELOG.md
-â”œâ”€â”€ PROJECT_SUMMARY.md
-â””â”€â”€ requirements.txt
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ .agent/
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ project-preferences.md
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ workflows/          (if needed)
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ app/
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ main.py            (FastAPI application)
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ collectors/        (monitoring modules)
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ __init__.py
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ system.py      (CPU, RAM, disk)
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ smart.py       (drive health)
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ docker.py      (container monitoring)
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ services.py    (HTTP health checks)
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ raid.py        (RAID status)
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ storage/           (database)
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ __init__.py
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ db.py          (SQLite setup)
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ models.py      (schema definitions)
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ alerts/            (notifications)
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ __init__.py
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ discord.py     (webhook integration)
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ rules.py       (alerting logic)
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ templates/         (HTML templates)
+Ã¢â€â€š   Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ dashboard.html
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ static/            (CSS, JS)
+Ã¢â€â€š       Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ styles.css
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ docker/
+Ã¢â€â€š   Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ Dockerfile
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ docker-compose.yml
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ scripts/
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ setup.sh           (future: interactive installer)
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ tests/
+Ã¢â€â€š   Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ (unit tests)
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ .env.example           (configuration template)
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ .gitignore
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ README.md
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ CHANGELOG.md
+Ã¢â€Å“Ã¢â€â‚¬Ã¢â€â‚¬ PROJECT_SUMMARY.md
+Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬ requirements.txt
 ```
 
 ---
@@ -622,7 +622,7 @@ HomeSentry is designed to run in Docker for:
 
 ---
 
-## ðŸš« Git Management
+## Ã°Å¸Å¡Â« Git Management
 
 **CRITICAL: User manages Git separately in Cursor**
 
@@ -661,3 +661,119 @@ Even if workflow instructions mention Git operations, skip those steps. The user
 - Test alerts
 
 These are future goals - keep code structure flexible to accommodate them!
+---
+
+## 📦 Task Completion & Chat Handoff
+
+**CRITICAL: When completing a task/feature, always provide files needed for the next chat.**
+
+This eliminates the need to zip the entire project between chats. Only provide the minimal files needed for context.
+
+### Files to Provide When Task is Complete
+
+At the end of each feature chat, Claude should present a **"Next Chat Starter Pack"** containing:
+
+#### Always Include (Core Context):
+1. **TASK_{feature-name}.md** - Task description for next feature
+2. **media-server-information.md** - MediaServer details (from project)
+3. **project-preferences.md** - This file (from project)
+
+#### Include When Relevant (Feature-Specific):
+4. **Related module files** - Only files the next task needs to reference
+   - Example: For `feature/module-homeassistant`, include `app/collectors/modules/base.py`
+   - Example: For collector work, include example collector like `app/collectors/services.py`
+
+#### Do NOT Include:
+- ❌ Entire codebase zips
+- ❌ Unrelated feature files
+- ❌ Files the next task won't reference
+- ❌ Database files or data directories
+
+### Example: Completing Plugin Architecture Task
+
+**✅ CORRECT - Minimal File Set:**
+```
+Files for next chat (feature/module-homeassistant):
+1. TASK_module-homeassistant.md (task description)
+2. media-server-information.md (MediaServer context)
+3. project-preferences.md (workflow and preferences)
+4. app/collectors/modules/base.py (module template to follow)
+```
+
+**❌ WRONG - Unnecessary Files:**
+```
+- homesentry.zip (entire project - too much)
+- app/main.py (next task doesn't need this)
+- app/scheduler.py (next task doesn't need this)
+- CHANGELOG.md (next task will update this themselves)
+```
+
+### Claude's Task Completion Checklist
+
+When user says "this task is complete" or similar, Claude should:
+
+1. **✅ Present completed work files** (for git commit)
+   - Modified source files
+   - Updated documentation files
+   - Git commit message
+
+2. **✅ Create TASK file for next feature**
+   - Write comprehensive task description
+   - Include requirements, testing steps, success criteria
+   - Format: `TASK_{next-feature-name}.md`
+
+3. **✅ Present "Next Chat Starter Pack"**
+   - Task file (newly created)
+   - Core context files (media-server-information.md, project-preferences.md)
+   - Relevant reference files (base classes, similar implementations)
+   - Clear list of what each file is for
+
+4. **✅ Provide clear handoff message**
+   ```
+   Ready for next task: feature/module-homeassistant
+   
+   Files for next chat:
+   - TASK_module-homeassistant.md - Complete implementation guide
+   - media-server-information.md - MediaServer context
+   - project-preferences.md - Project workflow
+   - app/collectors/modules/base.py - Module template/interface
+   
+   Start next chat with: "I want to work on feature/module-homeassistant"
+   ```
+
+### Benefits of Minimal File Sets
+
+**Efficiency:**
+- ✅ Faster uploads (4 files vs entire project)
+- ✅ Claude loads faster (less to process)
+- ✅ Clearer focus (only relevant context)
+
+**Clarity:**
+- ✅ Next Claude knows exactly what to reference
+- ✅ No confusion about which files matter
+- ✅ Reduced chance of referencing outdated code
+
+**Workflow:**
+- ✅ Matches professional development (modular tasks)
+- ✅ Each chat is self-contained
+- ✅ Easy to parallelize work on multiple features
+
+### Special Cases
+
+**For First Module in a System:**
+Include the base class or interface file.
+Example: First app module needs `app/collectors/modules/base.py`
+
+**For Similar Features:**
+Include one example implementation.
+Example: New collector can reference `app/collectors/services.py` as pattern
+
+**For Complex Dependencies:**
+Include dependency documentation or architecture diagram.
+Example: If new feature needs to understand alert system, include relevant docs
+
+**For API Integrations:**
+Include API documentation or example API responses.
+Example: Module that calls external API might need sample response JSON
+
+---
