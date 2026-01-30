@@ -23,6 +23,7 @@ from app.collectors import (
     collect_all_docker_metrics,
     collect_all_smart_metrics,
     collect_all_raid_metrics,
+    collect_all_app_metrics,
 )
 from app.alerts import process_alert
 
@@ -136,6 +137,31 @@ async def collect_docker_with_alerts() -> Dict[str, Any]:
     return results
 
 
+async def collect_app_with_alerts() -> Dict[str, Any]:
+    """
+    Collect app module metrics and process alerts for any status changes.
+    
+    This function:
+    1. Discovers available app modules (Home Assistant, qBittorrent, etc.)
+    2. Matches modules to running Docker containers
+    3. Collects app-specific metrics from each module
+    4. Writes results to the database
+    5. Processes alerts for each metric that has a status change
+    
+    Returns:
+        Dict[str, Any]: Collection results with all app module metrics
+    
+    Raises:
+        Exception: May raise exceptions which should be caught by caller
+    """
+    results = await collect_all_app_metrics()
+    
+    # Alerts are processed inside collect_all_app_metrics for each metric
+    # No additional alert processing needed here
+    
+    return results
+
+
 async def collect_smart_with_alerts() -> Dict[str, Any]:
     """
     Collect SMART drive health metrics and process alerts for any status changes.
@@ -167,7 +193,8 @@ async def collect_and_alert() -> None:
     1. Collect system metrics (CPU, RAM, disk) with alerting
     2. Collect service health checks with alerting
     3. Collect Docker container metrics with alerting
-    4. Collect SMART drive metrics (less frequently) with alerting
+    4. Collect app module metrics with alerting
+    5. Collect SMART drive metrics (less frequently) with alerting
     
     Each collector runs independently - if one fails, the others still run.
     Errors are logged but don't stop the collection cycle.
@@ -192,6 +219,13 @@ async def collect_and_alert() -> None:
         logger.debug(f"Docker collection completed: {len(docker_results)} containers")
     except Exception as e:
         logger.error(f"Docker collection failed: {e}", exc_info=True)
+    
+    # Collect app module metrics with alerts
+    try:
+        app_results = await collect_app_with_alerts()
+        logger.debug(f"App module collection completed: {len(app_results)} modules")
+    except Exception as e:
+        logger.error(f"App module collection failed: {e}", exc_info=True)
 
 
 async def collect_smart_cycle() -> None:
