@@ -4,10 +4,10 @@ Database schema definitions for HomeSentry
 This module contains SQL schema definitions for all database tables.
 Tables are designed to store metrics, service status, and state-change events.
 
-Schema Version: 0.3.0
+Schema Version: 0.3.1
 """
 
-SCHEMA_VERSION = "0.3.0"
+SCHEMA_VERSION = "0.3.1"
 
 # =============================================================================
 # Metrics Samples Table
@@ -101,6 +101,35 @@ CREATE INDEX IF NOT EXISTS idx_events_notified ON events(notified);
 """
 
 # =============================================================================
+# Sleep Events Table
+# =============================================================================
+# Stores events that occurred during sleep hours for morning summary digest.
+# Events are queued here during sleep schedule and cleared after summary is sent.
+#
+# Examples:
+#   - Event during sleep: category='service', name='jellyfin', new_status='FAIL'
+#   - Recovery during sleep: prev_status='FAIL', new_status='OK'
+
+CREATE_SLEEP_EVENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS sleep_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    event_key TEXT NOT NULL,
+    category TEXT NOT NULL,
+    name TEXT NOT NULL,
+    prev_status TEXT,
+    new_status TEXT NOT NULL,
+    message TEXT NOT NULL,
+    details_json TEXT
+);
+"""
+
+CREATE_SLEEP_EVENTS_INDEXES = """
+CREATE INDEX IF NOT EXISTS idx_sleep_events_ts ON sleep_events(ts);
+CREATE INDEX IF NOT EXISTS idx_sleep_events_key ON sleep_events(event_key);
+"""
+
+# =============================================================================
 # Schema Version Table
 # =============================================================================
 # Tracks database schema version for future migrations
@@ -154,5 +183,48 @@ async def migrate_to_v030(db):
             
     except Exception as e:
         logger.error(f"Failed to migrate to v0.3.0: {e}", exc_info=True)
+        raise
+
+
+async def migrate_to_v031(db):
+    """
+    Migrate database from v0.3.0 to v0.3.1.
+    
+    Adds:
+    1. sleep_suppressed column to events table for tracking sleep-suppressed alerts
+    2. sleep_events table for queuing events during sleep hours
+    
+    Args:
+        db: aiosqlite database connection
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Check if sleep_suppressed column already exists
+        cursor = await db.execute("PRAGMA table_info(events)")
+        columns = await cursor.fetchall()
+        column_names = [col[1] for col in columns]
+        
+        if "sleep_suppressed" not in column_names:
+            logger.info("Adding sleep_suppressed column to events table")
+            await db.execute("""
+                ALTER TABLE events 
+                ADD COLUMN sleep_suppressed BOOLEAN NOT NULL DEFAULT 0
+            """)
+            await db.commit()
+            logger.info("Added sleep_suppressed column to events table")
+        else:
+            logger.debug("Column sleep_suppressed already exists, skipping")
+        
+        # Create sleep_events table if it doesn't exist
+        logger.info("Creating sleep_events table")
+        await db.execute(CREATE_SLEEP_EVENTS_TABLE)
+        await db.executescript(CREATE_SLEEP_EVENTS_INDEXES)
+        await db.commit()
+        logger.info("Successfully migrated to schema v0.3.1")
+            
+    except Exception as e:
+        logger.error(f"Failed to migrate to v0.3.1: {e}", exc_info=True)
         raise
 
