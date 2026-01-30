@@ -20,6 +20,7 @@ Example:
 """
 from app.collectors.modules.base import AppModule
 import aiohttp
+import asyncio
 import logging
 from typing import Dict, Any, Tuple
 
@@ -115,7 +116,7 @@ class HomeAssistantModule(AppModule):
                             f"{automation_count} automations, {response_time_ms:.0f}ms response"
                         )
                 
-                except aiohttp.ClientTimeout:
+                except asyncio.TimeoutError:
                     logger.warning(f"Home Assistant API request timed out after {timeout}s")
                     return {}
                 
