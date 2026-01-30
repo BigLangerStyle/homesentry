@@ -516,6 +516,71 @@ async def test_alert():
             "error": "Failed to send test alert - check logs for details"
         }
 
+
+@app.get("/api/debug/sleep-schedule")
+async def debug_sleep_schedule():
+    """
+    Debug endpoint to verify sleep schedule configuration and current state.
+    
+    Returns current sleep schedule settings, whether we're in sleep hours,
+    and tests some example times. Useful for troubleshooting alert suppression.
+    
+    Returns:
+        dict: Sleep schedule configuration and current status
+    """
+    from app.alerts.sleep_schedule import get_sleep_schedule, is_in_sleep_hours
+    from datetime import datetime
+    
+    # Get configuration
+    start_time, end_time, enabled = get_sleep_schedule()
+    
+    # Check current time
+    now = datetime.now()
+    is_sleeping, reason = is_in_sleep_hours(now)
+    
+    # Get environment variables for verification
+    env_vars = {
+        "SLEEP_SCHEDULE_ENABLED": os.getenv("SLEEP_SCHEDULE_ENABLED", "(not set)"),
+        "SLEEP_SCHEDULE_START": os.getenv("SLEEP_SCHEDULE_START", "(not set)"),
+        "SLEEP_SCHEDULE_END": os.getenv("SLEEP_SCHEDULE_END", "(not set)"),
+        "SLEEP_SUMMARY_ENABLED": os.getenv("SLEEP_SUMMARY_ENABLED", "(not set)"),
+        "SLEEP_SUMMARY_TIME": os.getenv("SLEEP_SUMMARY_TIME", "(not set)"),
+        "SLEEP_ALLOW_CRITICAL_ALERTS": os.getenv("SLEEP_ALLOW_CRITICAL_ALERTS", "(not set)"),
+    }
+    
+    # Test a few specific times
+    test_times = [
+        datetime(2026, 1, 30, 3, 0),   # Middle of night
+        datetime(2026, 1, 30, 7, 30),  # End of sleep
+        datetime(2026, 1, 30, 8, 0),   # Morning
+    ]
+    
+    test_results = []
+    for test_time in test_times:
+        is_test_sleeping, test_reason = is_in_sleep_hours(test_time)
+        test_results.append({
+            "time": test_time.strftime("%H:%M"),
+            "is_sleeping": is_test_sleeping,
+            "reason": test_reason
+        })
+    
+    return {
+        "current_time": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "environment_variables": env_vars,
+        "parsed_config": {
+            "enabled": enabled,
+            "start_time": start_time.strftime("%H:%M") if start_time else None,
+            "end_time": end_time.strftime("%H:%M") if end_time else None,
+        },
+        "current_status": {
+            "is_in_sleep_hours": is_sleeping,
+            "reason": reason,
+            "alerts_suppressed": is_sleeping
+        },
+        "test_times": test_results
+    }
+
+
 if __name__ == "__main__":
     # This block allows running the app directly with: python -m app.main
     # Useful for development/debugging

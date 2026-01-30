@@ -33,6 +33,21 @@ Application-layer monitoring release introducing plugin architecture for app-spe
   - Detailed logging of suppression reasons for debugging
   - Schema migration from v0.1.0 to v0.3.0 for existing databases
 
+- **Sleep schedule with morning summary digest**
+  - Configurable sleep hours for complete alert suppression
+  - Suppress all alerts (down, recovery, warnings) during sleep hours
+  - Optional morning summary digest at configurable wake time
+  - Summary shows overnight activity, service restarts, and ongoing issues
+  - "Quiet night" message when no events occurred during sleep
+  - Optional critical infrastructure exemption (SMART, RAID) via `SLEEP_ALLOW_CRITICAL_ALERTS`
+  - Sleep schedule takes precedence over maintenance windows
+  - Midnight-spanning schedules supported (e.g., 23:00-07:00)
+  - Events queued in dedicated `sleep_events` table during sleep hours
+  - Database tracking via new `sleep_suppressed` column in events table
+  - Configurable via .env with HH:MM format for start/end times
+  - Automatic morning digest delivery via scheduler at wake time
+  - Schema migration from v0.3.0 to v0.3.1 for sleep schedule support
+
 ---
 
 ## [0.2.0] - 2026-01-27
