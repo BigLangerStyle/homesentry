@@ -136,6 +136,24 @@ Application-layer monitoring release introducing plugin architecture for app-spe
   - Metrics: active_streams, transcode_count, bandwidth_mbps, library_items, movie_count, tv_show_count
   - Manual testing endpoint: `/api/collect/modules/plex`
 
+- **Jellyfin monitoring module** - Secondary media server monitoring (completes v0.3.0 app modules!)
+  - Track active streaming sessions
+  - Monitor transcoding sessions (hardware vs software)
+  - Active user count (unique viewers)
+  - Library statistics (movies, series, episodes)
+  - Alert on high transcode count (CPU load)
+  - API key authentication (X-Emby-Token header)
+  - JSON response parsing (simpler than Plex XML)
+  - Auto-detection of Jellyfin Docker containers
+  - Direct Play vs Transcoding visibility
+  - Configurable transcoding thresholds
+  - Configuration via `JELLYFIN_API_URL`, `JELLYFIN_API_KEY`
+  - Graceful handling of API failures and timeouts
+  - Completes media server monitoring suite (Plex + Jellyfin)
+  - Metrics: active_streams, transcode_count, active_users, library_items, movie_count, series_count, episode_count
+  - API endpoints: /Sessions (streams/users), /Items/Counts (library stats)
+  - Manual testing endpoint: `/api/collect/modules/jellyfin`
+
 - **Bare-metal module support** - Run app modules without Docker containers
   - Modules can run against bare-metal services (systemd, native installs)
   - Configure with `{APP_NAME}_BARE_METAL=true` environment variable
