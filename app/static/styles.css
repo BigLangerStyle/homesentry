@@ -10,27 +10,33 @@
     --color-warn: #f59e0b;    /* Yellow/Orange */
     --color-fail: #ef4444;    /* Red */
     --color-unknown: #6b7280; /* Gray */
-    
+
+    /* Layer Colors */
+    --color-app-layer: #7c3aed;       /* Purple - Application Layer */
+    --color-app-layer-light: #ede9fe; /* Light purple background */
+    --color-infra-layer: #2563eb;     /* Blue - Infrastructure Layer */
+    --color-infra-layer-light: #dbeafe; /* Light blue background */
+
     /* Background Colors */
     --bg-primary: #ffffff;
     --bg-secondary: #f3f4f6;
     --bg-card: #ffffff;
-    
+
     /* Text Colors */
     --text-primary: #111827;
     --text-secondary: #6b7280;
     --text-muted: #9ca3af;
-    
+
     /* Border Colors */
     --border-light: #e5e7eb;
     --border-medium: #d1d5db;
-    
+
     /* Spacing */
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
-    
+
     /* Border Radius */
     --radius-sm: 4px;
     --radius-md: 8px;
@@ -54,10 +60,13 @@ body {
     flex-direction: column;
 }
 
-/* Header */
+/* ========================================
+   Header
+   ======================================== */
+
 header {
     background: var(--bg-primary);
-    padding: var(--spacing-xl);
+    padding: var(--spacing-lg) var(--spacing-xl);
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     position: sticky;
@@ -67,16 +76,25 @@ header {
 
 header h1 {
     font-size: 2rem;
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: 0.25rem;
     color: var(--text-primary);
 }
 
-header p {
+.header-subtitle {
     color: var(--text-secondary);
     font-size: 1rem;
+    margin-bottom: 0.25rem;
 }
 
-/* Main Content */
+.header-status {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+}
+
+/* ========================================
+   Main Content
+   ======================================== */
+
 main {
     max-width: 1400px;
     margin: 0 auto;
@@ -85,29 +103,197 @@ main {
     width: 100%;
 }
 
-/* Section Styles */
-section {
+/* ========================================
+   Layer Sections (Application + Infrastructure)
+   ======================================== */
+
+.layer-section {
     background: var(--bg-card);
     padding: var(--spacing-xl);
     margin-bottom: var(--spacing-xl);
-    border-radius: var(--radius-md);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-section h2 {
-    font-size: 1.5rem;
+/* Layer Header: title + badge on same line */
+.layer-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
     margin-bottom: var(--spacing-lg);
-    color: var(--text-primary);
+    padding-bottom: var(--spacing-md);
     border-bottom: 2px solid var(--border-light);
-    padding-bottom: var(--spacing-sm);
 }
 
-/* Status Overview Grid */
+.layer-header h2 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Layer badges */
+.layer-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.app-badge {
+    background: var(--color-app-layer-light);
+    color: var(--color-app-layer);
+}
+
+.infra-badge {
+    background: var(--color-infra-layer-light);
+    color: var(--color-infra-layer);
+}
+
+/* Application Layer: subtle purple top border accent */
+.app-layer {
+    border-top: 3px solid var(--color-app-layer);
+}
+
+/* Infrastructure Layer: subtle blue top border accent */
+.infra-layer {
+    border-top: 3px solid var(--color-infra-layer);
+}
+
+/* ========================================
+   Application Layer - App Cards Grid
+   ======================================== */
+
+.app-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-lg);
+}
+
+/* App Card */
+.app-card {
+    position: relative;
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-left: 4px solid var(--color-unknown);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.app-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* App Card status-colored left borders */
+.app-card.ok    { border-left-color: var(--color-ok); }
+.app-card.warn  { border-left-color: var(--color-warn); }
+.app-card.fail  { border-left-color: var(--color-fail); }
+.app-card.unknown { border-left-color: var(--color-unknown); }
+
+/* App Card Header: status icon + title */
+.app-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.app-card-status-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.app-card-status-icon.ok    { background: rgba(16, 185, 129, 0.12); color: var(--color-ok); }
+.app-card-status-icon.warn  { background: rgba(245, 158, 11, 0.12); color: var(--color-warn); }
+.app-card-status-icon.fail  { background: rgba(239, 68, 68, 0.12); color: var(--color-fail); }
+.app-card-status-icon.unknown { background: rgba(107, 114, 128, 0.12); color: var(--color-unknown); }
+
+.app-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* App Card Metrics Grid: 2x2 layout inside each card */
+.app-card-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+}
+
+/* Individual metric within an app card */
+.app-metric {
+    padding: 0.5rem 0.625rem;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--border-light);
+}
+
+.app-metric-value {
+    display: block;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.app-metric-label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: 0.125rem;
+}
+
+/* Subtle status tinting on app metrics */
+.app-metric.warn .app-metric-value { color: var(--color-warn); }
+.app-metric.fail .app-metric-value { color: var(--color-fail); }
+
+/* ========================================
+   Infrastructure Layer - Subsections
+   ======================================== */
+
+.infra-subsection {
+    margin-bottom: var(--spacing-lg);
+}
+
+.infra-subsection:last-child {
+    margin-bottom: 0;
+}
+
+.subsection-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-sm);
+    padding-left: var(--spacing-sm);
+    border-left: 3px solid var(--color-infra-layer-light);
+}
+
+/* ========================================
+   Status Overview Grid (Infrastructure cards)
+   ======================================== */
+
 .status-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: var(--spacing-lg);
-    margin-top: var(--spacing-lg);
+    gap: var(--spacing-md);
 }
 
 /* Status Cards */
@@ -127,21 +313,10 @@ section h2 {
 }
 
 /* Status Card Color Variants */
-.status-card.ok {
-    border-left-color: var(--color-ok);
-}
-
-.status-card.warn {
-    border-left-color: var(--color-warn);
-}
-
-.status-card.fail {
-    border-left-color: var(--color-fail);
-}
-
-.status-card.unknown {
-    border-left-color: var(--color-unknown);
-}
+.status-card.ok      { border-left-color: var(--color-ok); }
+.status-card.warn    { border-left-color: var(--color-warn); }
+.status-card.fail    { border-left-color: var(--color-fail); }
+.status-card.unknown { border-left-color: var(--color-unknown); }
 
 /* Status Indicator Dot */
 .status-indicator {
@@ -154,17 +329,9 @@ section h2 {
     background: var(--color-unknown);
 }
 
-.status-card.ok .status-indicator {
-    background: var(--color-ok);
-}
-
-.status-card.warn .status-indicator {
-    background: var(--color-warn);
-}
-
-.status-card.fail .status-indicator {
-    background: var(--color-fail);
-}
+.status-card.ok .status-indicator      { background: var(--color-ok); }
+.status-card.warn .status-indicator    { background: var(--color-warn); }
+.status-card.fail .status-indicator    { background: var(--color-fail); }
 
 /* Status Card Content */
 .status-content h3 {
@@ -190,107 +357,32 @@ section h2 {
     letter-spacing: 0.5px;
 }
 
-.status-card.ok .status-label {
-    color: var(--color-ok);
+.status-card.ok .status-label      { color: var(--color-ok); }
+.status-card.warn .status-label    { color: var(--color-warn); }
+.status-card.fail .status-label    { color: var(--color-fail); }
+.status-card.unknown .status-label { color: var(--color-unknown); }
+
+/* ========================================
+   Events List
+   ======================================== */
+
+/* Non-layer section (Recent Alerts) */
+section.recent-events {
+    background: var(--bg-card);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    border-radius: var(--radius-md);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.status-card.warn .status-label {
-    color: var(--color-warn);
+section.recent-events h2 {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-light);
+    padding-bottom: var(--spacing-sm);
 }
 
-.status-card.fail .status-label {
-    color: var(--color-fail);
-}
-
-.status-card.unknown .status-label {
-    color: var(--color-unknown);
-}
-
-/* Metrics Table */
-.metrics-table-container {
-    overflow-x: auto;
-    margin-top: var(--spacing-lg);
-}
-
-.metrics-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
-}
-
-.metrics-table thead {
-    background: var(--bg-secondary);
-}
-
-.metrics-table th {
-    padding: var(--spacing-md);
-    text-align: left;
-    font-weight: 600;
-    color: var(--text-secondary);
-    border-bottom: 2px solid var(--border-medium);
-}
-
-.metrics-table td {
-    padding: var(--spacing-md);
-    border-bottom: 1px solid var(--border-light);
-}
-
-.metrics-table tbody tr:hover {
-    background: var(--bg-secondary);
-}
-
-/* Category Badge */
-.category-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    border-radius: var(--radius-sm);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Status Badge */
-.status-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.status-badge.ok {
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--color-ok);
-}
-
-.status-badge.warn {
-    background: rgba(245, 158, 11, 0.1);
-    color: var(--color-warn);
-}
-
-.status-badge.fail {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--color-fail);
-}
-
-.status-badge.unknown {
-    background: rgba(107, 114, 128, 0.1);
-    color: var(--color-unknown);
-}
-
-/* Timestamp */
-.timestamp {
-    color: var(--text-muted);
-    font-size: 0.8125rem;
-    white-space: nowrap;
-}
-
-/* Events List */
 .events-list {
     list-style: none;
     margin-top: var(--spacing-lg);
@@ -313,7 +405,6 @@ section h2 {
     background: var(--bg-secondary);
 }
 
-/* Event Indicator */
 .event-indicator {
     flex-shrink: 0;
 }
@@ -323,7 +414,6 @@ section h2 {
     display: inline-block;
 }
 
-/* Event Content */
 .event-content {
     flex: 1;
     display: flex;
@@ -348,15 +438,21 @@ section h2 {
     white-space: nowrap;
 }
 
-/* No Data State */
+/* ========================================
+   No Data State
+   ======================================== */
+
 .no-data {
     text-align: center;
     color: var(--text-muted);
-    padding: var(--spacing-xl);
+    padding: var(--spacing-lg);
     font-style: italic;
 }
 
-/* Footer */
+/* ========================================
+   Footer
+   ======================================== */
+
 footer {
     background: var(--bg-primary);
     text-align: center;
@@ -378,37 +474,44 @@ footer a:hover {
     text-decoration: underline;
 }
 
-/* Responsive Design */
+/* ========================================
+   Responsive Design
+   ======================================== */
+
+/* Tablet: 2-column app grid */
+@media (max-width: 1024px) {
+    .app-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Mobile: single-column everything */
 @media (max-width: 768px) {
     header h1 {
         font-size: 1.5rem;
     }
-    
+
+    .app-grid {
+        grid-template-columns: 1fr;
+    }
+
     .status-grid {
         grid-template-columns: 1fr;
     }
-    
-    section {
+
+    .layer-section,
+    section.recent-events {
         padding: var(--spacing-md);
     }
-    
+
     main {
         padding: var(--spacing-md) var(--spacing-sm);
     }
-    
-    .metrics-table {
-        font-size: 0.75rem;
-    }
-    
-    .metrics-table th,
-    .metrics-table td {
-        padding: var(--spacing-sm);
-    }
-    
+
     .event-item {
         flex-wrap: wrap;
     }
-    
+
     .event-time {
         flex-basis: 100%;
         margin-top: var(--spacing-sm);
@@ -419,37 +522,50 @@ footer a:hover {
     header {
         padding: var(--spacing-md);
     }
-    
+
     header h1 {
         font-size: 1.25rem;
     }
-    
-    section h2 {
+
+    .layer-header h2 {
         font-size: 1.25rem;
     }
-    
+
     .status-value {
         font-size: 1.5rem;
     }
+
+    .app-card-metrics {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .app-metric-value {
+        font-size: 1rem;
+    }
 }
 
-/* Print Styles */
+/* ========================================
+   Print Styles
+   ======================================== */
+
 @media print {
     body {
         background: white;
     }
-    
+
     header {
         box-shadow: none;
         border-bottom: 2px solid var(--border-medium);
     }
-    
-    section {
+
+    .layer-section,
+    section.recent-events {
         box-shadow: none;
         page-break-inside: avoid;
     }
-    
-    .status-card {
+
+    .status-card,
+    .app-card {
         page-break-inside: avoid;
     }
 }
