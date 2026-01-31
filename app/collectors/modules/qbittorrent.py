@@ -2,7 +2,7 @@
 qBittorrent monitoring module.
 
 Collects app-specific metrics from qBittorrent via Web API.
-Tracks torrent activity, bandwidth usage, and disk space.
+Tracks torrent activity, bandwidth usage, and disk space (if available).
 
 Configuration:
     QBITTORRENT_API_URL: qBittorrent Web UI URL (required)
@@ -12,6 +12,11 @@ Configuration:
     QBITTORRENT_ACTIVE_TORRENTS_FAIL: Critical threshold for active torrents
     QBITTORRENT_DISK_FREE_WARN_GB: Warning threshold for free disk space (GB)
     QBITTORRENT_DISK_FREE_FAIL_GB: Critical threshold for free disk space (GB)
+
+Note:
+    The disk_free_gb metric is only collected if your qBittorrent version
+    provides the 'free_space_on_disk' field in the API response.
+    Older versions may not include this field.
 
 Example:
     QBITTORRENT_API_URL=http://qbittorrent:8080
@@ -100,7 +105,8 @@ class QBittorrentModule(AppModule):
             
         Returns:
             Dict of metrics: active_torrents, download_speed_mbps, upload_speed_mbps, 
-                           disk_free_gb, session_downloaded_gb, session_uploaded_gb
+                           session_downloaded_gb, session_uploaded_gb
+                           Optional: disk_free_gb (only if API provides it)
         """
         api_url = config.get('api_url', '').rstrip('/')
         username = config.get('username', 'admin')
@@ -151,9 +157,12 @@ class QBittorrentModule(AppModule):
                             up_speed_bytes = transfer_data.get('up_info_speed', 0)
                             metrics['upload_speed_mbps'] = round(up_speed_bytes * 8 / 1_000_000, 2)
                             
-                            # Free disk space (bytes -> GB)
-                            free_bytes = transfer_data.get('free_space_on_disk', 0)
-                            metrics['disk_free_gb'] = round(free_bytes / 1_073_741_824, 2)
+                            # Free disk space (bytes -> GB) - only if available
+                            # Some qBittorrent versions don't provide this field
+                            if 'free_space_on_disk' in transfer_data:
+                                free_bytes = transfer_data['free_space_on_disk']
+                                if free_bytes > 0:  # Only include if value is meaningful
+                                    metrics['disk_free_gb'] = round(free_bytes / 1_073_741_824, 2)
                             
                             # Session downloaded (bytes -> GB)
                             dl_bytes = transfer_data.get('dl_info_data', 0)
@@ -163,12 +172,15 @@ class QBittorrentModule(AppModule):
                             up_bytes = transfer_data.get('up_info_data', 0)
                             metrics['session_uploaded_gb'] = round(up_bytes / 1_073_741_824, 2)
                             
-                            logger.debug(
-                                f"qBittorrent transfer info: "
-                                f"DL {metrics['download_speed_mbps']} Mbps, "
-                                f"UL {metrics['upload_speed_mbps']} Mbps, "
-                                f"{metrics['disk_free_gb']} GB free"
-                            )
+                            # Build log message
+                            log_parts = [
+                                f"DL {metrics['download_speed_mbps']} Mbps",
+                                f"UL {metrics['upload_speed_mbps']} Mbps"
+                            ]
+                            if 'disk_free_gb' in metrics:
+                                log_parts.append(f"{metrics['disk_free_gb']} GB free")
+                            
+                            logger.debug(f"qBittorrent transfer info: {', '.join(log_parts)}")
                         else:
                             logger.warning(f"Failed to get qBittorrent transfer info: HTTP {resp.status}")
                             
