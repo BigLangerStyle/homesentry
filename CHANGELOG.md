@@ -98,6 +98,22 @@ Application-layer monitoring release introducing plugin architecture for app-spe
   - Stays within 3 API call limit per collection (2 calls used)
   - Metrics: active_torrents, download_speed_mbps, upload_speed_mbps, disk_free_gb, session_downloaded_gb, session_uploaded_gb
   - Manual testing endpoint: `/api/collect/modules/qbittorrent`
+
+- **Pi-hole monitoring module** - DNS sinkhole monitoring for network-wide ad blocking
+  - Track queries blocked today (count and percentage)
+  - Monitor total DNS queries and forwarded queries
+  - Active client count (devices using Pi-hole)
+  - Blocklist size (total blocked domains)
+  - Alert on low block percentage (Pi-hole not effective)
+  - No authentication required (public stats API)
+  - Single API call gets all metrics
+  - Auto-detection of Pi-hole containers and bare-metal installations
+  - Configurable thresholds for block percentage
+  - Works with both Docker and systemd Pi-hole installations
+  - Configuration via `PIHOLE_API_URL` and threshold settings
+  - Graceful handling of API failures and timeouts
+  - Metrics: queries_blocked_today, total_queries_today, percent_blocked, active_clients, blocklist_size, queries_forwarded
+  - Manual testing endpoint: `/api/collect/modules/pihole`
 
 ---
 
