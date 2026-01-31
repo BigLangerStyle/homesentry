@@ -154,6 +154,20 @@ Application-layer monitoring release introducing plugin architecture for app-spe
   - API endpoints: /Sessions (streams/users), /Items/Counts (library stats)
   - Manual testing endpoint: `/api/collect/modules/jellyfin`
 
+- **Dashboard UI updates for app modules** - Two-layer visual hierarchy for the monitoring dashboard
+  - Application Layer section at top with dynamic app cards for each enabled module
+  - Each app card shows 3-4 key metrics with status-colored indicators (✓ OK, ⚠ Warning, ✗ Error)
+  - Infrastructure Layer section below with System Resources, Service Health, Docker, SMART, RAID subsections
+  - New `/api/metrics/latest` endpoint returns both app and infrastructure metrics in one response
+  - App metrics grouped by module prefix and filtered to card_metrics display list per app
+  - JavaScript-driven rendering replaces server-side Jinja2 for app cards (fetches every 60s)
+  - Human-readable formatting: commas on numbers, auto-scaling bandwidth (Mbps/Gbps), percentages
+  - Responsive grid: 3 columns (desktop) → 2 (tablet) → 1 (mobile) for app cards
+  - Status bubbling: app card reflects worst metric status across all its metrics
+  - Removed meta refresh tag — polling handled by setInterval in JavaScript
+  - Infrastructure subsections use consistent status cards with colored left-border indicators
+  - Recent Alerts section preserved at bottom (server-rendered via Jinja2)
+
 - **Bare-metal module support** - Run app modules without Docker containers
   - Modules can run against bare-metal services (systemd, native installs)
   - Configure with `{APP_NAME}_BARE_METAL=true` environment variable

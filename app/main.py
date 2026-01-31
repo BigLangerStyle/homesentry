@@ -268,6 +268,175 @@ async def dashboard(request: Request):
     )
 
 
+@app.get("/api/metrics/latest")
+async def get_latest_dashboard_metrics():
+    """
+    Get the latest metrics for both Application Layer and Infrastructure Layer.
+
+    This endpoint is called by the dashboard JavaScript every 60 seconds to
+    refresh the display. It returns app metrics grouped by module, plus the
+    latest infrastructure metrics (system, docker, smart, raid, services).
+
+    The app metrics are fetched from metrics_samples where category='app',
+    grouped by the app prefix in the metric name (e.g., 'plex_active_streams'
+    groups under 'plex').
+
+    Returns:
+        dict with keys: apps, system, docker, smart, raid, services, timestamp
+    """
+    # Known app module prefixes - used to group app metrics by module
+    APP_PREFIXES = ["plex", "jellyfin", "pihole", "homeassistant", "qbittorrent"]
+
+    # Human-friendly display names for each app module
+    APP_DISPLAY_NAMES = {
+        "plex": "Plex",
+        "jellyfin": "Jellyfin",
+        "pihole": "Pi-hole",
+        "homeassistant": "Home Assistant",
+        "qbittorrent": "qBittorrent",
+    }
+
+    # Which metrics to show on each app's dashboard card (priority order)
+    APP_CARD_METRICS = {
+        "plex": ["active_streams", "transcode_count", "movie_count", "tv_show_count"],
+        "jellyfin": ["active_streams", "transcode_count", "movie_count", "episode_count"],
+        "pihole": ["percent_blocked", "queries_blocked_today", "active_clients", "blocklist_size"],
+        "homeassistant": ["entity_count", "automation_count", "response_time_ms"],
+        "qbittorrent": ["download_speed_mbps", "upload_speed_mbps", "active_torrents", "disk_free_gb"],
+    }
+
+    try:
+        # --- Fetch app metrics (category='app') ---
+        app_metrics_raw = await get_latest_metrics(category="app", limit=100)
+
+        # Group app metrics by module prefix, keeping only the latest per metric name
+        apps = {}
+        seen_metrics = set()  # Track which metrics we've already seen (dedupe by name)
+
+        for metric in app_metrics_raw:
+            name = metric["name"]
+            if name in seen_metrics:
+                continue  # Already have the latest sample for this metric
+            seen_metrics.add(name)
+
+            # Determine which app this metric belongs to by matching prefix
+            matched_app = None
+            for prefix in APP_PREFIXES:
+                if name.startswith(f"{prefix}_"):
+                    matched_app = prefix
+                    break
+
+            if not matched_app:
+                continue  # Skip metrics with unknown prefix
+
+            # Initialize app entry if first metric for this app
+            if matched_app not in apps:
+                apps[matched_app] = {
+                    "name": matched_app,
+                    "display_name": APP_DISPLAY_NAMES.get(matched_app, matched_app),
+                    "status": "OK",
+                    "metrics": {},
+                    "card_metrics": APP_CARD_METRICS.get(matched_app, []),
+                }
+
+            # Strip the app prefix to get the bare metric name
+            # e.g., "plex_active_streams" -> "active_streams"
+            bare_name = name[len(matched_app) + 1:]
+
+            apps[matched_app]["metrics"][bare_name] = {
+                "value": metric["value_num"] if metric["value_num"] is not None else metric["value_text"],
+                "status": metric["status"],
+                "ts": metric["ts"],
+            }
+
+            # Bubble up worst status: OK < WARN < FAIL
+            current_app_status = apps[matched_app]["status"]
+            metric_status = metric["status"]
+            if metric_status == "FAIL":
+                apps[matched_app]["status"] = "FAIL"
+            elif metric_status == "WARN" and current_app_status != "FAIL":
+                apps[matched_app]["status"] = "WARN"
+
+        # --- Fetch infrastructure metrics ---
+        infra_metrics_raw = await get_latest_metrics(limit=60)
+        latest_services_raw = await get_latest_service_status(limit=20)
+
+        # Process system/disk metrics using existing helper
+        system_status = process_system_status(infra_metrics_raw)
+        service_status = process_service_status(latest_services_raw)
+
+        # Extract docker container metrics (latest per container)
+        docker_containers = {}
+        for metric in infra_metrics_raw:
+            if metric["category"] == "docker":
+                parts = metric["name"].split("_", 2)
+                if len(parts) >= 3:
+                    container = parts[1]
+                    metric_type = parts[2]
+                    if container not in docker_containers:
+                        docker_containers[container] = {"name": container, "status": "OK"}
+                    docker_containers[container][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+                    if metric["status"] == "FAIL":
+                        docker_containers[container]["status"] = "FAIL"
+                    elif metric["status"] == "WARN" and docker_containers[container]["status"] != "FAIL":
+                        docker_containers[container]["status"] = "WARN"
+
+        # Extract SMART drive metrics (latest per drive)
+        smart_drives = {}
+        for metric in infra_metrics_raw:
+            if metric["category"] == "smart":
+                parts = metric["name"].split("_", 2)
+                if len(parts) >= 3:
+                    drive = parts[1]
+                    metric_type = parts[2]
+                    if drive not in smart_drives:
+                        smart_drives[drive] = {"name": drive, "status": "OK"}
+                    smart_drives[drive][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+                    if metric["status"] == "FAIL":
+                        smart_drives[drive]["status"] = "FAIL"
+                    elif metric["status"] == "WARN" and smart_drives[drive]["status"] != "FAIL":
+                        smart_drives[drive]["status"] = "WARN"
+
+        # Extract RAID array metrics (latest per array)
+        raid_arrays = {}
+        for metric in infra_metrics_raw:
+            if metric["category"] == "raid":
+                parts = metric["name"].split("_", 2)
+                if len(parts) >= 3:
+                    array = parts[1]
+                    metric_type = parts[2]
+                    if array not in raid_arrays:
+                        raid_arrays[array] = {"name": array, "status": "OK"}
+                    raid_arrays[array][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+                    if metric["status"] == "FAIL":
+                        raid_arrays[array]["status"] = "FAIL"
+                    elif metric["status"] == "WARN" and raid_arrays[array]["status"] != "FAIL":
+                        raid_arrays[array]["status"] = "WARN"
+
+        return {
+            "apps": apps,
+            "system": system_status,
+            "docker": list(docker_containers.values()),
+            "smart": list(smart_drives.values()),
+            "raid": list(raid_arrays.values()),
+            "services": service_status,
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get latest dashboard metrics: {e}", exc_info=True)
+        return {
+            "apps": {},
+            "system": {"cpu": {"value": "N/A", "status": "UNKNOWN"}, "memory": {"value": "N/A", "status": "UNKNOWN"}, "disk": []},
+            "docker": [],
+            "smart": [],
+            "raid": [],
+            "services": {},
+            "timestamp": datetime.now().isoformat(),
+            "error": str(e),
+        }
+
+
 @app.get("/api/dashboard/status")
 async def dashboard_status_api():
     """
