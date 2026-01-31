@@ -92,20 +92,20 @@ class JellyfinModule(AppModule):
                             transcode_count = 0
                             active_users = set()
                             
-                            for session in sessions:
+                            for sess in sessions:
                                 # Check if session is actively playing something
-                                now_playing = session.get('NowPlayingItem')
+                                now_playing = sess.get('NowPlayingItem')
                                 if now_playing:
                                     active_streams += 1
                                     
                                     # Track user
-                                    username = session.get('UserName')
+                                    username = sess.get('UserName')
                                     if username:
                                         active_users.add(username)
                                     
                                     # Check if transcoding
                                     # TranscodingInfo exists and IsVideoDirect=false means transcoding
-                                    transcode_info = session.get('TranscodingInfo')
+                                    transcode_info = sess.get('TranscodingInfo')
                                     if transcode_info and transcode_info.get('IsVideoDirect') == False:
                                         transcode_count += 1
                             
@@ -131,37 +131,29 @@ class JellyfinModule(AppModule):
                     logger.error(f"Error parsing Jellyfin sessions: {e}")
                 
                 # API Call 2: Get library statistics
-                logger.info("Jellyfin: Starting library counts API call")
                 try:
-                    logger.info("Jellyfin: About to call session.get() for Items/Counts")
                     async with session.get(
                         f"{api_url}/Items/Counts",
                         headers=headers,
                         timeout=aiohttp.ClientTimeout(total=timeout)
                     ) as resp:
-                        logger.info(f"Jellyfin: Library counts response status: {resp.status}")
-                        logger.info("Jellyfin: About to parse JSON response")
                         if resp.status == 200:
                             counts = await resp.json()
-                            logger.info(f"Jellyfin: JSON parsed successfully, type: {type(counts)}")
                             
-                            # Extract library counts using try/except (avoids any dict method calls)
+                            # Extract library counts
                             try:
                                 movie_count = counts['MovieCount']
-                            except (KeyError, TypeError) as e:
-                                logger.warning(f"Jellyfin: Error getting MovieCount: {e}")
+                            except (KeyError, TypeError):
                                 movie_count = 0
                             
                             try:
                                 series_count = counts['SeriesCount']
-                            except (KeyError, TypeError) as e:
-                                logger.warning(f"Jellyfin: Error getting SeriesCount: {e}")
+                            except (KeyError, TypeError):
                                 series_count = 0
                             
                             try:
                                 episode_count = counts['EpisodeCount']
-                            except (KeyError, TypeError) as e:
-                                logger.warning(f"Jellyfin: Error getting EpisodeCount: {e}")
+                            except (KeyError, TypeError):
                                 episode_count = 0
                             
                             metrics['movie_count'] = movie_count
@@ -171,7 +163,7 @@ class JellyfinModule(AppModule):
                             # Calculate total items (movies + episodes)
                             metrics['library_items'] = movie_count + episode_count
                             
-                            logger.info(
+                            logger.debug(
                                 f"Jellyfin library: {movie_count} movies, "
                                 f"{series_count} series ({episode_count} episodes)"
                             )
