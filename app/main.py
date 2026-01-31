@@ -172,10 +172,26 @@ def process_system_status(metrics: List[Dict[str, Any]]) -> Dict[str, Any]:
                     "status": metric["status"]
                 }
         elif metric["category"] == "disk":
-            # Extract mountpoint from name like "disk_/mnt/Array_percent"
-            name = metric["name"].replace("disk_", "").replace("_percent", "")
+            # Only process _percent metrics (skip _free_gb to avoid displaying raw GB as %)
+            if not metric["name"].endswith("_percent"):
+                continue
+
+            # Skip container-internal volume mounts that aren't real disks
+            # These are Docker bind mounts like /etc/resolv.conf, /etc/hostname, etc.
+            SKIP_DISK_PREFIXES = ["disk_etc_", "disk_app_data_"]
+            if any(metric["name"].startswith(p) for p in SKIP_DISK_PREFIXES):
+                continue
+
+            # Extract mountpoint from name like "disk_host_mnt_Array_percent"
+            # Strip "disk_" prefix and "_percent" suffix
+            mountpoint = metric["name"][len("disk_"):-len("_percent")]
+
+            # Dedupe: only keep the first (latest) entry per mountpoint
+            if any(d["mountpoint"] == mountpoint for d in status["disk"]):
+                continue
+
             status["disk"].append({
-                "mountpoint": name,
+                "mountpoint": mountpoint,
                 "value": f"{metric['value_num']:.1f}%",
                 "status": metric["status"]
             })
@@ -358,7 +374,10 @@ async def get_latest_dashboard_metrics():
                 apps[matched_app]["status"] = "WARN"
 
         # --- Fetch infrastructure metrics ---
-        infra_metrics_raw = await get_latest_metrics(limit=60)
+        # Fetch enough rows to guarantee we get at least one sample of every metric name.
+        # ~47 distinct metric names across system/disk/docker/smart/raid categories,
+        # so 200 rows gives comfortable headroom even if multiple samples per name appear.
+        infra_metrics_raw = await get_latest_metrics(limit=200)
         latest_services_raw = await get_latest_service_status(limit=20)
 
         # Process system/disk metrics using existing helper
@@ -366,52 +385,113 @@ async def get_latest_dashboard_metrics():
         service_status = process_service_status(latest_services_raw)
 
         # Extract docker container metrics (latest per container)
+        # Actual DB names: "container_homesentry_status", "container_jellyfin_status"
+        # Pattern: container_{name}_{metric}
         docker_containers = {}
+        seen_docker = set()
         for metric in infra_metrics_raw:
             if metric["category"] == "docker":
-                parts = metric["name"].split("_", 2)
-                if len(parts) >= 3:
-                    container = parts[1]
-                    metric_type = parts[2]
-                    if container not in docker_containers:
-                        docker_containers[container] = {"name": container, "status": "OK"}
-                    docker_containers[container][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
-                    if metric["status"] == "FAIL":
-                        docker_containers[container]["status"] = "FAIL"
-                    elif metric["status"] == "WARN" and docker_containers[container]["status"] != "FAIL":
-                        docker_containers[container]["status"] = "WARN"
+                name = metric["name"]
+                if name in seen_docker:
+                    continue
+                seen_docker.add(name)
+
+                # Strip "container_" prefix, then split off the last segment as metric_type
+                # e.g., "container_jellyfin_status" -> remainder="jellyfin_status"
+                if not name.startswith("container_"):
+                    continue
+                remainder = name[len("container_"):]
+                # The metric type is the last underscore segment (e.g., "status")
+                last_underscore = remainder.rfind("_")
+                if last_underscore == -1:
+                    continue
+                container = remainder[:last_underscore]
+                metric_type = remainder[last_underscore + 1:]
+
+                if container not in docker_containers:
+                    docker_containers[container] = {"name": container, "status": "OK"}
+                docker_containers[container][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+                if metric["status"] == "FAIL":
+                    docker_containers[container]["status"] = "FAIL"
+                elif metric["status"] == "WARN" and docker_containers[container]["status"] != "FAIL":
+                    docker_containers[container]["status"] = "WARN"
 
         # Extract SMART drive metrics (latest per drive)
+        # Actual DB names: "drive__dev_sda_health", "drive__dev_sda_temperature"
+        # Pattern: drive_{device_path}_{metric} where device_path contains slashes replaced with underscores
+        # Known metric suffixes to split on:
+        SMART_METRIC_SUFFIXES = ["_health", "_temperature", "_reallocated_sectors", "_pending_sectors", "_power_on_hours"]
         smart_drives = {}
+        seen_smart = set()
         for metric in infra_metrics_raw:
             if metric["category"] == "smart":
-                parts = metric["name"].split("_", 2)
-                if len(parts) >= 3:
-                    drive = parts[1]
-                    metric_type = parts[2]
-                    if drive not in smart_drives:
-                        smart_drives[drive] = {"name": drive, "status": "OK"}
-                    smart_drives[drive][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
-                    if metric["status"] == "FAIL":
-                        smart_drives[drive]["status"] = "FAIL"
-                    elif metric["status"] == "WARN" and smart_drives[drive]["status"] != "FAIL":
-                        smart_drives[drive]["status"] = "WARN"
+                name = metric["name"]
+                if name in seen_smart:
+                    continue
+                seen_smart.add(name)
+
+                if not name.startswith("drive_"):
+                    continue
+
+                # Match against known suffixes to extract drive identity and metric type
+                drive = None
+                metric_type = None
+                for suffix in SMART_METRIC_SUFFIXES:
+                    if name.endswith(suffix):
+                        # Everything between "drive_" and the suffix is the drive identifier
+                        drive = name[len("drive_"):-len(suffix)]
+                        metric_type = suffix[1:]  # strip leading underscore
+                        break
+
+                if not drive or not metric_type:
+                    continue
+
+                # Clean up the drive name for display: "__dev_sda" -> "/dev/sda"
+                display_name = drive.replace("__", "/").replace("_", "/") if drive.startswith("_") else drive
+
+                if drive not in smart_drives:
+                    smart_drives[drive] = {"name": display_name, "status": "OK"}
+                smart_drives[drive][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+                if metric["status"] == "FAIL":
+                    smart_drives[drive]["status"] = "FAIL"
+                elif metric["status"] == "WARN" and smart_drives[drive]["status"] != "FAIL":
+                    smart_drives[drive]["status"] = "WARN"
 
         # Extract RAID array metrics (latest per array)
+        # Actual DB names: "array_md0_health", "array_md0_active_disks"
+        # Pattern: array_{arrayname}_{metric}
+        RAID_METRIC_SUFFIXES = ["_health", "_active_disks", "_state", "_degraded"]
         raid_arrays = {}
+        seen_raid = set()
         for metric in infra_metrics_raw:
             if metric["category"] == "raid":
-                parts = metric["name"].split("_", 2)
-                if len(parts) >= 3:
-                    array = parts[1]
-                    metric_type = parts[2]
-                    if array not in raid_arrays:
-                        raid_arrays[array] = {"name": array, "status": "OK"}
-                    raid_arrays[array][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
-                    if metric["status"] == "FAIL":
-                        raid_arrays[array]["status"] = "FAIL"
-                    elif metric["status"] == "WARN" and raid_arrays[array]["status"] != "FAIL":
-                        raid_arrays[array]["status"] = "WARN"
+                name = metric["name"]
+                if name in seen_raid:
+                    continue
+                seen_raid.add(name)
+
+                if not name.startswith("array_"):
+                    continue
+
+                # Match against known suffixes
+                array = None
+                metric_type = None
+                for suffix in RAID_METRIC_SUFFIXES:
+                    if name.endswith(suffix):
+                        array = name[len("array_"):-len(suffix)]
+                        metric_type = suffix[1:]  # strip leading underscore
+                        break
+
+                if not array or not metric_type:
+                    continue
+
+                if array not in raid_arrays:
+                    raid_arrays[array] = {"name": array, "status": "OK"}
+                raid_arrays[array][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+                if metric["status"] == "FAIL":
+                    raid_arrays[array]["status"] = "FAIL"
+                elif metric["status"] == "WARN" and raid_arrays[array]["status"] != "FAIL":
+                    raid_arrays[array]["status"] = "WARN"
 
         return {
             "apps": apps,
