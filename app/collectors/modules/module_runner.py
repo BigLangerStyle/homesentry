@@ -74,7 +74,7 @@ async def collect_all_app_metrics() -> Dict[str, Any]:
             config = load_module_config(app_name)
             
             # Check if this is a bare-metal module
-            is_bare_metal = config.get('bare_metal', '').lower() == 'true'
+            is_bare_metal = config.get('bare_metal', False)
             
             # Find matching containers
             matched_containers = [
