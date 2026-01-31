@@ -410,7 +410,19 @@ async def get_latest_dashboard_metrics():
 
                 if container not in docker_containers:
                     docker_containers[container] = {"name": container, "status": "OK"}
-                docker_containers[container][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+
+                # The "status" metric is special: value_num 1.0 = running, 0 = stopped.
+                # Don't store the raw number — convert to a display string and use it
+                # to set the container's overall status instead.
+                if metric_type == "status":
+                    is_running = metric["value_num"] == 1.0 if metric["value_num"] is not None else False
+                    docker_containers[container]["health"] = "Running" if is_running else "Stopped"
+                    if not is_running:
+                        docker_containers[container]["status"] = "FAIL"
+                else:
+                    docker_containers[container][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+
+                # Bubble up worst status from the metric's own status field
                 if metric["status"] == "FAIL":
                     docker_containers[container]["status"] = "FAIL"
                 elif metric["status"] == "WARN" and docker_containers[container]["status"] != "FAIL":
@@ -451,7 +463,19 @@ async def get_latest_dashboard_metrics():
 
                 if drive not in smart_drives:
                     smart_drives[drive] = {"name": display_name, "status": "OK"}
-                smart_drives[drive][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+
+                value = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+
+                # power_on_hours has a collector accumulation bug producing values like 1.44e16.
+                # No drive has more than ~200,000 hours (~23 years). Suppress garbage values.
+                if metric_type == "power_on_hours" and isinstance(value, (int, float)) and value > 200000:
+                    continue  # Skip this bogus value entirely
+
+                # health is stored as 1.0 (passed) or 0.0 (failed) — convert to string
+                if metric_type == "health":
+                    value = "PASSED" if value == 1.0 else "FAILED"
+
+                smart_drives[drive][metric_type] = value
                 if metric["status"] == "FAIL":
                     smart_drives[drive]["status"] = "FAIL"
                 elif metric["status"] == "WARN" and smart_drives[drive]["status"] != "FAIL":
@@ -487,7 +511,14 @@ async def get_latest_dashboard_metrics():
 
                 if array not in raid_arrays:
                     raid_arrays[array] = {"name": array, "status": "OK"}
-                raid_arrays[array][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+
+                value = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+
+                # health is stored as 1.0 (healthy) or 0.0 (degraded) — convert to string
+                if metric_type == "health":
+                    value = "Healthy" if value == 1.0 else "Degraded"
+
+                raid_arrays[array][metric_type] = value
                 if metric["status"] == "FAIL":
                     raid_arrays[array]["status"] = "FAIL"
                 elif metric["status"] == "WARN" and raid_arrays[array]["status"] != "FAIL":
