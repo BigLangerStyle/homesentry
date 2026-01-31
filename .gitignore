@@ -135,9 +135,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-# TEMPORARY: .env is being tracked for development convenience
-# TODO: Remove .env from tracking before project finalization
-# .env
+.env
 .envrc
 .venv
 env/

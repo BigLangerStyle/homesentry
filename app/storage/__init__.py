@@ -11,9 +11,6 @@ This module provides database operations for HomeSentry:
 - get_latest_service_status() - Query recent service checks
 - get_latest_event_by_key() - Query specific event for state tracking
 - update_event_notified() - Mark event as notified for cooldown tracking
-- insert_sleep_event() - Insert event into sleep queue
-- get_sleep_events() - Get all queued sleep events
-- clear_sleep_events() - Clear sleep events after summary sent
 """
 
 from .db import (
@@ -27,9 +24,6 @@ from .db import (
     get_latest_service_status,
     get_latest_event_by_key,
     update_event_notified,
-    insert_sleep_event,
-    get_sleep_events,
-    clear_sleep_events,
 )
 
 __all__ = [
@@ -43,7 +37,4 @@ __all__ = [
     "get_latest_service_status",
     "get_latest_event_by_key",
     "update_event_notified",
-    "insert_sleep_event",
-    "get_sleep_events",
-    "clear_sleep_events",
 ]

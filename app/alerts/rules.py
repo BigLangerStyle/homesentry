@@ -17,8 +17,6 @@ from app.alerts.discord import (
     format_system_alert,
     format_disk_alert
 )
-from app.alerts.maintenance import should_suppress_alert as should_suppress_maintenance
-from app.alerts.sleep_schedule import should_suppress_for_sleep, queue_sleep_event
 
 logger = logging.getLogger(__name__)
 
@@ -250,51 +248,6 @@ async def process_alert(
     if not await should_alert(event_key, prev_status, new_status, last_notified_ts):
         return False
     
-    # Check sleep schedule FIRST (takes precedence over maintenance windows)
-    suppress_sleep, reason_sleep = should_suppress_for_sleep(category, name, new_status)
-    
-    if suppress_sleep:
-        logger.info(f"Alert suppressed for sleep schedule: {event_key} - {reason_sleep}")
-        
-        # Queue event for morning summary
-        await queue_sleep_event({
-            'event_key': event_key,
-            'category': category,
-            'name': name,
-            'prev_status': prev_status,
-            'new_status': new_status,
-            'message': f"{name}: {prev_status or 'Unknown'} → {new_status}",
-            'details': details
-        })
-        
-        # Log to database but mark as sleep-suppressed
-        message = f"{name}: {prev_status or 'Unknown'} → {new_status}"
-        await insert_event(
-            event_key=event_key,
-            prev_status=prev_status,
-            new_status=new_status,
-            message=message,
-            sleep_suppressed=True
-        )
-        return False  # Don't send to Discord
-    
-    # Check if alert should be suppressed due to maintenance window
-    suppress, reason = should_suppress_maintenance(category, name, new_status)
-    
-    if suppress:
-        logger.info(f"Alert suppressed for {event_key}: {reason}")
-        
-        # Still log to database but mark as maintenance-suppressed
-        message = f"{name}: {prev_status or 'Unknown'} → {new_status}"
-        await insert_event(
-            event_key=event_key,
-            prev_status=prev_status,
-            new_status=new_status,
-            message=message,
-            maintenance_suppressed=True
-        )
-        return False  # Don't send to Discord
-    
     # Format alert message based on category
     if category == "service":
         embed = format_service_alert(name, prev_status, new_status, details)
@@ -308,14 +261,13 @@ async def process_alert(
         success = await send_alert_async(DISCORD_WEBHOOK_URL, embed)
         
         if success:
-            # Insert event record (not maintenance-suppressed)
+            # Insert event record
             message = embed.get("title", "Alert")
             await insert_event(
                 event_key=event_key,
                 prev_status=prev_status,
                 new_status=new_status,
-                message=message,
-                maintenance_suppressed=False
+                message=message
             )
             
             # Mark as notified

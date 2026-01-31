@@ -21,12 +21,8 @@ from .models import (
     CREATE_SERVICE_INDEXES,
     CREATE_EVENTS_TABLE,
     CREATE_EVENTS_INDEXES,
-    CREATE_SLEEP_EVENTS_TABLE,
-    CREATE_SLEEP_EVENTS_INDEXES,
     CREATE_SCHEMA_VERSION_TABLE,
     INSERT_SCHEMA_VERSION,
-    migrate_to_v030,
-    migrate_to_v031,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,7 +51,6 @@ async def init_database() -> bool:
     
     This function is idempotent - it's safe to call multiple times.
     Tables are created with IF NOT EXISTS, so existing tables won't be affected.
-    Runs migrations if needed to update schema to latest version.
     
     Returns:
         bool: True if successful, False otherwise
@@ -79,37 +74,10 @@ async def init_database() -> bool:
         await db.executescript(CREATE_EVENTS_INDEXES)
         logger.debug("Created events table")
         
-        # Create sleep_events table
-        await db.execute(CREATE_SLEEP_EVENTS_TABLE)
-        await db.executescript(CREATE_SLEEP_EVENTS_INDEXES)
-        logger.debug("Created sleep_events table")
-        
         # Create schema_version table
         await db.execute(CREATE_SCHEMA_VERSION_TABLE)
-        
-        # Check current schema version
-        cursor = await db.execute("SELECT version FROM schema_version ORDER BY applied_ts DESC LIMIT 1")
-        row = await cursor.fetchone()
-        current_version = row[0] if row else None
-        
-        # Run migrations if needed
-        if current_version != SCHEMA_VERSION:
-            if current_version == "0.1.0" or current_version is None:
-                logger.info(f"Migrating database from {current_version or 'unknown'} to v0.3.0")
-                await migrate_to_v030(db)
-                # Update version to 0.3.0 first
-                await db.execute(INSERT_SCHEMA_VERSION, ("0.3.0",))
-                current_version = "0.3.0"
-            
-            if current_version == "0.3.0":
-                logger.info(f"Migrating database from v0.3.0 to v0.3.1")
-                await migrate_to_v031(db)
-            
-            # Update schema version to current
-            await db.execute(INSERT_SCHEMA_VERSION, (SCHEMA_VERSION,))
-            logger.info(f"Database schema updated to v{SCHEMA_VERSION}")
-        else:
-            logger.debug(f"Database schema already at v{SCHEMA_VERSION}")
+        await db.execute(INSERT_SCHEMA_VERSION, (SCHEMA_VERSION,))
+        logger.debug(f"Initialized schema version: {SCHEMA_VERSION}")
         
         await db.commit()
         logger.info(f"Database initialized successfully (schema v{SCHEMA_VERSION})")
@@ -226,8 +194,6 @@ async def insert_event(
     new_status: str,
     message: str,
     prev_status: Optional[str] = None,
-    maintenance_suppressed: bool = False,
-    sleep_suppressed: bool = False,
 ) -> bool:
     """
     Insert or update a state-change event in the database.
@@ -236,22 +202,18 @@ async def insert_event(
     already exists, it will be replaced (using INSERT OR REPLACE).
     
     Args:
-        event_key: Unique event identifier (e.g., 'service_plex', 'disk_/mnt/array')
+        event_key: Unique event identifier (e.g., 'plex_down', 'disk_/mnt/Array_critical')
         new_status: New status (OK, WARN, FAIL)
         message: Human-readable message for Discord notification
         prev_status: Previous status (optional, None for new events)
-        maintenance_suppressed: Whether alert was suppressed due to maintenance window
-        sleep_suppressed: Whether alert was suppressed due to sleep schedule
     
     Returns:
         bool: True if successful, False otherwise
     
     Examples:
-        >>> await insert_event("service_plex", "FAIL", "Plex is unreachable", prev_status="OK")
-        >>> await insert_event("service_jellyfin", "FAIL", "Jellyfin down during maintenance",
-        ...                   prev_status="OK", maintenance_suppressed=True)
-        >>> await insert_event("service_plex", "FAIL", "Plex down during sleep",
-        ...                   prev_status="OK", sleep_suppressed=True)
+        >>> await insert_event("plex_down", "FAIL", "Plex is unreachable", prev_status="OK")
+        >>> await insert_event("disk_/mnt/Array_warn", "WARN", 
+        ...                   "Disk usage > 85%", prev_status="OK")
     """
     db = None
     try:
@@ -259,22 +221,13 @@ async def insert_event(
         await db.execute(
             """
             INSERT OR REPLACE INTO events 
-            (event_key, prev_status, new_status, message, notified, notified_ts, 
-             maintenance_suppressed, sleep_suppressed)
-            VALUES (?, ?, ?, ?, 0, NULL, ?, ?)
+            (event_key, prev_status, new_status, message, notified, notified_ts)
+            VALUES (?, ?, ?, ?, 0, NULL)
             """,
-            (event_key, prev_status, new_status, message, 
-             1 if maintenance_suppressed else 0, 1 if sleep_suppressed else 0),
+            (event_key, prev_status, new_status, message),
         )
         await db.commit()
-        
-        if sleep_suppressed:
-            logger.debug(f"Inserted event (sleep-suppressed): {event_key} ({prev_status} -> {new_status})")
-        elif maintenance_suppressed:
-            logger.debug(f"Inserted event (maintenance-suppressed): {event_key} ({prev_status} -> {new_status})")
-        else:
-            logger.debug(f"Inserted event: {event_key} ({prev_status} -> {new_status})")
-        
+        logger.debug(f"Inserted event: {event_key} ({prev_status} -> {new_status})")
         return True
         
     except Exception as e:
@@ -511,131 +464,6 @@ async def update_event_notified(event_key: str) -> bool:
         
     except Exception as e:
         logger.error(f"Failed to update event notification status for {event_key}: {e}", exc_info=True)
-        return False
-    finally:
-        if db:
-            await db.close()
-
-
-async def insert_sleep_event(
-    event_key: str,
-    category: str,
-    name: str,
-    new_status: str,
-    message: str,
-    prev_status: Optional[str] = None,
-    details: Optional[Dict[str, Any]] = None,
-) -> bool:
-    """
-    Insert event into sleep_events table for morning summary.
-    
-    Events queued during sleep hours are stored here and cleared after
-    the morning summary is generated and sent.
-    
-    Args:
-        event_key: Unique event identifier
-        category: Alert category (service, system, docker, smart, raid)
-        name: Item name
-        new_status: New status (OK, WARN, FAIL)
-        message: Human-readable message
-        prev_status: Previous status (optional)
-        details: Additional context (will be JSON-encoded)
-    
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    import json
-    
-    db = None
-    try:
-        db = await get_connection()
-        
-        # Convert details dict to JSON string if provided
-        details_json = json.dumps(details) if details else None
-        
-        await db.execute(
-            """
-            INSERT INTO sleep_events 
-            (event_key, category, name, prev_status, new_status, message, details_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (event_key, category, name, prev_status, new_status, message, details_json)
-        )
-        await db.commit()
-        logger.debug(f"Inserted sleep event: {event_key} ({prev_status} -> {new_status})")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Failed to insert sleep event: {e}", exc_info=True)
-        return False
-    finally:
-        if db:
-            await db.close()
-
-
-async def get_sleep_events() -> List[Dict[str, Any]]:
-    """
-    Get all sleep events for morning summary generation.
-    
-    Returns:
-        List[Dict[str, Any]]: List of sleep events
-    """
-    import json
-    
-    db = None
-    try:
-        db = await get_connection()
-        db.row_factory = aiosqlite.Row
-        
-        cursor = await db.execute(
-            """
-            SELECT id, ts, event_key, category, name, 
-                   prev_status, new_status, message, details_json
-            FROM sleep_events
-            ORDER BY ts ASC
-            """
-        )
-        rows = await cursor.fetchall()
-        
-        # Convert rows to dicts and parse JSON details
-        events = []
-        for row in rows:
-            event = dict(row)
-            if event.get('details_json'):
-                try:
-                    event['details'] = json.loads(event['details_json'])
-                except:
-                    event['details'] = None
-            events.append(event)
-        
-        return events
-        
-    except Exception as e:
-        logger.error(f"Failed to get sleep events: {e}", exc_info=True)
-        return []
-    finally:
-        if db:
-            await db.close()
-
-
-async def clear_sleep_events() -> bool:
-    """
-    Clear all sleep events after morning summary has been sent.
-    
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    db = None
-    try:
-        db = await get_connection()
-        
-        await db.execute("DELETE FROM sleep_events")
-        await db.commit()
-        logger.debug("Cleared all sleep events")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Failed to clear sleep events: {e}", exc_info=True)
         return False
     finally:
         if db:
