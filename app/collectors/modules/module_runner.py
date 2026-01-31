@@ -25,7 +25,7 @@ class APICallLimitExceeded(Exception):
 
 async def collect_all_app_metrics() -> Dict[str, Any]:
     """
-    Discover and run all app modules for matching containers.
+    Discover and run all app modules for matching containers and bare-metal services.
     
     This is called by the scheduler alongside other collectors.
     
@@ -33,9 +33,10 @@ async def collect_all_app_metrics() -> Dict[str, Any]:
     1. Discover available modules
     2. Get running Docker containers
     3. Match modules to containers
-    4. Run each module's collect()
-    5. Store metrics in database
-    6. Process alerts
+    4. Check for bare-metal module configurations
+    5. Run each module's collect()
+    6. Store metrics in database
+    7. Process alerts
     
     Returns:
         Dict of {module_name: result} for all modules
@@ -55,14 +56,15 @@ async def collect_all_app_metrics() -> Dict[str, Any]:
             client = docker.from_env()
         except Exception as e:
             logger.error(f"Failed to connect to Docker: {e}")
-            return results
+            client = None
         
-        # Get running containers
-        try:
-            containers = client.containers.list()
-        except Exception as e:
-            logger.error(f"Failed to list Docker containers: {e}")
-            return results
+        # Get running containers (if Docker is available)
+        containers = []
+        if client:
+            try:
+                containers = client.containers.list()
+            except Exception as e:
+                logger.error(f"Failed to list Docker containers: {e}")
         
         # Match modules to containers and run collections
         for module_class in modules:
@@ -71,16 +73,50 @@ async def collect_all_app_metrics() -> Dict[str, Any]:
             # Load module configuration
             config = load_module_config(app_name)
             
+            # Check if this is a bare-metal module
+            is_bare_metal = config.get('bare_metal', False)
+            
             # Find matching containers
             matched_containers = [
                 c for c in containers 
                 if module_class.detect(c)
             ]
             
+            # If bare-metal mode, run module without container
+            if is_bare_metal:
+                logger.info(
+                    f"Running bare-metal module: {module_class.APP_DISPLAY_NAME}"
+                )
+                try:
+                    result = await run_module(module_class, None, config)
+                    results[f"{app_name}_baremetal"] = result
+                    
+                    # Store metrics if successful
+                    if result.get('status') == 'success':
+                        await store_module_metrics(
+                            app_name=app_name,
+                            container_name='baremetal',
+                            metrics=result.get('metrics', {}),
+                            config=config
+                        )
+                        
+                except Exception as e:
+                    logger.error(
+                        f"Failed to run bare-metal module {app_name}: {e}",
+                        exc_info=True
+                    )
+                    results[f"{app_name}_baremetal"] = {
+                        'status': 'error',
+                        'error': str(e)
+                    }
+                continue
+            
+            # Otherwise, require container match
             if not matched_containers:
                 logger.debug(
                     f"No running containers found for module {app_name} "
-                    f"(looking for: {', '.join(module_class.CONTAINER_NAMES)})"
+                    f"(looking for: {', '.join(module_class.CONTAINER_NAMES)}). "
+                    f"Set {app_name.upper()}_BARE_METAL=true to run without container."
                 )
                 continue
             
@@ -129,10 +165,11 @@ async def run_module(
     - Hard limits are enforced (10 metrics, 3 API calls)
     - Execution time is tracked
     - Errors are logged clearly
+    - Supports both containerized and bare-metal services
     
     Args:
         module_class: AppModule subclass (not instance)
-        container: Docker container object
+        container: Docker container object (or None for bare-metal)
         config: Module configuration dict
         
     Returns:
@@ -173,11 +210,14 @@ async def run_module(
         
         execution_time = time.time() - start_time
         
+        # Get container name (or 'baremetal' for bare-metal services)
+        container_name = container.name if container else 'baremetal'
+        
         return {
             'status': 'success',
             'metrics': metrics,
             'execution_time_ms': round(execution_time * 1000, 2),
-            'container_name': container.name
+            'container_name': container_name
         }
         
     except APICallLimitExceeded as e:
@@ -188,8 +228,9 @@ async def run_module(
         }
     
     except Exception as e:
+        container_name = container.name if container else 'baremetal'
         logger.error(
-            f"Module {app_name} failed for container {container.name}: {e}",
+            f"Module {app_name} failed for {container_name}: {e}",
             exc_info=True
         )
         return {
