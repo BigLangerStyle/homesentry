@@ -117,6 +117,25 @@ Application-layer monitoring release introducing plugin architecture for app-spe
   - Metrics: queries_blocked_today, total_queries_today, percent_blocked, active_clients, blocklist_size, queries_forwarded
   - Manual testing endpoint: `/api/collect/modules/pihole`
 
+- **Plex Media Server monitoring module** - Streaming activity and library tracking
+  - Track active streaming sessions (who's watching)
+  - Monitor transcoding sessions (hardware vs software)
+  - Total bandwidth usage across all streams
+  - Library statistics (movies, TV shows, total items)
+  - Alert on high transcode count (CPU load)
+  - X-Plex-Token authentication
+  - Bare-metal module support (runs without Docker container)
+  - XML response parsing (Plex API uses XML, not JSON)
+  - Auto-detection of Plex containers and systemd installations
+  - Direct Play vs Transcoding visibility
+  - Configurable transcoding thresholds
+  - Works with both Docker and bare-metal Plex installations
+  - Configuration via `PLEX_API_URL`, `PLEX_API_TOKEN`, `PLEX_BARE_METAL`
+  - Graceful handling of API failures and timeouts
+  - Library count optimization with X-Plex-Container-Size parameter
+  - Metrics: active_streams, transcode_count, bandwidth_mbps, library_items, movie_count, tv_show_count
+  - Manual testing endpoint: `/api/collect/modules/plex`
+
 - **Bare-metal module support** - Run app modules without Docker containers
   - Modules can run against bare-metal services (systemd, native installs)
   - Configure with `{APP_NAME}_BARE_METAL=true` environment variable
