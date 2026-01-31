@@ -25,9 +25,12 @@ from app.storage import (
 from app.collectors import (
     collect_all_system_metrics,
     check_all_services,
+    collect_all_docker_metrics,
     collect_all_smart_metrics,
     collect_all_raid_metrics,
+    collect_all_app_metrics,
 )
+from app.collectors.modules import get_discovered_modules
 from app.scheduler import run_scheduler
 
 # Load environment variables from .env file
@@ -447,6 +450,189 @@ async def manual_collect_raid():
         "results": results,
     }
 
+@app.get("/api/modules")
+async def list_modules():
+    """
+    List all discovered app modules.
+    
+    Returns information about all available monitoring modules including
+    their metadata, supported containers, and current status. Modules are
+    automatically discovered from the app/collectors/modules/ directory.
+    
+    Returns:
+        dict: List of modules with their metadata and configuration
+        
+    Example response:
+        {
+            "modules": [
+                {
+                    "name": "homeassistant",
+                    "display_name": "Home Assistant",
+                    "container_names": ["homeassistant", "hass"],
+                    "max_metrics": 10,
+                    "max_api_calls": 3,
+                    "max_config_options": 15
+                }
+            ]
+        }
+    """
+    logger.info("Module list requested via API")
+    modules = get_discovered_modules()
+    
+    module_list = []
+    for module_class in modules:
+        module_list.append({
+            "name": module_class.APP_NAME,
+            "display_name": module_class.APP_DISPLAY_NAME,
+            "container_names": module_class.CONTAINER_NAMES,
+            "max_metrics": module_class.MAX_METRICS,
+            "max_api_calls": module_class.MAX_API_CALLS,
+            "max_config_options": module_class.MAX_CONFIG_OPTIONS,
+        })
+    
+    return {
+        "count": len(module_list),
+        "modules": module_list
+    }
+
+@app.get("/api/modules/{app_name}")
+async def get_module_details(app_name: str):
+    """
+    Get details for a specific module.
+    
+    Returns detailed information about a specific app monitoring module
+    including its configuration, capabilities, and current status.
+    
+    Args:
+        app_name: Module app name (e.g., "homeassistant", "qbittorrent")
+    
+    Returns:
+        dict: Module metadata and details
+        
+    Example response:
+        {
+            "name": "homeassistant",
+            "display_name": "Home Assistant",
+            "container_names": ["homeassistant", "hass"],
+            "limits": {
+                "max_metrics": 10,
+                "max_api_calls": 3,
+                "max_config_options": 15
+            }
+        }
+    """
+    logger.info(f"Module details requested for: {app_name}")
+    modules = get_discovered_modules()
+    
+    # Find the requested module
+    for module_class in modules:
+        if module_class.APP_NAME == app_name:
+            return {
+                "name": module_class.APP_NAME,
+                "display_name": module_class.APP_DISPLAY_NAME,
+                "container_names": module_class.CONTAINER_NAMES,
+                "limits": {
+                    "max_metrics": module_class.MAX_METRICS,
+                    "max_api_calls": module_class.MAX_API_CALLS,
+                    "max_config_options": module_class.MAX_CONFIG_OPTIONS,
+                }
+            }
+    
+    # Module not found
+    return {
+        "error": f"Module '{app_name}' not found",
+        "available_modules": [m.APP_NAME for m in modules]
+    }
+
+@app.get("/api/collect/modules")
+async def manual_collect_all_modules():
+    """
+    Manually trigger collection for all app modules (for testing).
+    
+    Discovers all available app modules, matches them to running containers,
+    and collects app-specific metrics. Writes results to the database and
+    processes alerts for status changes.
+    
+    Useful for testing module collection and debugging module behavior.
+    
+    Returns:
+        dict: Collection results for all modules with execution details
+        
+    Example response:
+        {
+            "message": "App module metrics collected successfully",
+            "results": {
+                "homeassistant_homeassistant": {
+                    "status": "success",
+                    "metrics": {
+                        "entity_count": 342,
+                        "automation_count": 45
+                    },
+                    "execution_time_ms": 234.56
+                }
+            }
+        }
+    """
+    logger.info("Manual app module collection triggered via API")
+    results = await collect_all_app_metrics()
+    return {
+        "message": "App module metrics collected successfully",
+        "count": len(results),
+        "results": results,
+    }
+
+@app.get("/api/collect/modules/{app_name}")
+async def manual_collect_specific_module(app_name: str):
+    """
+    Manually trigger collection for a specific module (for testing).
+    
+    Collects metrics from a single specified app module if it's available
+    and has matching running containers. Useful for testing individual
+    module implementations.
+    
+    Args:
+        app_name: Module app name (e.g., "homeassistant", "qbittorrent")
+    
+    Returns:
+        dict: Collection results for the specified module
+        
+    Example response:
+        {
+            "message": "Module homeassistant collected successfully",
+            "module": "homeassistant",
+            "results": {
+                "status": "success",
+                "metrics": {...}
+            }
+        }
+    """
+    logger.info(f"Manual collection triggered for module: {app_name}")
+    
+    # Get all results and filter for the requested module
+    all_results = await collect_all_app_metrics()
+    
+    # Find results matching this app name
+    matching_results = {
+        key: value for key, value in all_results.items()
+        if key.startswith(f"{app_name}_")
+    }
+    
+    if not matching_results:
+        modules = get_discovered_modules()
+        available = [m.APP_NAME for m in modules]
+        return {
+            "error": f"No results for module '{app_name}'",
+            "reason": "Module not found or no matching containers running",
+            "available_modules": available
+        }
+    
+    return {
+        "message": f"Module {app_name} collected successfully",
+        "module": app_name,
+        "count": len(matching_results),
+        "results": matching_results,
+    }
+
 @app.get("/api/test-alert")
 async def test_alert():
     """
@@ -515,6 +701,71 @@ async def test_alert():
             "success": False,
             "error": "Failed to send test alert - check logs for details"
         }
+
+
+@app.get("/api/debug/sleep-schedule")
+async def debug_sleep_schedule():
+    """
+    Debug endpoint to verify sleep schedule configuration and current state.
+    
+    Returns current sleep schedule settings, whether we're in sleep hours,
+    and tests some example times. Useful for troubleshooting alert suppression.
+    
+    Returns:
+        dict: Sleep schedule configuration and current status
+    """
+    from app.alerts.sleep_schedule import get_sleep_schedule, is_in_sleep_hours
+    from datetime import datetime
+    
+    # Get configuration
+    start_time, end_time, enabled = get_sleep_schedule()
+    
+    # Check current time
+    now = datetime.now()
+    is_sleeping, reason = is_in_sleep_hours(now)
+    
+    # Get environment variables for verification
+    env_vars = {
+        "SLEEP_SCHEDULE_ENABLED": os.getenv("SLEEP_SCHEDULE_ENABLED", "(not set)"),
+        "SLEEP_SCHEDULE_START": os.getenv("SLEEP_SCHEDULE_START", "(not set)"),
+        "SLEEP_SCHEDULE_END": os.getenv("SLEEP_SCHEDULE_END", "(not set)"),
+        "SLEEP_SUMMARY_ENABLED": os.getenv("SLEEP_SUMMARY_ENABLED", "(not set)"),
+        "SLEEP_SUMMARY_TIME": os.getenv("SLEEP_SUMMARY_TIME", "(not set)"),
+        "SLEEP_ALLOW_CRITICAL_ALERTS": os.getenv("SLEEP_ALLOW_CRITICAL_ALERTS", "(not set)"),
+    }
+    
+    # Test a few specific times
+    test_times = [
+        datetime(2026, 1, 30, 3, 0),   # Middle of night
+        datetime(2026, 1, 30, 7, 30),  # End of sleep
+        datetime(2026, 1, 30, 8, 0),   # Morning
+    ]
+    
+    test_results = []
+    for test_time in test_times:
+        is_test_sleeping, test_reason = is_in_sleep_hours(test_time)
+        test_results.append({
+            "time": test_time.strftime("%H:%M"),
+            "is_sleeping": is_test_sleeping,
+            "reason": test_reason
+        })
+    
+    return {
+        "current_time": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "environment_variables": env_vars,
+        "parsed_config": {
+            "enabled": enabled,
+            "start_time": start_time.strftime("%H:%M") if start_time else None,
+            "end_time": end_time.strftime("%H:%M") if end_time else None,
+        },
+        "current_status": {
+            "is_in_sleep_hours": is_sleeping,
+            "reason": reason,
+            "alerts_suppressed": is_sleeping
+        },
+        "test_times": test_results
+    }
+
 
 if __name__ == "__main__":
     # This block allows running the app directly with: python -m app.main
