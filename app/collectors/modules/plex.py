@@ -166,7 +166,7 @@ class PlexModule(AppModule):
                                             if count_resp.status == 200:
                                                 count_xml = await count_resp.text()
                                                 count_root = ET.fromstring(count_xml)
-                                                total_size = int(count_root.get('totalSize', 0))
+                                                total_size = int(count_root.get('size', 0))
                                                 
                                                 if lib_type == 'movie':
                                                     movie_count += total_size
