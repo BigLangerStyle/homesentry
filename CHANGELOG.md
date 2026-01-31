@@ -105,15 +105,27 @@ Application-layer monitoring release introducing plugin architecture for app-spe
   - Active client count (devices using Pi-hole)
   - Blocklist size (total blocked domains)
   - Alert on low block percentage (Pi-hole not effective)
-  - No authentication required (public stats API)
-  - Single API call gets all metrics
+  - Supports Pi-hole v6+ with session-based authentication
+  - Uses app password (not web UI password) for API access
   - Auto-detection of Pi-hole containers and bare-metal installations
+  - Bare-metal module support - runs without Docker container
   - Configurable thresholds for block percentage
   - Works with both Docker and systemd Pi-hole installations
-  - Configuration via `PIHOLE_API_URL` and threshold settings
+  - Configuration via `PIHOLE_API_URL`, `PIHOLE_API_PASSWORD`, `PIHOLE_BARE_METAL`
   - Graceful handling of API failures and timeouts
+  - Session-based auth flow: login → extract sid/csrf → use for API calls
   - Metrics: queries_blocked_today, total_queries_today, percent_blocked, active_clients, blocklist_size, queries_forwarded
   - Manual testing endpoint: `/api/collect/modules/pihole`
+
+- **Bare-metal module support** - Run app modules without Docker containers
+  - Modules can run against bare-metal services (systemd, native installs)
+  - Configure with `{APP_NAME}_BARE_METAL=true` environment variable
+  - Essential for mixed environments (some apps in Docker, some bare-metal)
+  - Enables monitoring of Plex, Pi-hole, and other non-containerized services
+  - Module runner checks for bare-metal flag and skips container requirement
+  - Metrics stored with 'baremetal' as container name
+  - Error isolation maintained for bare-metal modules
+  - Paves way for Plex module (also bare-metal on MediaServer)
 
 ---
 
