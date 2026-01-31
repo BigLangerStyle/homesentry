@@ -140,10 +140,13 @@ class JellyfinModule(AppModule):
                         if resp.status == 200:
                             counts = await resp.json()
                             
-                            # Extract library counts
-                            movie_count = counts.get('MovieCount', 0)
-                            series_count = counts.get('SeriesCount', 0)
-                            episode_count = counts.get('EpisodeCount', 0)
+                            # Debug: log the type and content
+                            logger.debug(f"Jellyfin counts type: {type(counts)}, value: {counts}")
+                            
+                            # Extract library counts (use bracket notation to avoid .get() issues)
+                            movie_count = counts['MovieCount'] if 'MovieCount' in counts else 0
+                            series_count = counts['SeriesCount'] if 'SeriesCount' in counts else 0
+                            episode_count = counts['EpisodeCount'] if 'EpisodeCount' in counts else 0
                             
                             metrics['movie_count'] = movie_count
                             metrics['series_count'] = series_count
