@@ -133,29 +133,35 @@ class JellyfinModule(AppModule):
                 # API Call 2: Get library statistics
                 logger.info("Jellyfin: Starting library counts API call")
                 try:
+                    logger.info("Jellyfin: About to call session.get() for Items/Counts")
                     async with session.get(
                         f"{api_url}/Items/Counts",
                         headers=headers,
                         timeout=aiohttp.ClientTimeout(total=timeout)
                     ) as resp:
                         logger.info(f"Jellyfin: Library counts response status: {resp.status}")
+                        logger.info("Jellyfin: About to parse JSON response")
                         if resp.status == 200:
                             counts = await resp.json()
+                            logger.info(f"Jellyfin: JSON parsed successfully, type: {type(counts)}")
                             
                             # Extract library counts using try/except (avoids any dict method calls)
                             try:
                                 movie_count = counts['MovieCount']
-                            except (KeyError, TypeError):
+                            except (KeyError, TypeError) as e:
+                                logger.warning(f"Jellyfin: Error getting MovieCount: {e}")
                                 movie_count = 0
                             
                             try:
                                 series_count = counts['SeriesCount']
-                            except (KeyError, TypeError):
+                            except (KeyError, TypeError) as e:
+                                logger.warning(f"Jellyfin: Error getting SeriesCount: {e}")
                                 series_count = 0
                             
                             try:
                                 episode_count = counts['EpisodeCount']
-                            except (KeyError, TypeError):
+                            except (KeyError, TypeError) as e:
+                                logger.warning(f"Jellyfin: Error getting EpisodeCount: {e}")
                                 episode_count = 0
                             
                             metrics['movie_count'] = movie_count
