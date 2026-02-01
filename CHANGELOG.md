@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Replaced hardcoded `APP_PREFIXES`, `APP_DISPLAY_NAMES`, and `APP_CARD_METRICS` lookup tables in `main.py` `get_latest_dashboard_metrics()` with dynamic registration from discovered modules
+  - Each module now declares `CARD_METRICS` on its class (alongside the existing `APP_NAME` and `APP_DISPLAY_NAME`)
+  - Dashboard card data is built at query time by iterating `get_discovered_modules()`
+  - Adding or modifying a module's dashboard card no longer requires editing `main.py`
+- Added `CARD_METRICS: List[str] = []` class attribute to `AppModule` base class
+- Added `CARD_METRICS` declaration to `HomeAssistantModule`
+- Updated example module template in `base.py` docstring to include `CARD_METRICS`
+
 ## [0.4.0] - 2026-02-01
 
 ### Fixed

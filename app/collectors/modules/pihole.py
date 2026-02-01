@@ -43,6 +43,7 @@ class PiHoleModule(AppModule):
     APP_NAME = "pihole"
     APP_DISPLAY_NAME = "Pi-hole"
     CONTAINER_NAMES = ["pihole", "pi-hole"]
+    CARD_METRICS = ["percent_blocked", "queries_blocked_today", "active_clients", "blocklist_size"]
     
     def __init__(self):
         """Initialize module with session cache."""
