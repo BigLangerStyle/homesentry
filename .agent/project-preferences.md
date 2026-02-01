@@ -663,152 +663,56 @@ Even if workflow instructions mention Git operations, skip those steps. The user
 These are future goals - keep code structure flexible to accommodate them!
 ---
 
-## ðŸ“¦ Task Completion & Chat Handoff
-
-**CRITICAL: When completing a task/feature, always provide files needed for the next chat.**
-
-This eliminates the need to zip the entire project between chats. Only provide the minimal files needed for context.
-
-### Files to Provide When Task is Complete
-
-At the end of each feature chat, Claude should present a **"Next Chat Starter Pack"** containing:
-
-#### Always Include (Core Context):
-1. **TASK_{feature-name}.md** - Task description for next feature
-2. **media-server-information.md** - MediaServer details (from project)
-3. **project-preferences.md** - This file (from project)
-
-#### Include When Relevant (Feature-Specific):
-4. **Related module files** - Only files the next task needs to reference
-   - Example: For `feature/module-homeassistant`, include `app/collectors/modules/base.py`
-   - Example: For collector work, include example collector like `app/collectors/services.py`
-
-#### Do NOT Include:
-- âŒ Entire codebase zips
-- âŒ Unrelated feature files
-- âŒ Files the next task won't reference
-- âŒ Database files or data directories
-
-### Example: Completing Plugin Architecture Task
-
-**âœ… CORRECT - Minimal File Set:**
-```
-Files for next chat (feature/module-homeassistant):
-1. TASK_module-homeassistant.md (task description)
-2. media-server-information.md (MediaServer context)
-3. project-preferences.md (workflow and preferences)
-4. app/collectors/modules/base.py (module template to follow)
-```
-
-**âŒ WRONG - Unnecessary Files:**
-```
-- homesentry.zip (entire project - too much)
-- app/main.py (next task doesn't need this)
-- app/scheduler.py (next task doesn't need this)
-- CHANGELOG.md (next task will update this themselves)
-```
-
-### Claude's Task Completion Checklist
-
-When user says "this task is complete" or similar, Claude should:
-
-1. **âœ… Present completed work files** (for git commit)
-   - Modified source files
-   - Updated documentation files
-   - Git commit message
-
-2. **âœ… Create TASK file for next feature**
-   - Write comprehensive task description
-   - Include requirements, testing steps, success criteria
-   - Format: `TASK_{next-feature-name}.md`
-
-3. **âœ… Present "Next Chat Starter Pack"**
-   - Task file (newly created)
-   - Core context files (media-server-information.md, project-preferences.md)
-   - Relevant reference files (base classes, similar implementations)
-   - Clear list of what each file is for
-
-4. **âœ… Provide clear handoff message**
-   ```
-   Ready for next task: feature/module-homeassistant
-   
-   Files for next chat:
-   - TASK_module-homeassistant.md - Complete implementation guide
-   - media-server-information.md - MediaServer context
-   - project-preferences.md - Project workflow
-   - app/collectors/modules/base.py - Module template/interface
-   
-   Start next chat with: "I want to work on feature/module-homeassistant"
-   ```
-
-### Benefits of Minimal File Sets
-
-**Efficiency:**
-- âœ… Faster uploads (4 files vs entire project)
-- âœ… Claude loads faster (less to process)
-- âœ… Clearer focus (only relevant context)
-
-**Clarity:**
-- âœ… Next Claude knows exactly what to reference
-- âœ… No confusion about which files matter
-- âœ… Reduced chance of referencing outdated code
-
-**Workflow:**
-- âœ… Matches professional development (modular tasks)
-- âœ… Each chat is self-contained
-- âœ… Easy to parallelize work on multiple features
-
-### Special Cases
-
-**For First Module in a System:**
-Include the base class or interface file.
-Example: First app module needs `app/collectors/modules/base.py`
-
-**For Similar Features:**
-Include one example implementation.
-Example: New collector can reference `app/collectors/services.py` as pattern
-
-**For Complex Dependencies:**
-Include dependency documentation or architecture diagram.
-Example: If new feature needs to understand alert system, include relevant docs
-
-**For API Integrations:**
-Include API documentation or example API responses.
-Example: Module that calls external API might need sample response JSON
-
----
----
 
 ## 📦 Task Completion & Chat Handoff
 
-**Simplified Workflow: Just upload the whole project as a zip file**
+When the main chat produces a task description for a new release/feature chat, it MUST also produce an explicit **"Files to upload"** list. Do NOT tell the user to upload the whole project zip — large zips can cause "No compactable messages" errors that prevent the chat from starting.
 
-The user will upload the entire homesentry project as a zip file to start each new chat. This is simpler and ensures all context is available.
+### Why Not Just Zip Everything?
+
+Uploading the full project zip as context can exceed Claude's compaction limit, which breaks chat creation entirely. Uploading only the files the task actually touches keeps context lean and the chat reliable.
+
+### What to Include
+
+The main chat (or release chat spinning off a feature chat) should always produce a list like this alongside the task description:
+
+```
+Files to upload for this chat:
+1. TASK_example.md                          — the task description (paste as text or upload)
+2. app/collectors/modules/base.py           — base class the new module extends
+3. app/collectors/modules/jellyfin.py       — example module to follow as a pattern
+4. CHANGELOG.md                             — needs updating when task is done
+5. PROJECT_SUMMARY.md                       — needs updating when task is done
+```
+
+### Rules for Building the List
+
+**Always include:**
+- The task description itself (TASK file or pasted text)
+- Every source file the task will **create or modify**
+- `CHANGELOG.md` and `PROJECT_SUMMARY.md` (these update with every task)
+- Any base class or interface the task implements/extends
+
+**Include when relevant:**
+- One example implementation if the task is following an existing pattern (e.g., a second module can reference the first as a template)
+- `.env.example` if the task adds new config variables
+- `docker-compose.yml` or `Dockerfile` if deployment config changes
+
+**Do NOT include:**
+- Files the task won't read or modify
+- The full project zip
+- Database files or data directories
+- `media-server-information.md` or `project-preferences.md` — these live in the Project and are always available automatically
 
 ### Claude's Task Completion Checklist
 
-When user says "this task is complete" or similar, Claude should:
+When a task is complete, Claude should:
 
-1. **✅ Present completed work files** (for git commit)
+1. **Present completed work files** (for git commit)
    - Modified source files
    - Updated documentation files (CHANGELOG.md, PROJECT_SUMMARY.md)
-   - Updated configuration files (.env and .env.example)
    - Git commit message
 
-2. **✅ Create TASK file for next feature** (if applicable)
-   - Write comprehensive task description
-   - Include requirements, testing steps, success criteria
-   - Format: `TASK_{next-feature-name}.md`
-   - User will upload this with the project zip in the next chat
-
-### That's It!
-
-No need to prepare specific file sets. The user will:
-1. Download the completed files
-2. Commit them to Git
-3. Upload the whole project zip to the next chat
-4. Continue working
-
-This keeps things simple and ensures full context is always available.
+2. **If spinning off a follow-up task:** produce the task description AND the "Files to upload" list together, so the user can start the next chat immediately.
 
 ---
