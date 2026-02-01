@@ -175,6 +175,14 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Updated README roadmap to reflect all shipped versions
 - [x] Updated CHANGELOG with complete v0.4.0 section
 
+### In Progress (post-v0.4.0)
+
+- [x] Replaced hardcoded app card registration in `main.py` with dynamic registration from discovered modules
+  - Added `CARD_METRICS` class attribute to `AppModule` base class
+  - Each module now self-declares its dashboard card metrics
+  - Dashboard card data built dynamically via `get_discovered_modules()` at query time
+  - New modules no longer require manual edits to `main.py`
+
 ### Future Enhancements
 
 **v0.5.0 - Installation & Configuration**
