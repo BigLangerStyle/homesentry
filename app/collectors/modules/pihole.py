@@ -31,7 +31,7 @@ import aiohttp
 import asyncio
 import logging
 import json
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -208,7 +208,7 @@ class PiHoleModule(AppModule):
             logger.error(f"Error collecting Pi-hole metrics: {e}", exc_info=True)
             return {}
     
-    def validate_config(self, config: dict) -> Tuple[bool, str]:
+    def validate_config(self, config: dict) -> tuple[bool, str]:
         """
         Validate Pi-hole configuration.
         
