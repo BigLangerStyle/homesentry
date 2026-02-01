@@ -29,7 +29,7 @@ from app.collectors.modules.base import AppModule
 import aiohttp
 import asyncio
 import logging
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -234,7 +234,7 @@ class QBittorrentModule(AppModule):
             logger.error(f"Error collecting qBittorrent metrics: {e}", exc_info=True)
             return {}
     
-    def validate_config(self, config: dict) -> Tuple[bool, str]:
+    def validate_config(self, config: dict) -> tuple[bool, str]:
         """
         Validate qBittorrent configuration.
         

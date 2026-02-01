@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-01
+
+### Fixed
+
+**Version Strings**
+- Updated dashboard footer version from v0.3.0 to v0.4.0
+- Updated `PROJECT_SUMMARY.md` version field to 0.4.0
+- Updated `README.md` roadmap to reflect shipped versions (v0.1.0–v0.3.0) and current v0.4.0 polish release
+
+**Code Quality**
+- Normalized `validate_config` return type from `Tuple[bool, str]` to `tuple[bool, str]` in `homeassistant.py`, `pihole.py`, and `qbittorrent.py` (use built-in generic syntax, Python 3.9+)
+- Removed unused `Tuple` from `typing` imports in `pihole.py` and `qbittorrent.py`
+- Moved `import time` from inside `HomeAssistantModule.collect()` method body to module-level imports in `homeassistant.py`
+- Fixed `validate_config` return type from `Tuple[bool, str]` to `tuple[bool, str]` in `discord.py`
+- Normalized `validate_config` return type in `jellyfin.py` and `plex.py`
+- Removed unused `Tuple` import from `jellyfin.py` and `plex.py`
+- Fixed version string in `scheduler.py` startup log from v0.2.0 to v0.3.0
+- Corrected version string in `main.py` application metadata from v0.2.0 to v0.3.0
+
+**Configuration**
+- Stripped CRLF corruption from `.env.example` (lines had 5–6 stray `\r` characters)
+- Removed duplicate `SMART_POLL_INTERVAL` entry from `.env.example` SMART section (canonical entry retained in Polling Intervals)
+- Removed stale "future feature" comment on `SMART_POLL_INTERVAL` — SMART monitoring shipped in v0.2.0
+- Removed ghost `TAUTULLI_URL` entry and `TAUTULLI_MAINTENANCE_WINDOW` comment from `.env.example` — no Tautulli module exists
+- Fixed Pi-hole notes in `.env.example`: removed v5 fallback references, module targets Pi-hole v6 session-based auth only
+- Added missing `RAID_POLL_INTERVAL` to Polling Intervals section of `.env.example` (default: 300, matching RAID collector)
+- Updated `RAID_POLL_INTERVAL` default from 120 to 300 in RAID section to match collector's actual poll interval
+
+**File Organization** *(flagged for manual action — not applied in this commit)*
+- Stray `gitignore` file (no dot prefix) at repo root should be deleted — `.gitignore` already exists
+- `test_database.py` at repo root should be moved to `tests/`
+
 ## [0.3.0] - 2026-01-31
 
 ### Added
@@ -349,6 +381,7 @@ Initial release establishing the foundation for HomeSentry with system monitorin
 
 ## Version History Summary
 
+- **v0.4.0** (Released 2026-02-01) - Polish release: 22 fixes across code quality, configuration, and documentation
 - **v0.3.0** (Released 2026-01-31) - Plugin architecture and app-specific modules
 - **v0.2.0** (Released 2026-01-27) - Infrastructure monitoring (Docker, SMART, RAID)
 - **v0.1.0** (Released 2026-01-25) - MVP with system monitoring, service checks, Discord alerts
