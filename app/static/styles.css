@@ -41,6 +41,32 @@
     --radius-sm: 4px;
     --radius-md: 8px;
     --radius-lg: 12px;
+
+    /* App Metric Background (swaps in dark mode) */
+    --bg-app-metric: rgba(255, 255, 255, 0.7);
+
+    /* Shadows (intensify in dark mode) */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode Overrides */
+body.dark-mode {
+    --bg-primary: #1e1e2e;
+    --bg-secondary: #181825;
+    --bg-card: #1e1e2e;
+
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --text-muted: #6c7086;
+
+    --border-light: #313244;
+    --border-medium: #45475a;
+
+    --color-app-layer-light: #2e1065;
+    --color-infra-layer-light: #1e3a5f;
+
+    --bg-app-metric: rgba(255, 255, 255, 0.05);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Reset and Base Styles */
@@ -68,7 +94,7 @@ header {
     background: var(--bg-primary);
     padding: var(--spacing-lg) var(--spacing-xl);
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -237,7 +263,7 @@ main {
 .app-metric {
     padding: 0.5rem 0.625rem;
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--bg-app-metric);
     border: 1px solid var(--border-light);
 }
 
@@ -472,6 +498,27 @@ footer a {
 footer a:hover {
     color: var(--color-ok);
     text-decoration: underline;
+}
+
+/* ========================================
+   Theme Toggle Button
+   ======================================== */
+
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.25rem 0.625rem;
+    margin-top: 0.5rem;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.theme-toggle:hover {
+    border-color: var(--text-secondary);
+    background: var(--bg-secondary);
 }
 
 /* ========================================
