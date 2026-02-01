@@ -208,6 +208,8 @@ Files to upload:
 3. CHANGELOG.md (if needed)
 4. .env.example (only if adding config)
 
+Note: The task description itself is NOT a file. It is produced as chat output by the release chat and pasted inline by the user into the feature chat. It does not appear in the zip or the upload list.
+
 ---
 
 ## Packaging the File List as a Zip
@@ -248,7 +250,7 @@ This is the **[release orchestration | feature implementation]** chat for HomeSe
 
 **What this chat does:**
 - [Release chat: Define scope, produce task descriptions and file lists for feature chats. No implementation work.]
-- [Feature chat: Implement the task described below. Stay inside the uploaded files only.]
+- [Feature chat: Implement the task description pasted below the intro block. Stay inside the uploaded files only.]
 
 **Uploaded files are the source of truth.** Do not guess at code you haven't seen. If you need a file not uploaded, ask for exactly that one file.
 ```
@@ -258,7 +260,7 @@ Rules:
 * Claude fills in the bracketed choices â€” never leaves them as options for the user to pick
 * The block is short enough to paste as a single message, not a file upload
 * It goes at the very end of the handoff output, after the zip command
-* It does not repeat the task description â€” that lives in the uploaded files or the zip
+* The task description is pasted inline directly after the chat intro block â€" the two together form a single copy-paste block. The task description is never uploaded as a file.
 
 ---
 
