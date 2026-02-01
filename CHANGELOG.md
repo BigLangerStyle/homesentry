@@ -184,6 +184,17 @@ Application-layer monitoring release introducing plugin architecture for app-spe
   - Defaults to system preference (prefers-color-scheme) on first visit
   - All colors driven by CSS custom properties — single override block
 
+- **Module development documentation** - Comprehensive guide for creating new app modules (`MODULES.md`)
+  - Architecture overview: auto-discovery, container matching, config parsing, bare-metal support
+  - Full explanation of the three required class attributes and `collect()` method interface
+  - Hard limits reference with rationale (10 metrics, 3 API calls, 15 config options)
+  - Configuration convention: environment variable prefix parsing with automatic type conversion
+  - Threshold alerting convention (`{METRIC}_WARN` / `{METRIC}_FAIL` naming pattern)
+  - Step-by-step walkthrough using a fictional Sonarr module (file creation through dashboard verification)
+  - Reference table of all 5 existing modules: auth method, API calls, metrics, and mode
+  - Dashboard card registration instructions (`APP_PREFIXES`, `APP_DISPLAY_NAMES`, `APP_CARD_METRICS` in `main.py`)
+  - Designed to be self-contained — a developer reads it and can write a working module without reading source code
+
 ---
 
 ## [0.2.0] - 2026-01-27
