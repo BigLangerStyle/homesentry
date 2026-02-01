@@ -1,8 +1,8 @@
 # HomeSentry - Project Summary
 
-**Version:** 0.2.0  
+**Version:** 0.3.0  
 **Status:** Production Ready  
-**Last Updated:** January 27, 2026  
+**Last Updated:** February 1, 2026  
 **Target Platform:** Linux (Ubuntu/Debian) + Docker  
 **Primary Language:** Python 3.11+  
 
@@ -144,7 +144,7 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Enhanced scheduler with multi-frequency collection
 - [x] Critical infrastructure alerting
 
-### In Progress (v0.3.0)
+### Completed (v0.3.0) - Plugin Architecture & App Modules
 
 - [x] Maintenance windows for scheduled downtime (alert suppression during planned events)
 - [x] Sleep schedule with morning summary digest (complete silence during sleep hours)
@@ -158,100 +158,22 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Dark mode for dashboard
 - [x] Module development documentation
 
-### Next Up (v0.5.0)
-
-
-
-### Completed (v0.1.0-dev)
-
-
-
-- [x] Project structure and documentation
-
-- [x] Agent preferences for development workflow
-
-- [x] README, CHANGELOG, PROJECT_SUMMARY
-
-- [x] .gitignore and LICENSE
-
-- [x] Development environment guidelines
-
-- [x] FastAPI application skeleton
-
-- [x] Docker Dockerfile + docker-compose.yml
-
-- [x] .env.example configuration template
-
-- [x] requirements.txt with dependencies
-
-- [x] Project directory structure (app/, collectors/, storage/, alerts/)
-
-- [x] SQLite database schema
-
-
-
-### In Progress (v0.1.0 MVP)
-
-
-
-- [x] System collector (CPU, RAM, disk)
-
-- [x] Service collector (HTTP checks)
-
-- [x] Background scheduler
-
-- [x] Discord alerting module
-
-- [x] Basic HTML dashboard (completed - responsive UI with status cards, metrics table, events list)
-
-- [x] Docker Dockerfile + docker-compose.yml
-
-- [x] .env.example configuration template
-
-- [x] requirements.txt with dependencies
-
-
-
-### Next Up (v0.2.0)
-
-
-
-- [ ] RAID status monitoring (mdadm, ZFS, btrfs)
-
-- [ ] Enhanced event tracking
-
-- [ ] State-change detection logic (OK → WARN → FAIL)
-
-
-
 ### Future Enhancements
-
-
 
 **v0.5.0 - Installation & Configuration**
 
 - [ ] Interactive setup wizard (like Pi-hole)
-
 - [ ] Auto-detection of installed services
-
 - [ ] Dynamic collector registration
-
 - [ ] Web-based configuration UI
-
-
 
 **v1.0.0 - Production Ready**
 
 - [ ] Historical data visualization (charts)
-
 - [ ] Authentication/authorization
-
 - [ ] Mobile-responsive UI
-
 - [ ] Multi-server support
-
 - [ ] API rate limiting
-
 - [ ] Unit test coverage > 80%
 
 
