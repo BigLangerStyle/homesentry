@@ -22,7 +22,8 @@ from app.collectors.modules.base import AppModule
 import aiohttp
 import asyncio
 import logging
-from typing import Dict, Any, Tuple
+import time
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,6 @@ class HomeAssistantModule(AppModule):
                 
                 # API Call 1: Get all states (for entity and automation counts)
                 try:
-                    import time
                     start_time = time.time()
                     
                     async with session.get(
@@ -130,7 +130,7 @@ class HomeAssistantModule(AppModule):
         
         return metrics
     
-    def validate_config(self, config: dict) -> Tuple[bool, str]:
+    def validate_config(self, config: dict) -> tuple[bool, str]:
         """
         Validate Home Assistant configuration.
         

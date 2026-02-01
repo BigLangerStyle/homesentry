@@ -1,6 +1,6 @@
 # HomeSentry - Project Summary
 
-**Version:** 0.3.0  
+**Version:** 0.4.0  
 **Status:** Production Ready  
 **Last Updated:** February 1, 2026  
 **Target Platform:** Linux (Ubuntu/Debian) + Docker  
@@ -157,6 +157,23 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Dashboard UI updates for app modules
 - [x] Dark mode for dashboard
 - [x] Module development documentation
+
+### Completed (v0.4.0) - Polish Release
+
+- [x] Normalized `validate_config` return types to `tuple[bool, str]` (homeassistant, pihole, qbittorrent, jellyfin, plex, discord)
+- [x] Removed unused `Tuple` imports from typing in all affected modules
+- [x] Moved `import time` to module level in homeassistant.py
+- [x] Fixed version strings in main.py and scheduler.py (were stuck at v0.2.0)
+- [x] Stripped CRLF corruption from .env.example
+- [x] Removed duplicate SMART_POLL_INTERVAL from .env.example
+- [x] Removed stale "future feature" comment on SMART (shipped v0.2.0)
+- [x] Removed ghost Tautulli references from .env.example
+- [x] Fixed Pi-hole notes: removed v5 fallback references, module is v6-only
+- [x] Added RAID_POLL_INTERVAL to Polling Intervals section (default: 300)
+- [x] Updated RAID_POLL_INTERVAL default to 300 to match collector
+- [x] Updated dashboard footer to v0.4.0
+- [x] Updated README roadmap to reflect all shipped versions
+- [x] Updated CHANGELOG with complete v0.4.0 section
 
 ### Future Enhancements
 
