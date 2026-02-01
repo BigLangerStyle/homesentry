@@ -38,6 +38,7 @@ class JellyfinModule(AppModule):
     APP_NAME = "jellyfin"
     APP_DISPLAY_NAME = "Jellyfin"
     CONTAINER_NAMES = ["jellyfin", "jellyfin-server"]
+    CARD_METRICS = ["active_streams", "transcode_count", "movie_count", "episode_count"]
     
     async def collect(self, container, config: dict) -> Dict[str, Any]:
         """
