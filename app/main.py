@@ -172,10 +172,26 @@ def process_system_status(metrics: List[Dict[str, Any]]) -> Dict[str, Any]:
                     "status": metric["status"]
                 }
         elif metric["category"] == "disk":
-            # Extract mountpoint from name like "disk_/mnt/Array_percent"
-            name = metric["name"].replace("disk_", "").replace("_percent", "")
+            # Only process _percent metrics (skip _free_gb to avoid displaying raw GB as %)
+            if not metric["name"].endswith("_percent"):
+                continue
+
+            # Skip container-internal volume mounts that aren't real disks
+            # These are Docker bind mounts like /etc/resolv.conf, /etc/hostname, etc.
+            SKIP_DISK_PREFIXES = ["disk_etc_", "disk_app_data_"]
+            if any(metric["name"].startswith(p) for p in SKIP_DISK_PREFIXES):
+                continue
+
+            # Extract mountpoint from name like "disk_host_mnt_Array_percent"
+            # Strip "disk_" prefix and "_percent" suffix
+            mountpoint = metric["name"][len("disk_"):-len("_percent")]
+
+            # Dedupe: only keep the first (latest) entry per mountpoint
+            if any(d["mountpoint"] == mountpoint for d in status["disk"]):
+                continue
+
             status["disk"].append({
-                "mountpoint": name,
+                "mountpoint": mountpoint,
                 "value": f"{metric['value_num']:.1f}%",
                 "status": metric["status"]
             })
@@ -266,6 +282,270 @@ async def dashboard(request: Request):
             "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
     )
+
+
+@app.get("/api/metrics/latest")
+async def get_latest_dashboard_metrics():
+    """
+    Get the latest metrics for both Application Layer and Infrastructure Layer.
+
+    This endpoint is called by the dashboard JavaScript every 60 seconds to
+    refresh the display. It returns app metrics grouped by module, plus the
+    latest infrastructure metrics (system, docker, smart, raid, services).
+
+    The app metrics are fetched from metrics_samples where category='app',
+    grouped by the app prefix in the metric name (e.g., 'plex_active_streams'
+    groups under 'plex').
+
+    Returns:
+        dict with keys: apps, system, docker, smart, raid, services, timestamp
+    """
+    # Known app module prefixes - used to group app metrics by module
+    APP_PREFIXES = ["plex", "jellyfin", "pihole", "homeassistant", "qbittorrent"]
+
+    # Human-friendly display names for each app module
+    APP_DISPLAY_NAMES = {
+        "plex": "Plex",
+        "jellyfin": "Jellyfin",
+        "pihole": "Pi-hole",
+        "homeassistant": "Home Assistant",
+        "qbittorrent": "qBittorrent",
+    }
+
+    # Which metrics to show on each app's dashboard card (priority order)
+    APP_CARD_METRICS = {
+        "plex": ["active_streams", "transcode_count", "movie_count", "tv_show_count"],
+        "jellyfin": ["active_streams", "transcode_count", "movie_count", "episode_count"],
+        "pihole": ["percent_blocked", "queries_blocked_today", "active_clients", "blocklist_size"],
+        "homeassistant": ["entity_count", "automation_count", "response_time_ms"],
+        "qbittorrent": ["download_speed_mbps", "upload_speed_mbps", "active_torrents", "disk_free_gb"],
+    }
+
+    try:
+        # --- Fetch app metrics (category='app') ---
+        app_metrics_raw = await get_latest_metrics(category="app", limit=100)
+
+        # Group app metrics by module prefix, keeping only the latest per metric name
+        apps = {}
+        seen_metrics = set()  # Track which metrics we've already seen (dedupe by name)
+
+        for metric in app_metrics_raw:
+            name = metric["name"]
+            if name in seen_metrics:
+                continue  # Already have the latest sample for this metric
+            seen_metrics.add(name)
+
+            # Determine which app this metric belongs to by matching prefix
+            matched_app = None
+            for prefix in APP_PREFIXES:
+                if name.startswith(f"{prefix}_"):
+                    matched_app = prefix
+                    break
+
+            if not matched_app:
+                continue  # Skip metrics with unknown prefix
+
+            # Initialize app entry if first metric for this app
+            if matched_app not in apps:
+                apps[matched_app] = {
+                    "name": matched_app,
+                    "display_name": APP_DISPLAY_NAMES.get(matched_app, matched_app),
+                    "status": "OK",
+                    "metrics": {},
+                    "card_metrics": APP_CARD_METRICS.get(matched_app, []),
+                }
+
+            # Strip the app prefix to get the bare metric name
+            # e.g., "plex_active_streams" -> "active_streams"
+            bare_name = name[len(matched_app) + 1:]
+
+            apps[matched_app]["metrics"][bare_name] = {
+                "value": metric["value_num"] if metric["value_num"] is not None else metric["value_text"],
+                "status": metric["status"],
+                "ts": metric["ts"],
+            }
+
+            # Bubble up worst status: OK < WARN < FAIL
+            current_app_status = apps[matched_app]["status"]
+            metric_status = metric["status"]
+            if metric_status == "FAIL":
+                apps[matched_app]["status"] = "FAIL"
+            elif metric_status == "WARN" and current_app_status != "FAIL":
+                apps[matched_app]["status"] = "WARN"
+
+        # --- Fetch infrastructure metrics ---
+        # Fetch enough rows to guarantee we get at least one sample of every metric name.
+        # ~47 distinct metric names across system/disk/docker/smart/raid categories,
+        # so 200 rows gives comfortable headroom even if multiple samples per name appear.
+        infra_metrics_raw = await get_latest_metrics(limit=200)
+        latest_services_raw = await get_latest_service_status(limit=20)
+
+        # Process system/disk metrics using existing helper
+        system_status = process_system_status(infra_metrics_raw)
+        service_status = process_service_status(latest_services_raw)
+
+        # Extract docker container metrics (latest per container)
+        # Actual DB names: "container_homesentry_status", "container_jellyfin_status"
+        # Pattern: container_{name}_{metric}
+        docker_containers = {}
+        seen_docker = set()
+        for metric in infra_metrics_raw:
+            if metric["category"] == "docker":
+                name = metric["name"]
+                if name in seen_docker:
+                    continue
+                seen_docker.add(name)
+
+                # Strip "container_" prefix, then split off the last segment as metric_type
+                # e.g., "container_jellyfin_status" -> remainder="jellyfin_status"
+                if not name.startswith("container_"):
+                    continue
+                remainder = name[len("container_"):]
+                # The metric type is the last underscore segment (e.g., "status")
+                last_underscore = remainder.rfind("_")
+                if last_underscore == -1:
+                    continue
+                container = remainder[:last_underscore]
+                metric_type = remainder[last_underscore + 1:]
+
+                if container not in docker_containers:
+                    docker_containers[container] = {"name": container, "status": "OK"}
+
+                # The "status" metric is special: value_num 1.0 = running, 0 = stopped.
+                # Don't store the raw number — convert to a display string and use it
+                # to set the container's overall status instead.
+                if metric_type == "status":
+                    is_running = metric["value_num"] == 1.0 if metric["value_num"] is not None else False
+                    docker_containers[container]["health"] = "Running" if is_running else "Stopped"
+                    if not is_running:
+                        docker_containers[container]["status"] = "FAIL"
+                else:
+                    docker_containers[container][metric_type] = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+
+                # Bubble up worst status from the metric's own status field
+                if metric["status"] == "FAIL":
+                    docker_containers[container]["status"] = "FAIL"
+                elif metric["status"] == "WARN" and docker_containers[container]["status"] != "FAIL":
+                    docker_containers[container]["status"] = "WARN"
+
+        # Extract SMART drive metrics (latest per drive)
+        # Actual DB names: "drive__dev_sda_health", "drive__dev_sda_temperature"
+        # Pattern: drive_{device_path}_{metric} where device_path contains slashes replaced with underscores
+        # Known metric suffixes to split on:
+        SMART_METRIC_SUFFIXES = ["_health", "_temperature", "_reallocated_sectors", "_pending_sectors", "_power_on_hours"]
+        smart_drives = {}
+        seen_smart = set()
+        for metric in infra_metrics_raw:
+            if metric["category"] == "smart":
+                name = metric["name"]
+                if name in seen_smart:
+                    continue
+                seen_smart.add(name)
+
+                if not name.startswith("drive_"):
+                    continue
+
+                # Match against known suffixes to extract drive identity and metric type
+                drive = None
+                metric_type = None
+                for suffix in SMART_METRIC_SUFFIXES:
+                    if name.endswith(suffix):
+                        # Everything between "drive_" and the suffix is the drive identifier
+                        drive = name[len("drive_"):-len(suffix)]
+                        metric_type = suffix[1:]  # strip leading underscore
+                        break
+
+                if not drive or not metric_type:
+                    continue
+
+                # Clean up the drive name for display: "__dev_sda" -> "/dev/sda"
+                display_name = drive.replace("__", "/").replace("_", "/") if drive.startswith("_") else drive
+
+                if drive not in smart_drives:
+                    smart_drives[drive] = {"name": display_name, "status": "OK"}
+
+                value = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+
+                # power_on_hours has a collector accumulation bug producing values like 1.44e16.
+                # No drive has more than ~200,000 hours (~23 years). Suppress garbage values.
+                if metric_type == "power_on_hours" and isinstance(value, (int, float)) and value > 200000:
+                    continue  # Skip this bogus value entirely
+
+                # health is stored as 1.0 (passed) or 0.0 (failed) — convert to string
+                if metric_type == "health":
+                    value = "PASSED" if value == 1.0 else "FAILED"
+
+                smart_drives[drive][metric_type] = value
+                if metric["status"] == "FAIL":
+                    smart_drives[drive]["status"] = "FAIL"
+                elif metric["status"] == "WARN" and smart_drives[drive]["status"] != "FAIL":
+                    smart_drives[drive]["status"] = "WARN"
+
+        # Extract RAID array metrics (latest per array)
+        # Actual DB names: "array_md0_health", "array_md0_active_disks"
+        # Pattern: array_{arrayname}_{metric}
+        RAID_METRIC_SUFFIXES = ["_health", "_active_disks", "_state", "_degraded"]
+        raid_arrays = {}
+        seen_raid = set()
+        for metric in infra_metrics_raw:
+            if metric["category"] == "raid":
+                name = metric["name"]
+                if name in seen_raid:
+                    continue
+                seen_raid.add(name)
+
+                if not name.startswith("array_"):
+                    continue
+
+                # Match against known suffixes
+                array = None
+                metric_type = None
+                for suffix in RAID_METRIC_SUFFIXES:
+                    if name.endswith(suffix):
+                        array = name[len("array_"):-len(suffix)]
+                        metric_type = suffix[1:]  # strip leading underscore
+                        break
+
+                if not array or not metric_type:
+                    continue
+
+                if array not in raid_arrays:
+                    raid_arrays[array] = {"name": array, "status": "OK"}
+
+                value = metric["value_num"] if metric["value_num"] is not None else metric["value_text"]
+
+                # health is stored as 1.0 (healthy) or 0.0 (degraded) — convert to string
+                if metric_type == "health":
+                    value = "Healthy" if value == 1.0 else "Degraded"
+
+                raid_arrays[array][metric_type] = value
+                if metric["status"] == "FAIL":
+                    raid_arrays[array]["status"] = "FAIL"
+                elif metric["status"] == "WARN" and raid_arrays[array]["status"] != "FAIL":
+                    raid_arrays[array]["status"] = "WARN"
+
+        return {
+            "apps": apps,
+            "system": system_status,
+            "docker": list(docker_containers.values()),
+            "smart": list(smart_drives.values()),
+            "raid": list(raid_arrays.values()),
+            "services": service_status,
+            "timestamp": datetime.now().isoformat(),
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get latest dashboard metrics: {e}", exc_info=True)
+        return {
+            "apps": {},
+            "system": {"cpu": {"value": "N/A", "status": "UNKNOWN"}, "memory": {"value": "N/A", "status": "UNKNOWN"}, "disk": []},
+            "docker": [],
+            "smart": [],
+            "raid": [],
+            "services": {},
+            "timestamp": datetime.now().isoformat(),
+            "error": str(e),
+        }
 
 
 @app.get("/api/dashboard/status")

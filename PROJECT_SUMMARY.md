@@ -154,7 +154,7 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Pi-hole monitoring module
 - [x] Plex monitoring module
 - [x] Jellyfin monitoring module
-- [ ] Dashboard UI updates for app modules
+- [x] Dashboard UI updates for app modules
 - [ ] Module development documentation
 
 ### Next Up (v0.5.0)
