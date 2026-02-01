@@ -5,129 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HomeSentry Dashboard</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <!-- Auto-refresh every 60 seconds -->
-    <meta http-equiv="refresh" content="60">
+    <!-- No meta refresh - JavaScript handles polling now -->
 </head>
 <body>
     <header>
         <h1>🐕‍🦺 HomeSentry</h1>
-        <p>Server Health Monitoring Dashboard</p>
+        <p class="header-subtitle">Server Health Monitoring Dashboard</p>
+        <p class="header-status" id="last-updated">Loading...</p>
     </header>
-    
+
     <main>
-        <!-- Status Overview Section -->
-        <section class="status-overview">
-            <h2>Status Overview</h2>
-            <div class="status-grid">
-                <!-- System Status Cards -->
-                {% if system_status.cpu.value != "N/A" %}
-                <div class="status-card {{ system_status.cpu.status.lower() }}">
-                    <div class="status-indicator"></div>
-                    <div class="status-content">
-                        <h3>CPU</h3>
-                        <p class="status-value">{{ system_status.cpu.value }}</p>
-                        <p class="status-label">{{ system_status.cpu.status }}</p>
-                    </div>
-                </div>
-                {% endif %}
-                
-                {% if system_status.memory.value != "N/A" %}
-                <div class="status-card {{ system_status.memory.status.lower() }}">
-                    <div class="status-indicator"></div>
-                    <div class="status-content">
-                        <h3>Memory</h3>
-                        <p class="status-value">{{ system_status.memory.value }}</p>
-                        <p class="status-label">{{ system_status.memory.status }}</p>
-                    </div>
-                </div>
-                {% endif %}
-                
-                <!-- Disk Status Cards -->
-                {% for disk in system_status.disk %}
-                <div class="status-card {{ disk.status.lower() }}">
-                    <div class="status-indicator"></div>
-                    <div class="status-content">
-                        <h3>Disk: {{ disk.mountpoint }}</h3>
-                        <p class="status-value">{{ disk.value }}</p>
-                        <p class="status-label">{{ disk.status }}</p>
-                    </div>
-                </div>
-                {% endfor %}
-                
-                <!-- Service Status Cards -->
-                {% for service_name, service_data in service_status.items() %}
-                <div class="status-card {{ service_data.status.lower() }}">
-                    <div class="status-indicator"></div>
-                    <div class="status-content">
-                        <h3>{{ service_name|title }}</h3>
-                        <p class="status-value">
-                            {% if service_data.response_ms %}
-                                {{ "%.0f"|format(service_data.response_ms) }}ms
-                            {% else %}
-                                --
-                            {% endif %}
-                        </p>
-                        <p class="status-label">{{ service_data.status }}</p>
-                    </div>
-                </div>
-                {% endfor %}
-                
-                <!-- No Data State -->
-                {% if system_status.cpu.value == "N/A" and system_status.memory.value == "N/A" and service_status|length == 0 %}
-                <div class="status-card unknown">
-                    <div class="status-indicator"></div>
-                    <div class="status-content">
-                        <h3>No Data</h3>
-                        <p class="status-value">--</p>
-                        <p class="status-label">Waiting for first collection...</p>
-                    </div>
-                </div>
-                {% endif %}
+        <!-- ============================================================
+             APPLICATION LAYER
+             Dynamic app cards rendered by JavaScript from /api/metrics/latest
+             ============================================================ -->
+        <section class="layer-section app-layer">
+            <div class="layer-header">
+                <h2>📦 Application Layer</h2>
+                <span class="layer-badge app-badge">App Modules</span>
+            </div>
+            <p class="no-data" id="app-no-data" style="display:none;">No app modules reporting data yet.</p>
+            <div class="app-grid" id="app-grid"></div>
+        </section>
+
+        <!-- ============================================================
+             INFRASTRUCTURE LAYER
+             System resources, Docker containers, SMART drives, RAID arrays
+             ============================================================ -->
+        <section class="layer-section infra-layer">
+            <div class="layer-header">
+                <h2>🖥️ Infrastructure Layer</h2>
+                <span class="layer-badge infra-badge">Core Systems</span>
+            </div>
+
+            <!-- System Resources sub-section -->
+            <div class="infra-subsection">
+                <h3 class="subsection-title">System Resources</h3>
+                <div class="status-grid" id="system-grid"></div>
+            </div>
+
+            <!-- Service Health sub-section -->
+            <div class="infra-subsection">
+                <h3 class="subsection-title">Service Health</h3>
+                <div class="status-grid" id="service-grid"></div>
+            </div>
+
+            <!-- Docker Containers sub-section -->
+            <div class="infra-subsection">
+                <h3 class="subsection-title">Docker Containers</h3>
+                <div class="status-grid" id="docker-grid"></div>
+            </div>
+
+            <!-- SMART Drive Health sub-section -->
+            <div class="infra-subsection">
+                <h3 class="subsection-title">Drive Health (SMART)</h3>
+                <div class="status-grid" id="smart-grid"></div>
+            </div>
+
+            <!-- RAID Array sub-section -->
+            <div class="infra-subsection">
+                <h3 class="subsection-title">RAID Arrays</h3>
+                <div class="status-grid" id="raid-grid"></div>
             </div>
         </section>
-        
-        <!-- Recent Metrics Section -->
-        <section class="recent-metrics">
-            <h2>Recent Metrics</h2>
-            {% if latest_metrics|length > 0 %}
-            <div class="metrics-table-container">
-                <table class="metrics-table">
-                    <thead>
-                        <tr>
-                            <th>Category</th>
-                            <th>Metric</th>
-                            <th>Value</th>
-                            <th>Status</th>
-                            <th>Timestamp</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for metric in latest_metrics %}
-                        <tr class="metric-row {{ metric.status.lower() }}">
-                            <td><span class="category-badge">{{ metric.category }}</span></td>
-                            <td>{{ metric.name }}</td>
-                            <td>
-                                {% if metric.value_num is not none %}
-                                    {{ "%.1f"|format(metric.value_num) }}{% if 'percent' in metric.name %}%{% endif %}
-                                {% elif metric.value_text %}
-                                    {{ metric.value_text }}
-                                {% else %}
-                                    --
-                                {% endif %}
-                            </td>
-                            <td><span class="status-badge {{ metric.status.lower() }}">{{ metric.status }}</span></td>
-                            <td class="timestamp">{{ metric.ts }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <p class="no-data">No metrics collected yet. The scheduler will collect data every {{ poll_interval }} seconds.</p>
-            {% endif %}
-        </section>
-        
-        <!-- Recent Events Section -->
+
+        <!-- Recent Events Section (server-rendered via Jinja2) -->
         <section class="recent-events">
             <h2>Recent Alerts</h2>
             {% if recent_events|length > 0 %}
@@ -158,11 +100,319 @@
             {% endif %}
         </section>
     </main>
-    
+
     <footer>
-        <p>HomeSentry v0.1.0 | Last updated: {{ last_updated }} | 
-        <a href="/docs" target="_blank">API Docs</a> | 
+        <p>HomeSentry v0.3.0 | <span id="footer-timestamp">{{ last_updated }}</span> |
+        <a href="/docs" target="_blank">API Docs</a> |
         <a href="/healthz" target="_blank">Health Check</a></p>
     </footer>
+
+    <!-- ============================================================
+         DASHBOARD JAVASCRIPT
+         Fetches /api/metrics/latest every 60 seconds and renders
+         both Application Layer cards and Infrastructure Layer grids.
+         ============================================================ -->
+    <script>
+    (function() {
+        "use strict";
+
+        const POLL_INTERVAL_MS = {{ poll_interval }} * 1000;
+
+        // ---- Formatting Helpers ----
+
+        function formatNumber(val) {
+            if (val === null || val === undefined || val === "N/A") return "N/A";
+            var num = Number(val);
+            if (isNaN(num)) return String(val);
+            if (Number.isInteger(num)) return num.toLocaleString();
+            return num.toLocaleString(undefined, { maximumFractionDigits: 1 });
+        }
+
+        function formatBandwidth(mbps) {
+            if (mbps === null || mbps === undefined) return "0 Mbps";
+            var num = Number(mbps);
+            if (num >= 1000) return (num / 1000).toFixed(2) + " Gbps";
+            return num.toFixed(1) + " Mbps";
+        }
+
+        function formatGB(gb) {
+            if (gb === null || gb === undefined) return "N/A";
+            return Number(gb).toFixed(1) + " GB";
+        }
+
+        function formatMs(ms) {
+            if (ms === null || ms === undefined) return "N/A";
+            return Math.round(Number(ms)) + " ms";
+        }
+
+        function formatPercent(val) {
+            if (val === null || val === undefined) return "N/A";
+            return Number(val).toFixed(1) + "%";
+        }
+
+        // ---- Metric Formatters and Labels ----
+
+        var METRIC_FORMATTERS = {
+            "download_speed_mbps": formatBandwidth,
+            "upload_speed_mbps": formatBandwidth,
+            "bandwidth_mbps": formatBandwidth,
+            "disk_free_gb": formatGB,
+            "session_downloaded_gb": formatGB,
+            "session_uploaded_gb": formatGB,
+            "percent_blocked": formatPercent,
+            "response_time_ms": formatMs
+        };
+
+        var METRIC_LABELS = {
+            "active_streams": "Streams",
+            "transcode_count": "Transcoding",
+            "movie_count": "Movies",
+            "tv_show_count": "TV Shows",
+            "episode_count": "Episodes",
+            "active_users": "Users",
+            "percent_blocked": "Blocked",
+            "queries_blocked_today": "Blocked Today",
+            "active_clients": "Clients",
+            "blocklist_size": "Blocklist",
+            "entity_count": "Entities",
+            "automation_count": "Automations",
+            "response_time_ms": "Response",
+            "download_speed_mbps": "Download",
+            "upload_speed_mbps": "Upload",
+            "active_torrents": "Torrents",
+            "disk_free_gb": "Free Space"
+        };
+
+        function formatMetricValue(metricName, value) {
+            if (METRIC_FORMATTERS[metricName]) {
+                return METRIC_FORMATTERS[metricName](value);
+            }
+            return formatNumber(value);
+        }
+
+        function getMetricLabel(metricName) {
+            if (METRIC_LABELS[metricName]) return METRIC_LABELS[metricName];
+            // Fallback: convert snake_case to Title Case
+            return metricName.replace(/_/g, " ").replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+        }
+
+        // ---- Status Helpers ----
+
+        function statusIcon(status) {
+            switch ((status || "").toUpperCase()) {
+                case "OK":   return "✓";
+                case "WARN": return "⚠";
+                case "FAIL": return "✗";
+                default:     return "?";
+            }
+        }
+
+        // ---- App Card Rendering ----
+
+        function createAppCard(app) {
+            var statusClass = (app.status || "unknown").toLowerCase();
+            var card = document.createElement("div");
+            card.className = "app-card " + statusClass;
+
+            var html = '<div class="app-card-header">' +
+                '<span class="app-card-status-icon ' + statusClass + '">' + statusIcon(app.status) + '</span>' +
+                '<h3 class="app-card-title">' + app.display_name + '</h3>' +
+                '</div>' +
+                '<div class="app-card-metrics">';
+
+            var cardMetrics = app.card_metrics || [];
+            var metricsShown = 0;
+
+            for (var i = 0; i < cardMetrics.length; i++) {
+                var metricName = cardMetrics[i];
+                var metricData = app.metrics[metricName];
+                if (!metricData) continue;
+
+                var formattedValue = formatMetricValue(metricName, metricData.value);
+                var label = getMetricLabel(metricName);
+                var metricStatus = (metricData.status || "ok").toLowerCase();
+
+                html += '<div class="app-metric ' + metricStatus + '">' +
+                    '<span class="app-metric-value">' + formattedValue + '</span>' +
+                    '<span class="app-metric-label">' + label + '</span>' +
+                    '</div>';
+
+                metricsShown++;
+                if (metricsShown >= 4) break;
+            }
+
+            if (metricsShown === 0) {
+                html += '<div class="app-metric unknown">' +
+                    '<span class="app-metric-value">--</span>' +
+                    '<span class="app-metric-label">Awaiting data</span>' +
+                    '</div>';
+            }
+
+            html += '</div>';
+            card.innerHTML = html;
+            return card;
+        }
+
+        // ---- Infrastructure Card Rendering ----
+
+        function createStatusCard(title, value, statusLabel, statusClass) {
+            var card = document.createElement("div");
+            card.className = "status-card " + statusClass;
+            card.innerHTML =
+                '<div class="status-indicator"></div>' +
+                '<div class="status-content">' +
+                    '<h3>' + title + '</h3>' +
+                    '<p class="status-value">' + value + '</p>' +
+                    '<p class="status-label">' + statusLabel + '</p>' +
+                '</div>';
+            return card;
+        }
+
+        // ---- Render Functions ----
+
+        function renderDashboard(data) {
+            renderAppLayer(data.apps || {});
+            renderSystemGrid(data.system || {});
+            renderServiceGrid(data.services || {});
+            renderDockerGrid(data.docker || []);
+            renderSmartGrid(data.smart || []);
+            renderRaidGrid(data.raid || []);
+
+            var now = new Date();
+            var ts = now.toLocaleString();
+            document.getElementById("last-updated").textContent = "Last updated: " + ts;
+            document.getElementById("footer-timestamp").textContent = ts;
+        }
+
+        function renderAppLayer(apps) {
+            var grid = document.getElementById("app-grid");
+            var noData = document.getElementById("app-no-data");
+
+            var appList = Object.values(apps).sort(function(a, b) {
+                return a.display_name.localeCompare(b.display_name);
+            });
+
+            if (appList.length === 0) {
+                noData.style.display = "block";
+                noData.textContent = "No app modules reporting data yet. Modules will appear once metrics are collected.";
+                return;
+            }
+
+            noData.style.display = "none";
+            grid.innerHTML = "";
+            for (var i = 0; i < appList.length; i++) {
+                grid.appendChild(createAppCard(appList[i]));
+            }
+        }
+
+        function renderSystemGrid(system) {
+            var grid = document.getElementById("system-grid");
+            grid.innerHTML = "";
+
+            if (system.cpu && system.cpu.value !== "N/A") {
+                grid.appendChild(createStatusCard("CPU", system.cpu.value, system.cpu.status, (system.cpu.status || "unknown").toLowerCase()));
+            }
+            if (system.memory && system.memory.value !== "N/A") {
+                grid.appendChild(createStatusCard("Memory", system.memory.value, system.memory.status, (system.memory.status || "unknown").toLowerCase()));
+            }
+            if (system.disk) {
+                for (var i = 0; i < system.disk.length; i++) {
+                    var disk = system.disk[i];
+                    grid.appendChild(createStatusCard("Disk: " + disk.mountpoint, disk.value, disk.status, (disk.status || "unknown").toLowerCase()));
+                }
+            }
+            if (grid.children.length === 0) {
+                grid.innerHTML = '<p class="no-data" style="grid-column:1/-1;">Waiting for system metrics...</p>';
+            }
+        }
+
+        function renderServiceGrid(services) {
+            var grid = document.getElementById("service-grid");
+            grid.innerHTML = "";
+            var names = Object.keys(services);
+            if (names.length === 0) {
+                grid.innerHTML = '<p class="no-data" style="grid-column:1/-1;">Waiting for service checks...</p>';
+                return;
+            }
+            for (var i = 0; i < names.length; i++) {
+                var name = names[i];
+                var svc = services[name];
+                var responseText = svc.response_ms ? Math.round(svc.response_ms) + "ms" : "--";
+                var title = name.charAt(0).toUpperCase() + name.slice(1);
+                grid.appendChild(createStatusCard(title, responseText, svc.status, (svc.status || "unknown").toLowerCase()));
+            }
+        }
+
+        function renderDockerGrid(containers) {
+            var grid = document.getElementById("docker-grid");
+            grid.innerHTML = "";
+            if (containers.length === 0) {
+                grid.innerHTML = '<p class="no-data" style="grid-column:1/-1;">Waiting for Docker metrics...</p>';
+                return;
+            }
+            for (var i = 0; i < containers.length; i++) {
+                var c = containers[i];
+                var healthVal = c.health || c.status_text || c.status || "unknown";
+                grid.appendChild(createStatusCard(c.name, healthVal, c.status, (c.status || "unknown").toLowerCase()));
+            }
+        }
+
+        function renderSmartGrid(drives) {
+            var grid = document.getElementById("smart-grid");
+            grid.innerHTML = "";
+            if (drives.length === 0) {
+                grid.innerHTML = '<p class="no-data" style="grid-column:1/-1;">Waiting for SMART data...</p>';
+                return;
+            }
+            for (var i = 0; i < drives.length; i++) {
+                var d = drives[i];
+                var healthVal = d.health || "Unknown";
+                var tempText = d.temperature ? d.temperature + "°C" : "";
+                var displayVal = healthVal + (tempText ? " · " + tempText : "");
+                grid.appendChild(createStatusCard(d.name, displayVal, d.status, (d.status || "unknown").toLowerCase()));
+            }
+        }
+
+        function renderRaidGrid(arrays) {
+            var grid = document.getElementById("raid-grid");
+            grid.innerHTML = "";
+            if (arrays.length === 0) {
+                grid.innerHTML = '<p class="no-data" style="grid-column:1/-1;">Waiting for RAID data...</p>';
+                return;
+            }
+            for (var i = 0; i < arrays.length; i++) {
+                var a = arrays[i];
+                // Display "Healthy · 3 disks" using the fields the API actually returns
+                var stateVal = a.health || a.status || "unknown";
+                if (a.active_disks) stateVal += " · " + a.active_disks + " disks";
+                grid.appendChild(createStatusCard(a.name, stateVal, a.status, (a.status || "unknown").toLowerCase()));
+            }
+        }
+
+        // ---- Polling Loop ----
+
+        async function fetchAndRender() {
+            try {
+                var response = await fetch("/api/metrics/latest");
+                if (!response.ok) {
+                    console.warn("Dashboard API returned " + response.status);
+                    return;
+                }
+                var data = await response.json();
+                renderDashboard(data);
+            } catch (err) {
+                console.error("Failed to fetch dashboard metrics:", err);
+            }
+        }
+
+        function startPolling() {
+            fetchAndRender();
+            setInterval(fetchAndRender, POLL_INTERVAL_MS);
+        }
+
+        document.addEventListener("DOMContentLoaded", startPolling);
+
+    })();
+    </script>
 </body>
 </html>
