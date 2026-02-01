@@ -17,7 +17,7 @@ Think of it as your server's guardian angel: quiet when everything's fine, loud 
 
 ### Key Features
 
-✅ **Available Now (v0.2.0):**
+✅ **Available Now (v0.4.0):**
 - **System Monitoring** - Real-time CPU, RAM, and disk usage tracking
 - **Service Checks** - HTTP health checks for Plex, Jellyfin, Pi-hole, and other web services
 - **Docker Monitoring** - Container health, restart counts, and resource usage
@@ -29,7 +29,6 @@ Think of it as your server's guardian angel: quiet when everything's fine, loud 
 - **Historical Data** - SQLite database tracks all metrics over time
 
 🔮 **Coming Soon:**
-- **Plugin Architecture** - App-specific monitoring modules (Home Assistant, Plex, qBittorrent, etc.) (v0.3.0)
 - **Configuration UI** - Web-based configuration and module management (v0.5.0)
 - **Historical Charts** - Visualize metrics over time (v1.0.0)
 
@@ -331,7 +330,7 @@ If you prefer running without Docker:
 
 ## Roadmap
 
-### v0.1.0 (Current - MVP)
+### v0.1.0 (January 25, 2026) ✅ Shipped
 - [x] FastAPI web server
 - [x] System monitoring (CPU, RAM, disk)
 - [x] Service HTTP checks
@@ -339,13 +338,28 @@ If you prefer running without Docker:
 - [x] Background scheduler (autonomous monitoring)
 - [x] Discord alerts
 - [x] Docker deployment
-- [ ] Basic dashboard UI
+- [x] Basic dashboard UI
 
-### v0.2.0 (Next)
-- [ ] Docker container monitoring
-- [ ] SMART health checks
-- [ ] RAID status monitoring
-- [ ] Enhanced event tracking
+### v0.2.0 (January 27, 2026) ✅ Shipped
+- [x] Docker container monitoring
+- [x] SMART health checks
+- [x] RAID status monitoring
+- [x] Enhanced scheduler with multi-frequency collection
+- [x] Critical infrastructure alerting
+
+### v0.3.0 (January 31, 2026) ✅ Shipped
+- [x] Plugin architecture (AppModule base class, auto-discovery)
+- [x] Home Assistant monitoring module
+- [x] qBittorrent monitoring module
+- [x] Pi-hole monitoring module
+- [x] Plex monitoring module
+- [x] Jellyfin monitoring module
+- [x] Maintenance windows and sleep schedule
+- [x] Dashboard two-layer UI with dark mode
+- [x] Bare-metal module support
+
+### v0.4.0 (February 1, 2026) ✅ Shipped
+- [x] Polish release — 22 fixes across code quality, configuration, and documentation
 
 ### v0.5.0 (Future)
 - [ ] Interactive installation wizard
