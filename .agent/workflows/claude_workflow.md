@@ -4,7 +4,7 @@
 
 This document teaches and enforces a compaction-proof workflow for using Claude with this repo.
 
-Claude must act like a calm coach who walks the user through the process step-by-step until the user says itâ€™s â€œold hat.â€
+Claude must act like a calm coach who walks the user through the process step-by-step until the user says itÃ¢â‚¬â„¢s Ã¢â‚¬Å“old hat.Ã¢â‚¬Â
 
 Core goal: avoid full-project uploads and avoid relying on chat memory. Use scoped context plus authoritative docs.
 
@@ -52,7 +52,7 @@ Rationale:
 * Prevents manual copy/paste errors
 * Keeps Git commits atomic and reviewable
 * Reduces cognitive overhead for the user
-* Matches the userâ€™s preferred AI-assisted workflow
+* Matches the userÃ¢â‚¬â„¢s preferred AI-assisted workflow
 
 If a file is too large to safely return in full:
 
@@ -74,11 +74,11 @@ You must:
 
 When the user says something like:
 
-* â€œI get it nowâ€
-* â€œThis is old hatâ€
-* â€œStop the training wheelsâ€
+* Ã¢â‚¬Å“I get it nowÃ¢â‚¬Â
+* Ã¢â‚¬Å“This is old hatÃ¢â‚¬Â
+* Ã¢â‚¬Å“Stop the training wheelsÃ¢â‚¬Â
 
-Then you can switch to â€œnormal modeâ€ and stop walking through each step.
+Then you can switch to Ã¢â‚¬Å“normal modeÃ¢â‚¬Â and stop walking through each step.
 
 Until then, always coach.
 
@@ -185,7 +185,7 @@ Release chat responsibilities:
 
 * Define scope for the release
 * Produce one Task Description at a time
-* Produce a â€œFiles to uploadâ€ list for the next feature chat
+* Produce a Ã¢â‚¬Å“Files to uploadÃ¢â‚¬Â list for the next feature chat
 
 Release chat outputs must always include:
 
@@ -212,13 +212,13 @@ Files to upload:
 
 ## Packaging the File List as a Zip
 
-Once Claude produces a "Files to upload" list, the user can package it into a single zip for upload to the next chat. A small, targeted zip like this is fine — the rule against zips only applies to the full project.
+Once Claude produces a "Files to upload" list, the user can package it into a single zip for upload to the next chat. A small, targeted zip like this is fine â€” the rule against zips only applies to the full project.
 
-Claude must generate the zip command automatically at the end of every "Files to upload" list. Use PowerShell — `zip` is not installed in Git Bash. Example:
+Claude must generate the zip command automatically at the end of every "Files to upload" list. Use PowerShell â€” `zip` is not installed in Git Bash. Example:
 
 ```powershell
 cd "C:\Users\slanger\Documents\Git\homesentry"
-Compress-Archive -Path PROJECT_SUMMARY.md, CHANGELOG.md, app/main.py, app/collectors/__init__.py -DestinationPath release_v050_files.zip
+Compress-Archive -Path PROJECT_SUMMARY.md, CHANGELOG.md, app/main.py, app/collectors/modules/__init__.py, app/collectors/modules/module_runner.py -DestinationPath feature_startup_config_validation_files.zip
 ```
 
 Rules for the generated command:
@@ -227,6 +227,7 @@ Rules for the generated command:
 * Zip filename describes what it contains (e.g. `release_v050_files.zip`, `feature_setup_wizard_files.zip`)
 * File paths are exactly as they appear in the repo (forward slashes, works in PowerShell)
 * Never includes `.env`, `data/`, or files not in the "Files to upload" list
+* Directory structure must be preserved in the zip — the receiving chat sees files at their repo-relative paths. This matters when the same filename appears at multiple depths (e.g. `app/collectors/__init__.py` vs `app/collectors/modules/__init__.py`). PowerShell's `Compress-Archive` preserves relative paths automatically when run from the repo root, so no extra flags are needed — but the paths in `-Path` must be the full repo-relative paths, never bare filenames.
 
 ---
 
@@ -237,13 +238,13 @@ When handing off to a new chat (release or feature), Claude must produce a short
 Claude generates this at the end of every handoff, in a clearly labeled block. Template:
 
 ```markdown
-## HomeSentry — [release/v0.5.0 | feature/setup-wizard]
+## HomeSentry â€” [release/v0.5.0 | feature/setup-wizard]
 
 This is the **[release orchestration | feature implementation]** chat for HomeSentry.
 
 **Project:** Self-hosted home server health monitor. Python/FastAPI, SQLite, Docker. Runs on a Linux MediaServer, developed on Windows in Cursor.
 
-**Workflow rules:** `.agent/workflows/claude_workflow.md` (in the Project files — read it first).
+**Workflow rules:** `.agent/workflows/claude_workflow.md` (in the Project files â€” read it first).
 
 **What this chat does:**
 - [Release chat: Define scope, produce task descriptions and file lists for feature chats. No implementation work.]
@@ -254,39 +255,39 @@ This is the **[release orchestration | feature implementation]** chat for HomeSe
 
 Rules:
 
-* Claude fills in the bracketed choices — never leaves them as options for the user to pick
+* Claude fills in the bracketed choices â€” never leaves them as options for the user to pick
 * The block is short enough to paste as a single message, not a file upload
 * It goes at the very end of the handoff output, after the zip command
-* It does not repeat the task description — that lives in the uploaded files or the zip
+* It does not repeat the task description â€” that lives in the uploaded files or the zip
 
 ---
 
-## Standard â€œTraining Wheelsâ€ Prompts
+## Standard Ã¢â‚¬Å“Training WheelsÃ¢â‚¬Â Prompts
 
 ### Prompt A: Starting a task
 
-â€œCool. Before we code, I want to keep this compaction-proof.
-Tell me the task in one sentence, then Iâ€™ll give you an exact â€˜Files to uploadâ€™ list.â€
+Ã¢â‚¬Å“Cool. Before we code, I want to keep this compaction-proof.
+Tell me the task in one sentence, then IÃ¢â‚¬â„¢ll give you an exact Ã¢â‚¬ËœFiles to uploadÃ¢â‚¬â„¢ list.Ã¢â‚¬Â
 
 ### Prompt B: After files are uploaded
 
-â€œGot them. Iâ€™m going to stay inside these files only.
-If I need anything else, Iâ€™ll ask for one specific file.â€
+Ã¢â‚¬Å“Got them. IÃ¢â‚¬â„¢m going to stay inside these files only.
+If I need anything else, IÃ¢â‚¬â„¢ll ask for one specific file.Ã¢â‚¬Â
 
 ### Prompt C: Before commit
 
-â€œHereâ€™s the exact commit set and tests. Run these and paste the output back.â€
+Ã¢â‚¬Å“HereÃ¢â‚¬â„¢s the exact commit set and tests. Run these and paste the output back.Ã¢â‚¬Â
 
 ### Prompt D: If user tries to upload a full zip
 
-â€œLetâ€™s not do the full zip. It tends to break compaction.
-Instead, upload only these files: ...â€
+Ã¢â‚¬Å“LetÃ¢â‚¬â„¢s not do the full zip. It tends to break compaction.
+Instead, upload only these files: ...Ã¢â‚¬Â
 
 ---
 
 ## When to Stop Coaching
 
-Only stop the step-by-step walkthrough when the user explicitly says theyâ€™ve got it.
+Only stop the step-by-step walkthrough when the user explicitly says theyÃ¢â‚¬â„¢ve got it.
 
 If unsure, keep coaching.
 
