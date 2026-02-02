@@ -22,6 +22,9 @@ router = APIRouter()
 # Define sensitive field suffixes for masking
 SENSITIVE_SUFFIXES = ["_TOKEN", "_PASSWORD", "_API_KEY", "_WEBHOOK_URL"]
 
+# Placeholder for masked sensitive values
+MASKED_PLACEHOLDER = "••••••••••••••••"  # 16 bullets
+
 
 def is_sensitive_field(key: str) -> bool:
     """Check if a field is sensitive based on its key."""
@@ -29,8 +32,13 @@ def is_sensitive_field(key: str) -> bool:
 
 
 def mask_sensitive_value(value: str) -> str:
-    """Mask a sensitive value for display."""
-    return "***sensitive***" if value else ""
+    """
+    Mask a sensitive value for display.
+    Returns a placeholder that indicates the field has a value without showing it.
+    """
+    if not value:
+        return ""
+    return MASKED_PLACEHOLDER
 
 
 def group_env_vars_by_section(env_dict: Dict[str, str]) -> Dict[str, Dict[str, Any]]:
@@ -174,8 +182,8 @@ def build_env_content(config: Dict[str, Any], current_env: Dict[str, str]) -> st
     if "core" in config:
         for key, value in sorted(config["core"].items()):
             env_key = key.upper()
-            # Preserve masked sensitive values
-            if value == "***sensitive***" and env_key in current_env:
+            # Preserve masked sensitive values (if user didn't change the placeholder)
+            if value == MASKED_PLACEHOLDER and env_key in current_env:
                 value = current_env[env_key]
             lines.append(f"{env_key}={value}")
     
@@ -199,8 +207,8 @@ def build_env_content(config: Dict[str, Any], current_env: Dict[str, str]) -> st
                 if key == "enabled":
                     continue
                 env_key = f"{module_prefix}_{key.upper()}"
-                # Preserve masked sensitive values
-                if value == "***sensitive***" and env_key in current_env:
+                # Preserve masked sensitive values (if user didn't change the placeholder)
+                if value == MASKED_PLACEHOLDER and env_key in current_env:
                     value = current_env[env_key]
                 lines.append(f"{env_key}={value}")
     
