@@ -6,9 +6,6 @@
 
 set -u  # Exit on undefined variable
 
-# Debug trap to catch errors
-trap 'echo "ERROR at line $LINENO: Command failed with exit code $?" >&2' ERR
-
 # ============================================================================
 # Global Variables
 # ============================================================================
@@ -113,16 +110,12 @@ check_dependencies() {
 # ============================================================================
 
 detect_docker_services() {
-    log_info "Checking for Docker containers..."
-    
     if ! command -v docker >/dev/null 2>&1; then
-        log_warn "Docker command not found, skipping container detection"
         return
     fi
     
     # Check if we can access Docker
     if ! docker ps >/dev/null 2>&1; then
-        log_warn "Cannot access Docker (permission denied or daemon not running)"
         return
     fi
     
@@ -131,7 +124,6 @@ detect_docker_services() {
     containers=$(docker ps --format '{{.Names}}' 2>/dev/null || true)
     
     if [ -z "$containers" ]; then
-        log_info "No running Docker containers found"
         return
     fi
     
@@ -140,16 +132,12 @@ detect_docker_services() {
         local pattern="${MODULE_CONTAINER_PATTERNS[$module]}"
         if echo "$containers" | grep -qiE "$pattern"; then
             DETECTED_SERVICES["$module"]="docker"
-            log_info "Detected $module via Docker"
         fi
     done
 }
 
 detect_systemd_services() {
-    log_info "Checking for systemd services..."
-    
     if ! command -v systemctl >/dev/null 2>&1; then
-        log_warn "systemctl not found, skipping systemd detection"
         return
     fi
     
@@ -158,7 +146,6 @@ detect_systemd_services() {
     services=$(systemctl list-units --type=service --state=running --no-pager --plain 2>/dev/null | awk '{print $1}' || true)
     
     if [ -z "$services" ]; then
-        log_warn "Could not query systemd services"
         return
     fi
     
@@ -167,16 +154,12 @@ detect_systemd_services() {
         local pattern="${MODULE_SYSTEMD_PATTERNS[$module]}"
         if echo "$services" | grep -qiE "$pattern"; then
             DETECTED_SERVICES["$module"]="systemd"
-            log_info "Detected $module via systemd"
         fi
     done
 }
 
 detect_http_services() {
-    log_info "Checking for HTTP services..."
-    
     if ! command -v curl >/dev/null 2>&1; then
-        log_warn "curl not found, skipping HTTP detection"
         return
     fi
     
@@ -193,22 +176,16 @@ detect_http_services() {
             # Don't overwrite if already detected via docker/systemd
             if [ -z "${DETECTED_SERVICES[$module]:-}" ]; then
                 DETECTED_SERVICES["$module"]="http"
-                log_info "Detected $module via HTTP (port $port)"
             fi
         fi
     done
 }
 
 detect_all_services() {
-    log_info "Starting service detection..."
-    echo ""
-    
+    # Run detection silently (no terminal output during dialogs)
     detect_docker_services
     detect_systemd_services
     detect_http_services
-    
-    echo ""
-    log_info "Service detection complete"
 }
 
 # ============================================================================
@@ -241,13 +218,9 @@ Do you want to continue?"
         message="${message}${warning}"
     fi
     
-    echo "[DEBUG] About to show welcome dialog" >&2
-    
     if $DIALOG_CMD --title "HomeSentry Setup" --yesno "$message" $DIALOG_HEIGHT $DIALOG_WIDTH; then
-        echo "[DEBUG] User clicked Yes" >&2
         return 0
     else
-        echo "[DEBUG] User clicked No or Cancel" >&2
         log_info "Setup cancelled by user"
         exit 0
     fi
@@ -521,14 +494,27 @@ show_module_config() {
     
     # If bare-metal capable, ask how it's running
     if [ $is_bare_metal_capable -eq 1 ]; then
-        if $DIALOG_CMD --title "$display_name Configuration" \
-            --yesno "How is $display_name running?\n\nSelect:\n• Yes = Docker container\n• No = Bare-metal (systemd service)" \
-            12 60; then
-            MODULE_CONFIGS["${module}_bare_metal"]="false"
-            log_info "$module running in Docker"
-        else
+        local deployment_type
+        local exit_code
+        deployment_type=$($DIALOG_CMD --title "$display_name Configuration" \
+            --menu "How is $display_name running on your system?" \
+            15 60 2 \
+            "docker" "Docker container" \
+            "bare-metal" "Systemd service (bare-metal)" \
+            3>&1 1>&2 2>&3)
+        exit_code=$?
+        
+        if [ $exit_code -ne 0 ]; then
+            log_info "Setup cancelled by user"
+            exit 0
+        fi
+        
+        if [ "$deployment_type" = "bare-metal" ]; then
             MODULE_CONFIGS["${module}_bare_metal"]="true"
             log_info "$module running as bare-metal service"
+        else
+            MODULE_CONFIGS["${module}_bare_metal"]="false"
+            log_info "$module running in Docker"
         fi
     fi
     
@@ -821,44 +807,28 @@ main() {
     
     # Check dependencies first
     check_dependencies
-    echo "[DEBUG] check_dependencies completed" >&2
-    log_info "Dependencies checked"
     
     # Screen 1: Welcome
     show_welcome
-    echo "[DEBUG] show_welcome completed" >&2
-    log_info "Welcome screen completed"
     
-    # Screen 2: Service Detection
+    # Screen 2: Service Detection (runs silently, then shows results)
     detect_all_services
-    echo "[DEBUG] detect_all_services completed" >&2
     show_detection_results
-    echo "[DEBUG] show_detection_results completed" >&2
-    log_info "Detection screen completed"
     
     # Screen 3: Module Selection
-    log_info "Starting module selection..."
-    echo "[DEBUG] About to call show_module_selection" >&2
     show_module_selection
-    echo "[DEBUG] show_module_selection completed" >&2
-    log_info "Module selection completed. Selected modules: ${!SELECTED_MODULES[@]}"
     
     # Screen 4: Core Configuration
-    log_info "Starting core configuration..."
     show_core_config
-    log_info "Core configuration completed"
     
     # Screen 5: Module Configuration (one screen per selected module)
     for module in homeassistant qbittorrent pihole plex jellyfin; do
         if [ "${SELECTED_MODULES[$module]:-0}" = "1" ]; then
-            log_info "Configuring module: $module"
             show_module_config "$module"
         fi
     done
-    log_info "Module configuration completed"
     
     # Screen 6: Review & Write
-    log_info "Starting review & write..."
     write_env_file
     
     log_info "Setup complete!"
