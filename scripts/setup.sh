@@ -6,6 +6,9 @@
 
 set -u  # Exit on undefined variable
 
+# Debug trap to catch errors
+trap 'echo "ERROR at line $LINENO: Command failed with exit code $?" >&2' ERR
+
 # ============================================================================
 # Global Variables
 # ============================================================================
@@ -227,7 +230,7 @@ The entire process takes 5-10 minutes."
     
     # Check if .env already exists
     if [ -f "$ENV_FILE" ]; then
-        message="$message
+        local warning="
 
 ⚠️  WARNING: $ENV_FILE already exists!
 
@@ -235,11 +238,16 @@ Running this installer will OVERWRITE your existing configuration.
 All current settings will be lost.
 
 Do you want to continue?"
+        message="${message}${warning}"
     fi
     
+    echo "[DEBUG] About to show welcome dialog" >&2
+    
     if $DIALOG_CMD --title "HomeSentry Setup" --yesno "$message" $DIALOG_HEIGHT $DIALOG_WIDTH; then
+        echo "[DEBUG] User clicked Yes" >&2
         return 0
     else
+        echo "[DEBUG] User clicked No or Cancel" >&2
         log_info "Setup cancelled by user"
         exit 0
     fi
@@ -813,20 +821,26 @@ main() {
     
     # Check dependencies first
     check_dependencies
+    echo "[DEBUG] check_dependencies completed" >&2
     log_info "Dependencies checked"
     
     # Screen 1: Welcome
     show_welcome
+    echo "[DEBUG] show_welcome completed" >&2
     log_info "Welcome screen completed"
     
     # Screen 2: Service Detection
     detect_all_services
+    echo "[DEBUG] detect_all_services completed" >&2
     show_detection_results
+    echo "[DEBUG] show_detection_results completed" >&2
     log_info "Detection screen completed"
     
     # Screen 3: Module Selection
     log_info "Starting module selection..."
+    echo "[DEBUG] About to call show_module_selection" >&2
     show_module_selection
+    echo "[DEBUG] show_module_selection completed" >&2
     log_info "Module selection completed. Selected modules: ${!SELECTED_MODULES[@]}"
     
     # Screen 4: Core Configuration
