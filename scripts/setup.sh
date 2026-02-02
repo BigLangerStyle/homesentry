@@ -723,7 +723,7 @@ generate_env_content() {
             fi
             
             # Add all configured fields
-            get_module_fields "$module" | while IFS='|' read -r suffix label field_type requirement default_value; do
+            while IFS='|' read -r suffix label field_type requirement default_value; do
                 local env_key="${module}_${suffix}"
                 local value="${MODULE_CONFIGS[$env_key]:-}"
                 
@@ -732,10 +732,15 @@ generate_env_content() {
                     continue
                 fi
                 
+                # Skip empty required fields (shouldn't happen due to validation, but just in case)
+                if [ "$requirement" = "required" ] && [ -z "$value" ]; then
+                    continue
+                fi
+                
                 # Build full env var name
                 local suffix_upper=$(echo "$suffix" | tr '[:lower:]' '[:upper:]')
                 content+="${module_upper}_${suffix_upper}=$value\n"
-            done
+            done < <(get_module_fields "$module")
             
             content+="\n"
         fi
@@ -754,15 +759,46 @@ write_env_file() {
     # Write to temporary preview file
     echo -e "$content" > "$preview_file"
     
-    # Show preview
-    $DIALOG_CMD --title "Review Configuration" \
+    # Create a summary for the user
+    local summary="Configuration Summary:\n\n"
+    summary+="📡 Discord webhook: configured\n"
+    summary+="⏱️  Poll interval: ${POLL_INTERVAL}s\n"
+    summary+="\n"
+    summary+="📦 Modules to monitor:\n"
+    
+    for module in homeassistant qbittorrent pihole plex jellyfin; do
+        if [ "${SELECTED_MODULES[$module]:-0}" = "1" ]; then
+            local display_name="${MODULE_DISPLAY_NAMES[$module]}"
+            local bare_metal="${MODULE_CONFIGS[${module}_bare_metal]:-false}"
+            if [ "$bare_metal" = "true" ]; then
+                summary+="  • $display_name (bare-metal)\n"
+            else
+                summary+="  • $display_name (Docker)\n"
+            fi
+        fi
+    done
+    
+    summary+="\n"
+    summary+="Press OK to review the full .env file contents."
+    
+    # Show summary first
+    $DIALOG_CMD --title "Configuration Summary" \
+        --msgbox "$summary" \
+        18 $DIALOG_WIDTH
+    
+    # Then show full preview
+    $DIALOG_CMD --title "Review Full Configuration" \
+        --msgbox "The next screen shows the complete .env file that will be created.\n\nUse arrow keys to scroll through it.\n\nPress OK when ready to continue." \
+        12 $DIALOG_WIDTH
+    
+    $DIALOG_CMD --title "Configuration File Preview" \
         --textbox "$preview_file" \
         $DIALOG_HEIGHT $DIALOG_WIDTH
     
     # Confirm write
     if $DIALOG_CMD --title "Write Configuration" \
-        --yesno "Write this configuration to .env file?\n\nLocation: $ENV_FILE" \
-        10 $DIALOG_WIDTH; then
+        --yesno "Write this configuration to .env file?\n\nLocation: $ENV_FILE\n\nThis will start monitoring immediately when you run docker compose up." \
+        12 $DIALOG_WIDTH; then
         
         # Write to .env
         echo -e "$content" > "$ENV_FILE"
