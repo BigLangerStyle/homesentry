@@ -594,8 +594,36 @@
             }
         });
 
+        // ---- Prevent non-numeric input in number fields ----
+        function setupNumberFieldValidation() {
+            var numberInputs = document.querySelectorAll('input[type="number"]');
+            numberInputs.forEach(function(input) {
+                input.addEventListener('keypress', function(e) {
+                    // Allow: backspace, delete, tab, escape, enter
+                    if ([8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+                        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                        (e.keyCode === 65 && e.ctrlKey === true) ||
+                        (e.keyCode === 67 && e.ctrlKey === true) ||
+                        (e.keyCode === 86 && e.ctrlKey === true) ||
+                        (e.keyCode === 88 && e.ctrlKey === true)) {
+                        return;
+                    }
+                    // Ensure it's a number
+                    if ((e.which < 48 || e.which > 57)) {
+                        e.preventDefault();
+                    }
+                });
+
+                // Also validate on input (for paste events)
+                input.addEventListener('input', function(e) {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+            });
+        }
+
         // ---- Initialize ----
         setupModuleToggles();
+        setupNumberFieldValidation();
         loadConfig();
     })();
     </script>
@@ -638,15 +666,19 @@
         text-decoration: none;
         border-radius: 4px;
         transition: background-color 0.2s;
+        border: 1px solid transparent;
     }
 
     .nav-link:hover {
         background: var(--hover-bg);
+        border-color: var(--card-border);
     }
 
     .nav-link.active {
         background: var(--primary-color);
         color: white;
+        border-color: var(--primary-color);
+        font-weight: 500;
     }
 
     .config-content {
@@ -684,16 +716,36 @@
     .form-group select {
         width: 100%;
         padding: 0.75rem;
-        border: 1px solid var(--card-border);
+        border: 2px solid var(--card-border);
         border-radius: 4px;
-        background: var(--card-bg);
+        background: rgba(255, 255, 255, 0.05);
         color: var(--text-primary);
         font-size: 1rem;
+        transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        background: rgba(255, 255, 255, 0.08);
     }
 
     .form-group input:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    /* Larger number input controls */
+    .form-group input[type="number"] {
+        -moz-appearance: textfield;
+    }
+
+    .form-group input[type="number"]::-webkit-inner-spin-button,
+    .form-group input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
 
     .help-text {
@@ -748,27 +800,39 @@
         border: none;
         border-radius: 4px;
         font-size: 1rem;
+        font-weight: 500;
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn:active {
+        transform: translateY(0);
     }
 
     .btn-primary {
         background: var(--primary-color);
         color: white;
+        border: 2px solid var(--primary-color);
     }
 
     .btn-primary:hover {
         background: var(--primary-hover);
+        border-color: var(--primary-hover);
     }
 
     .btn-secondary {
         background: var(--card-bg);
         color: var(--text-primary);
-        border: 1px solid var(--card-border);
+        border: 2px solid var(--card-border);
     }
 
     .btn-secondary:hover {
         background: var(--hover-bg);
+        border-color: var(--text-primary);
     }
 
     .status-message {
