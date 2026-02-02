@@ -301,14 +301,16 @@ show_module_selection() {
     
     # Show checklist
     local selected
+    local exit_code
     selected=$($DIALOG_CMD --title "Select Services to Monitor" \
         --checklist "Use SPACE to select/deselect, ENTER to confirm:" \
         $DIALOG_HEIGHT $DIALOG_WIDTH $DIALOG_LIST_HEIGHT \
         "${options[@]}" \
         3>&1 1>&2 2>&3)
+    exit_code=$?
     
     # Check if user cancelled
-    if [ $? -ne 0 ]; then
+    if [ $exit_code -ne 0 ]; then
         log_info "Setup cancelled by user"
         exit 0
     fi
@@ -316,18 +318,27 @@ show_module_selection() {
     # Parse selected modules (removes quotes)
     selected=$(echo "$selected" | tr -d '"')
     
+    log_info "Raw selected modules: $selected"
+    
+    # Clear previous selections (don't reinitialize as array, already associative)
+    for module in homeassistant qbittorrent pihole plex jellyfin; do
+        unset SELECTED_MODULES["$module"]
+    done
+    
     # Store selected modules
-    SELECTED_MODULES=()
+    local selected_count=0
     for module in $selected; do
         SELECTED_MODULES["$module"]=1
         log_info "Selected module: $module"
+        ((selected_count++))
     done
     
-    if [ ${#SELECTED_MODULES[@]} -eq 0 ]; then
+    if [ $selected_count -eq 0 ]; then
         $DIALOG_CMD --title "No Services Selected" \
             --msgbox "You must select at least one service to monitor.\n\nReturning to service selection..." \
             10 60
         show_module_selection
+        return
     fi
 }
 
@@ -371,13 +382,15 @@ test_discord_webhook() {
 show_core_config() {
     # Get Discord webhook URL
     local webhook_default="https://discord.com/api/webhooks/YOUR_WEBHOOK_HERE"
+    local exit_code
     
     DISCORD_WEBHOOK=$($DIALOG_CMD --title "Discord Webhook URL" \
         --inputbox "Enter your Discord webhook URL:\n\n(Create in Discord: Server Settings > Integrations > Webhooks)" \
         12 $DIALOG_WIDTH "$webhook_default" \
         3>&1 1>&2 2>&3)
+    exit_code=$?
     
-    if [ $? -ne 0 ]; then
+    if [ $exit_code -ne 0 ]; then
         log_info "Setup cancelled by user"
         exit 0
     fi
@@ -403,8 +416,9 @@ show_core_config() {
         --inputbox "How often should HomeSentry check services?\n\n(Enter interval in seconds, default: 60)" \
         12 $DIALOG_WIDTH "60" \
         3>&1 1>&2 2>&3)
+    exit_code=$?
     
-    if [ $? -ne 0 ]; then
+    if [ $exit_code -ne 0 ]; then
         log_info "Setup cancelled by user"
         exit 0
     fi
@@ -529,12 +543,14 @@ show_module_config() {
         
         # Prompt for value
         local value
+        local exit_code
         value=$($DIALOG_CMD --title "$display_name Configuration" \
             $input_type "$full_label:" \
             10 $DIALOG_WIDTH "$default_value" \
             3>&1 1>&2 2>&3)
+        exit_code=$?
         
-        if [ $? -ne 0 ]; then
+        if [ $exit_code -ne 0 ]; then
             log_info "Setup cancelled by user"
             exit 0
         fi
