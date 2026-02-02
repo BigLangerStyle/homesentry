@@ -19,6 +19,7 @@ Example Module Template:
         APP_NAME = "exampleapp"
         APP_DISPLAY_NAME = "Example App"
         CONTAINER_NAMES = ["exampleapp", "example-app"]
+        CARD_METRICS = ["total_items", "active_users", "queue_size"]
         
         async def collect(self, container, config: dict) -> dict:
             '''
@@ -100,6 +101,7 @@ class AppModule(ABC):
     APP_NAME: str = ""              # Used for config keys (lowercase)
     APP_DISPLAY_NAME: str = ""      # Used in UI (friendly name)
     CONTAINER_NAMES: List[str] = [] # Container names this module handles
+    CARD_METRICS: List[str] = []    # Metric names to show on dashboard card (priority order)
     
     # Hard limits (enforced by framework)
     MAX_METRICS = 10
