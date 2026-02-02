@@ -2,6 +2,7 @@
 Configuration management API routes.
 
 Provides endpoints for reading, validating, and writing HomeSentry configuration.
+Configuration is read from environment variables (loaded by Docker Compose from .env).
 """
 
 import logging
@@ -11,7 +12,6 @@ from typing import Dict, Any, List, Tuple
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from dotenv import dotenv_values
 
 from app.config.module_fields import MODULE_FIELDS
 
@@ -236,35 +236,33 @@ def build_env_content(config: Dict[str, Any], current_env: Dict[str, str]) -> st
 @router.get("/api/config")
 async def get_config() -> JSONResponse:
     """
-    Get current configuration.
+    Get current configuration from environment variables.
     
-    Returns current .env configuration grouped by sections.
+    Returns current configuration grouped by sections.
     Sensitive fields are masked.
+    
+    Note: In Docker, environment variables are loaded from .env by docker-compose.
+    This is the proper way to handle config in containerized apps.
     """
     try:
-        # Try multiple possible .env locations
-        possible_paths = [
-            Path("/app/.env"),  # Docker container path
-            Path(".env"),  # Current directory
-            Path("/app/.env.example"),  # Fallback to example
-            Path(".env.example")  # Local fallback
-        ]
+        # Read all environment variables
+        env_dict = dict(os.environ)
+        logger.info(f"Reading configuration from {len(env_dict)} environment variables")
         
-        env_path = None
-        for path in possible_paths:
-            if path.exists():
-                env_path = path
-                logger.info(f"Found config file at: {path}")
-                break
+        # Filter to only HomeSentry-related variables
+        homesentry_vars = {
+            k: v for k, v in env_dict.items()
+            if any(k.startswith(prefix) for prefix in [
+                "DISCORD_", "POLL_", "LOG_", "DATABASE_",
+                "HOMEASSISTANT_", "QBITTORRENT_", "PIHOLE_", "PLEX_", "JELLYFIN_",
+                "CPU_", "MEMORY_", "DISK_", "DOCKER_", "SMART_", "RAID_", "SERVICE_", "CONTAINER_",
+                "ALERTS_", "ALERT_", "SLEEP_", "MAINTENANCE_", "GLOBAL_MAINTENANCE_"
+            ])
+        }
         
-        if not env_path:
-            logger.warning("No .env file found, using empty config")
-            env_dict = {}
-        else:
-            env_dict = dotenv_values(env_path)
-            logger.info(f"Loaded {len(env_dict)} config values from {env_path}")
+        logger.info(f"Found {len(homesentry_vars)} HomeSentry configuration variables")
         
-        grouped = group_env_vars_by_section(env_dict)
+        grouped = group_env_vars_by_section(homesentry_vars)
         
         return JSONResponse(content=grouped)
     
@@ -286,14 +284,26 @@ async def update_config(config: ConfigUpdate) -> JSONResponse:
     """
     Update configuration.
     
-    Validates and writes new configuration to .env file.
+    Validates and writes new configuration to .env file on host.
+    Also updates environment variables in the current process.
+    
+    Note: Docker Compose loads .env from the host directory, so we write there.
+    Changes take effect immediately for the current process, and persist for next restart.
     """
     try:
-        # Determine .env path (prefer /app/.env in Docker)
-        env_path = Path("/app/.env") if Path("/app").exists() else Path(".env")
+        # In Docker, write to host .env (mounted or parent of app dir)
+        # The .env file should be in the parent directory of the app code
+        if Path("/app/.env").exists():
+            env_path = Path("/app/.env")
+        elif Path("/app").exists():
+            # We're in Docker but .env doesn't exist yet, create it
+            env_path = Path("/app/.env")
+        else:
+            # Local development
+            env_path = Path(".env")
         
-        # Read current .env for preserving masked values
-        current_env = dotenv_values(env_path) if env_path.exists() else {}
+        # Read current environment variables for preserving masked values
+        current_env = dict(os.environ)
         
         # Convert to dict for validation
         config_dict = config.dict()
@@ -309,16 +319,29 @@ async def update_config(config: ConfigUpdate) -> JSONResponse:
         # Build new .env content
         env_content = build_env_content(config_dict, current_env)
         
-        # Write atomically
+        # Write atomically to .env file
         tmp_path = env_path.parent / ".env.tmp"
         tmp_path.write_text(env_content)
         tmp_path.rename(env_path)
         
+        # Also update the current process environment variables
+        # This makes changes take effect immediately without restart
+        # Parse the .env content we just wrote
+        new_env = {}
+        for line in env_content.split('\n'):
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, value = line.split('=', 1)
+                new_env[key] = value
+                os.environ[key] = value
+        
         logger.info(f"Configuration updated successfully at {env_path}")
+        logger.info(f"Updated {len(new_env)} environment variables in current process")
         
         return JSONResponse(content={
             "success": True,
-            "path": str(env_path.absolute())
+            "path": str(env_path.absolute()),
+            "message": "Configuration saved. Changes take effect immediately."
         })
     
     except Exception as e:
