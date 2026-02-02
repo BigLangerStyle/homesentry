@@ -412,27 +412,38 @@
         // ---- Load Configuration ----
         async function loadConfig() {
             try {
+                console.log("Loading configuration from /api/config...");
                 var response = await fetch("/api/config");
+                
+                if (!response.ok) {
+                    throw new Error("HTTP " + response.status + ": " + response.statusText);
+                }
+                
                 var config = await response.json();
+                console.log("Configuration loaded:", config);
 
                 // Populate core settings
                 if (config.core) {
+                    console.log("Populating core settings:", config.core);
                     for (var key in config.core) {
                         var input = document.querySelector('[name="core.' + key + '"]');
                         if (input) {
                             input.value = config.core[key];
+                            console.log("Set core." + key + " = " + config.core[key]);
                         }
                     }
                 }
 
                 // Populate modules
                 if (config.modules) {
+                    console.log("Populating module settings:", config.modules);
                     for (var moduleName in config.modules) {
                         var moduleConfig = config.modules[moduleName];
                         var enabledCheckbox = document.getElementById(moduleName + "_enabled");
 
                         if (enabledCheckbox) {
                             enabledCheckbox.checked = moduleConfig.enabled || false;
+                            console.log("Module " + moduleName + " enabled: " + enabledCheckbox.checked);
                             enabledCheckbox.dispatchEvent(new Event("change"));
 
                             for (var fieldKey in moduleConfig) {
@@ -452,6 +463,7 @@
 
                 // Populate infrastructure
                 if (config.infrastructure) {
+                    console.log("Populating infrastructure settings:", config.infrastructure);
                     for (var key in config.infrastructure) {
                         var input = document.querySelector('[name="infrastructure.' + key + '"]');
                         if (input) {
@@ -462,6 +474,7 @@
 
                 // Populate advanced
                 if (config.advanced) {
+                    console.log("Populating advanced settings:", config.advanced);
                     for (var key in config.advanced) {
                         var input = document.querySelector('[name="advanced.' + key + '"]');
                         if (input) {
@@ -474,6 +487,7 @@
                     }
                 }
             } catch (error) {
+                console.error("Failed to load configuration:", error);
                 showMessage("error", "Failed to load configuration: " + error.message);
             }
         }
