@@ -4,7 +4,6 @@
 # This script walks you through configuring HomeSentry for the first time.
 # It detects running services, guides you through configuration, and generates .env file.
 
-set -e  # Exit on error
 set -u  # Exit on undefined variable
 
 # ============================================================================
@@ -267,7 +266,10 @@ show_detection_results() {
         detected_list="Found $count service(s):$detected_list"
     fi
     
-    $DIALOG_CMD --title "Service Detection" --msgbox "$detected_list\n\nPress OK to continue to service selection." $DIALOG_HEIGHT $DIALOG_WIDTH
+    if ! $DIALOG_CMD --title "Service Detection" --msgbox "$detected_list\n\nPress OK to continue to service selection." $DIALOG_HEIGHT $DIALOG_WIDTH; then
+        log_info "Setup cancelled by user"
+        exit 0
+    fi
 }
 
 # ============================================================================
@@ -811,28 +813,38 @@ main() {
     
     # Check dependencies first
     check_dependencies
+    log_info "Dependencies checked"
     
     # Screen 1: Welcome
     show_welcome
+    log_info "Welcome screen completed"
     
     # Screen 2: Service Detection
     detect_all_services
     show_detection_results
+    log_info "Detection screen completed"
     
     # Screen 3: Module Selection
+    log_info "Starting module selection..."
     show_module_selection
+    log_info "Module selection completed. Selected modules: ${!SELECTED_MODULES[@]}"
     
     # Screen 4: Core Configuration
+    log_info "Starting core configuration..."
     show_core_config
+    log_info "Core configuration completed"
     
     # Screen 5: Module Configuration (one screen per selected module)
     for module in homeassistant qbittorrent pihole plex jellyfin; do
         if [ "${SELECTED_MODULES[$module]:-0}" = "1" ]; then
+            log_info "Configuring module: $module"
             show_module_config "$module"
         fi
     done
+    log_info "Module configuration completed"
     
     # Screen 6: Review & Write
+    log_info "Starting review & write..."
     write_env_file
     
     log_info "Setup complete!"
