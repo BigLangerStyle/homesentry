@@ -78,6 +78,7 @@
                     
                     <!-- Home Assistant Module -->
                     <div class="module-subsection">
+                        <span class="module-status-badge" id="homeassistant_status">Disabled</span>
                         <h3>
                             <label class="module-toggle">
                                 <input type="checkbox" name="modules.homeassistant.enabled" id="homeassistant_enabled">
@@ -109,6 +110,7 @@
 
                     <!-- qBittorrent Module -->
                     <div class="module-subsection">
+                        <span class="module-status-badge" id="qbittorrent_status">Disabled</span>
                         <h3>
                             <label class="module-toggle">
                                 <input type="checkbox" name="modules.qbittorrent.enabled" id="qbittorrent_enabled">
@@ -138,6 +140,7 @@
 
                     <!-- Pi-hole Module -->
                     <div class="module-subsection">
+                        <span class="module-status-badge" id="pihole_status">Disabled</span>
                         <h3>
                             <label class="module-toggle">
                                 <input type="checkbox" name="modules.pihole.enabled" id="pihole_enabled">
@@ -166,6 +169,7 @@
 
                     <!-- Plex Module -->
                     <div class="module-subsection">
+                        <span class="module-status-badge" id="plex_status">Disabled</span>
                         <h3>
                             <label class="module-toggle">
                                 <input type="checkbox" name="modules.plex.enabled" id="plex_enabled">
@@ -194,6 +198,7 @@
 
                     <!-- Jellyfin Module -->
                     <div class="module-subsection">
+                        <span class="module-status-badge" id="jellyfin_status">Disabled</span>
                         <h3>
                             <label class="module-toggle">
                                 <input type="checkbox" name="modules.jellyfin.enabled" id="jellyfin_enabled">
@@ -380,13 +385,22 @@
                     var moduleName = this.id.replace("_enabled", "");
                     var fieldsDiv = document.getElementById(moduleName + "_fields");
                     var inputs = fieldsDiv.querySelectorAll("input, select");
+                    var statusBadge = document.getElementById(moduleName + "_status");
 
                     if (this.checked) {
                         fieldsDiv.style.opacity = "1";
                         inputs.forEach(function(input) { input.disabled = false; });
+                        if (statusBadge) {
+                            statusBadge.textContent = "Enabled";
+                            statusBadge.classList.add("enabled");
+                        }
                     } else {
                         fieldsDiv.style.opacity = "0.5";
                         inputs.forEach(function(input) { input.disabled = true; });
+                        if (statusBadge) {
+                            statusBadge.textContent = "Disabled";
+                            statusBadge.classList.remove("enabled");
+                        }
                     }
                 });
 
@@ -867,6 +881,157 @@
 
     .back-link:hover {
         text-decoration: underline;
+    }
+
+    /* ============================================================
+       LIGHT MODE OVERRIDES
+       Fix visibility issues when not in dark mode
+       ============================================================ */
+    body:not(.dark-mode) .config-sidebar {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    body:not(.dark-mode) .nav-link {
+        color: #333;
+    }
+
+    body:not(.dark-mode) .nav-link:hover {
+        background: #e8e8e8;
+        border-color: #ccc;
+    }
+
+    body:not(.dark-mode) .nav-link.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    body:not(.dark-mode) .section-description {
+        color: #666;
+    }
+
+    body:not(.dark-mode) .form-group input[type="text"],
+    body:not(.dark-mode) .form-group input[type="password"],
+    body:not(.dark-mode) .form-group input[type="number"],
+    body:not(.dark-mode) .form-group input[type="time"],
+    body:not(.dark-mode) .form-group select {
+        background: white;
+        border-color: #ccc;
+        color: #333;
+    }
+
+    body:not(.dark-mode) .form-group input:focus,
+    body:not(.dark-mode) .form-group select:focus {
+        border-color: #007bff;
+        background: #f9f9f9;
+    }
+
+    body:not(.dark-mode) .form-group input:disabled {
+        background: #e9ecef;
+        color: #6c757d;
+    }
+
+    body:not(.dark-mode) .help-text {
+        color: #666;
+    }
+
+    body:not(.dark-mode) .module-subsection {
+        background: #f9f9f9;
+        border-color: #ddd;
+    }
+
+    body:not(.dark-mode) .btn-primary {
+        background: #007bff;
+        border-color: #007bff;
+    }
+
+    body:not(.dark-mode) .btn-primary:hover {
+        background: #0056b3;
+        border-color: #0056b3;
+    }
+
+    body:not(.dark-mode) .btn-secondary {
+        background: white;
+        color: #333;
+        border-color: #ccc;
+    }
+
+    body:not(.dark-mode) .btn-secondary:hover {
+        background: #f8f9fa;
+        border-color: #333;
+    }
+
+    /* ============================================================
+       MODULE TOGGLE IMPROVEMENTS
+       Make it clearer that checkbox enables/disables the module
+       ============================================================ */
+    .module-toggle {
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        margin: -0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .module-toggle:hover {
+        background: rgba(0, 123, 255, 0.1);
+    }
+
+    .module-toggle input[type="checkbox"] {
+        margin-right: 0.75rem;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .module-subsection h3 {
+        margin: 0 0 1rem 0;
+    }
+
+    /* Add "Enabled" badge next to module name */
+    .module-toggle::after {
+        content: "disabled";
+        margin-left: auto;
+        padding: 0.25rem 0.75rem;
+        background: #6c757d;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 12px;
+        text-transform: uppercase;
+    }
+
+    .module-toggle input[type="checkbox"]:checked + .module-toggle::after,
+    .module-toggle input[type="checkbox"]:checked ~ .module-toggle::after {
+        content: "enabled";
+        background: #28a745;
+    }
+
+    /* Better approach: style the label text based on checkbox state */
+    .module-subsection {
+        position: relative;
+    }
+
+    .module-status-badge {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        padding: 0.25rem 0.75rem;
+        background: #6c757d;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 12px;
+        text-transform: uppercase;
+        transition: background-color 0.3s;
+    }
+
+    .module-status-badge.enabled {
+        background: #28a745;
     }
     </style>
 </body>
