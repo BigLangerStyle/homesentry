@@ -41,7 +41,6 @@ class QBittorrentModule(AppModule):
     APP_NAME = "qbittorrent"
     APP_DISPLAY_NAME = "qBittorrent"
     CONTAINER_NAMES = ["qbittorrent", "qbittorrent-vpn", "qbittorrentvpn"]
-    CARD_METRICS = ["download_speed_mbps", "upload_speed_mbps", "active_torrents", "disk_free_gb"]
     
     def __init__(self):
         """Initialize module with session cookie storage."""
