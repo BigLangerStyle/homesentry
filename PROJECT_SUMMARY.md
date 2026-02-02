@@ -1,6 +1,6 @@
 # HomeSentry - Project Summary
 
-**Version:** 0.4.0  
+**Version:** 0.5.0  
 **Status:** Production Ready  
 **Last Updated:** February 1, 2026  
 **Target Platform:** Linux (Ubuntu/Debian) + Docker  
@@ -175,7 +175,18 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Updated README roadmap to reflect all shipped versions
 - [x] Updated CHANGELOG with complete v0.4.0 section
 
-### In Progress (post-v0.4.0)
+### Completed (v0.5.0) - Installation & Configuration
+
+- [x] Interactive TUI setup installer (scripts/setup.sh)
+- [x] Automatic service detection (Docker, systemd, HTTP)
+- [x] Menu-driven module selection with pre-checked detected services
+- [x] Guided configuration screens for each module
+- [x] Discord webhook validation with test message
+- [x] Bare-metal service support (Plex, Pi-hole)
+- [x] Configuration preview and .env generation
+- [x] Eliminates manual .env editing for first-time setup
+
+### In Progress (post-v0.5.0)
 
 - [x] Replaced hardcoded app card registration in `main.py` with dynamic registration from discovered modules
   - Added `CARD_METRICS` class attribute to `AppModule` base class
@@ -185,18 +196,21 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 
 ### Future Enhancements
 
-**v0.5.0 - Installation & Configuration**
+**v0.6.0 - Advanced Configuration**
 
-- [ ] Interactive setup wizard (like Pi-hole)
-- [ ] Auto-detection of installed services
-- [ ] Dynamic collector registration
 - [ ] Web-based configuration UI
+- [ ] Module enable/disable toggle in UI
+- [ ] Threshold editing in browser
+- [ ] Alert rule customization
 
 **v1.0.0 - Production Ready**
 
 - [ ] Historical data visualization (charts)
 - [ ] Authentication/authorization
 - [ ] Mobile-responsive UI
+- [ ] Multi-server support
+- [ ] API rate limiting
+- [ ] Unit test coverage > 80%
 - [ ] Multi-server support
 - [ ] API rate limiting
 - [ ] Unit test coverage > 80%

@@ -16,6 +16,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `CARD_METRICS` declaration to `HomeAssistantModule`
 - Updated example module template in `base.py` docstring to include `CARD_METRICS`
 
+## [0.5.0] - 2026-02-01
+
+### Added
+- **Interactive TUI setup installer** (`scripts/setup.sh`)
+  - Terminal-based configuration wizard using whiptail/dialog
+  - Automatic service detection via three methods: Docker containers, systemd services, HTTP checks
+  - Menu-driven module selection with pre-checked detected services
+  - Guided configuration screens for each enabled module
+  - Discord webhook validation with live test message
+  - Support for bare-metal service configuration (Plex, Pi-hole)
+  - Required field validation and optional field defaults
+  - Configuration preview before writing .env file
+  - Generates complete .env file with infrastructure defaults from .env.example
+  - Overwrites existing .env with confirmation prompt
+  - Provides next steps after completion (docker compose commands, dashboard URL)
+  - Eliminates manual .env editing for first-time setup
+  - Detects: Home Assistant, qBittorrent, Pi-hole, Plex, Jellyfin
+  - Follows raspi-config UI pattern (arrow keys, space to select, tab for buttons)
+  - Works over SSH without browser requirement
+  - Runs before first `docker compose up` for seamless deployment
+
 ## [0.4.0] - 2026-02-01
 
 ### Fixed
