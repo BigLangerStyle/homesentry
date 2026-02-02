@@ -242,11 +242,28 @@ async def get_config() -> JSONResponse:
     Sensitive fields are masked.
     """
     try:
-        env_path = Path(".env")
-        if not env_path.exists():
-            env_path = Path(".env.example")
+        # Try multiple possible .env locations
+        possible_paths = [
+            Path("/app/.env"),  # Docker container path
+            Path(".env"),  # Current directory
+            Path("/app/.env.example"),  # Fallback to example
+            Path(".env.example")  # Local fallback
+        ]
         
-        env_dict = dotenv_values(env_path)
+        env_path = None
+        for path in possible_paths:
+            if path.exists():
+                env_path = path
+                logger.info(f"Found config file at: {path}")
+                break
+        
+        if not env_path:
+            logger.warning("No .env file found, using empty config")
+            env_dict = {}
+        else:
+            env_dict = dotenv_values(env_path)
+            logger.info(f"Loaded {len(env_dict)} config values from {env_path}")
+        
         grouped = group_env_vars_by_section(env_dict)
         
         return JSONResponse(content=grouped)
@@ -272,8 +289,10 @@ async def update_config(config: ConfigUpdate) -> JSONResponse:
     Validates and writes new configuration to .env file.
     """
     try:
+        # Determine .env path (prefer /app/.env in Docker)
+        env_path = Path("/app/.env") if Path("/app").exists() else Path(".env")
+        
         # Read current .env for preserving masked values
-        env_path = Path(".env")
         current_env = dotenv_values(env_path) if env_path.exists() else {}
         
         # Convert to dict for validation
@@ -291,11 +310,11 @@ async def update_config(config: ConfigUpdate) -> JSONResponse:
         env_content = build_env_content(config_dict, current_env)
         
         # Write atomically
-        tmp_path = Path(".env.tmp")
+        tmp_path = env_path.parent / ".env.tmp"
         tmp_path.write_text(env_content)
         tmp_path.rename(env_path)
         
-        logger.info("Configuration updated successfully")
+        logger.info(f"Configuration updated successfully at {env_path}")
         
         return JSONResponse(content={
             "success": True,
