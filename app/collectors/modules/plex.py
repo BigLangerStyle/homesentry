@@ -41,7 +41,6 @@ class PlexModule(AppModule):
     APP_NAME = "plex"
     APP_DISPLAY_NAME = "Plex Media Server"
     CONTAINER_NAMES = ["plex", "plexmediaserver"]
-    CARD_METRICS = ["active_streams", "transcode_count", "movie_count", "tv_show_count"]
     
     async def collect(self, container, config: dict) -> Dict[str, Any]:
         """

@@ -7,67 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- Replaced hardcoded `APP_PREFIXES`, `APP_DISPLAY_NAMES`, and `APP_CARD_METRICS` lookup tables in `main.py` `get_latest_dashboard_metrics()` with dynamic registration from discovered modules
-  - Each module now declares `CARD_METRICS` on its class (alongside the existing `APP_NAME` and `APP_DISPLAY_NAME`)
-  - Dashboard card data is built at query time by iterating `get_discovered_modules()`
-  - Adding or modifying a module's dashboard card no longer requires editing `main.py`
-- Added `CARD_METRICS: List[str] = []` class attribute to `AppModule` base class
-- Added `CARD_METRICS` declaration to `HomeAssistantModule`
-- Updated example module template in `base.py` docstring to include `CARD_METRICS`
-
-## [0.5.0] - 2026-02-01
-
-### Added
-- **Interactive TUI setup installer** (`scripts/setup.sh`)
-  - Terminal-based configuration wizard using whiptail/dialog
-  - Automatic service detection via three methods: Docker containers, systemd services, HTTP checks
-  - Menu-driven module selection with pre-checked detected services
-  - Guided configuration screens for each enabled module
-  - Discord webhook validation with live test message
-  - Support for bare-metal service configuration (Plex, Pi-hole)
-  - Required field validation and optional field defaults
-  - Configuration preview before writing .env file
-  - Generates complete .env file with infrastructure defaults from .env.example
-  - Overwrites existing .env with confirmation prompt
-  - Provides next steps after completion (docker compose commands, dashboard URL)
-  - Eliminates manual .env editing for first-time setup
-  - Detects: Home Assistant, qBittorrent, Pi-hole, Plex, Jellyfin
-  - Follows raspi-config UI pattern (arrow keys, space to select, tab for buttons)
-  - Works over SSH without browser requirement
-  - Runs before first `docker compose up` for seamless deployment
-
-- **Web-based configuration UI** (`/config`)
-  - Browser-based settings management at `/config` route
-  - Organized sections: Core, Modules, Infrastructure, Advanced
-  - Sidebar navigation for easy section switching
-  - Per-module enable/disable toggles with field auto-enable
-  - Sensitive field masking (API tokens, passwords, webhook URLs)
-  - Live validation without saving (Test Configuration button)
-  - Atomic .env file writes (temp file + rename for safety)
-  - Form pre-population from current .env values
-  - Module field definitions in `app/config/module_fields.py`
-  - API endpoints: `GET /api/config`, `POST /api/config`, `POST /api/config/validate`
-  - Configuration link added to dashboard footer
-  - Preserves masked sensitive values when unchanged
-  - Groups settings by section with comments in written .env
-  - Success message with next steps (restart instructions)
-  - Follows existing dashboard dark mode theme
-  - No manual SSH required for configuration updates
-
-### Fixed
-- **Config UI improvements**
-  - Added full light mode support (all form fields, buttons, dropdowns readable in light mode)
-  - Added status badges to modules (green "ENABLED" / gray "DISABLED" pills in top-right corner)
-  - Restored number input spinner controls (up/down arrows visible)
-  - Improved dropdown styling with custom arrow icon for both light and dark modes
-  - Sensitive field masking uses bullet characters (`••••••••••••••••`) instead of ugly `***sensitive***` text
-  - Config reads from environment variables (proper Docker pattern) instead of parsing .env file
-  - Config updates both .env file AND current process environment for immediate effect
-  - Added console logging for debugging config load issues
-  - Prominent configuration button added to dashboard header (⚙️ Configuration)
-  - Better form field contrast and focus states in both themes
-
 ## [0.4.0] - 2026-02-01
 
 ### Fixed

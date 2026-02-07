@@ -35,7 +35,6 @@ class HomeAssistantModule(AppModule):
     APP_NAME = "homeassistant"
     APP_DISPLAY_NAME = "Home Assistant"
     CONTAINER_NAMES = ["homeassistant", "hass"]
-    CARD_METRICS = ["entity_count", "automation_count", "response_time_ms"]
     
     async def collect(self, container, config: dict) -> Dict[str, Any]:
         """

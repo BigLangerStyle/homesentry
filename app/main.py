@@ -326,14 +326,26 @@ async def get_latest_dashboard_metrics():
     Returns:
         dict with keys: apps, system, docker, smart, raid, services, timestamp
     """
-    # Build app card registration dynamically from discovered modules.
-    # Each module declares APP_NAME, APP_DISPLAY_NAME, and CARD_METRICS on its class,
-    # so adding a new module is as simple as dropping a file in modules/ — no manual
-    # registration here required.
-    discovered_modules = get_discovered_modules()
-    APP_PREFIXES = [m.APP_NAME for m in discovered_modules]
-    APP_DISPLAY_NAMES = {m.APP_NAME: m.APP_DISPLAY_NAME for m in discovered_modules}
-    APP_CARD_METRICS = {m.APP_NAME: m.CARD_METRICS for m in discovered_modules}
+    # Known app module prefixes - used to group app metrics by module
+    APP_PREFIXES = ["plex", "jellyfin", "pihole", "homeassistant", "qbittorrent"]
+
+    # Human-friendly display names for each app module
+    APP_DISPLAY_NAMES = {
+        "plex": "Plex",
+        "jellyfin": "Jellyfin",
+        "pihole": "Pi-hole",
+        "homeassistant": "Home Assistant",
+        "qbittorrent": "qBittorrent",
+    }
+
+    # Which metrics to show on each app's dashboard card (priority order)
+    APP_CARD_METRICS = {
+        "plex": ["active_streams", "transcode_count", "movie_count", "tv_show_count"],
+        "jellyfin": ["active_streams", "transcode_count", "movie_count", "episode_count"],
+        "pihole": ["percent_blocked", "queries_blocked_today", "active_clients", "blocklist_size"],
+        "homeassistant": ["entity_count", "automation_count", "response_time_ms"],
+        "qbittorrent": ["download_speed_mbps", "upload_speed_mbps", "active_torrents", "disk_free_gb"],
+    }
 
     try:
         # --- Fetch app metrics (category='app') ---
