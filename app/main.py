@@ -32,6 +32,7 @@ from app.collectors import (
 )
 from app.collectors.modules import get_discovered_modules
 from app.scheduler import run_scheduler
+from app.config.routes import router as config_router
 
 # Load environment variables from .env file
 load_dotenv()
@@ -67,6 +68,9 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Setup Jinja2 templates
 templates = Jinja2Templates(directory="app/templates")
+
+# Mount config router
+app.include_router(config_router)
 
 # Global task reference for scheduler
 scheduler_task = None
@@ -280,6 +284,28 @@ async def dashboard(request: Request):
             "recent_events": recent_events,
             "poll_interval": poll_interval,
             "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+    )
+
+
+@app.get("/config", response_class=HTMLResponse)
+async def config_page(request: Request):
+    """
+    Render the configuration management page.
+    
+    This endpoint serves the web-based configuration UI where users can
+    modify HomeSentry settings without manually editing .env files.
+    
+    Args:
+        request: FastAPI request object (required for Jinja2 templating)
+        
+    Returns:
+        HTMLResponse: Rendered configuration page HTML
+    """
+    return templates.TemplateResponse(
+        "config.html",
+        {
+            "request": request
         }
     )
 

@@ -1,6 +1,6 @@
 # HomeSentry - Project Summary
 
-**Version:** 0.4.0  
+**Version:** 0.5.0  
 **Status:** Production Ready  
 **Last Updated:** February 1, 2026  
 **Target Platform:** Linux (Ubuntu/Debian) + Docker  
@@ -177,18 +177,21 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 
 ### Future Enhancements
 
-**v0.5.0 - Installation & Configuration**
+**v0.6.0 - Advanced Configuration**
 
-- [ ] Interactive setup wizard (like Pi-hole)
-- [ ] Auto-detection of installed services
-- [ ] Dynamic collector registration
 - [ ] Web-based configuration UI
+- [ ] Module enable/disable toggle in UI
+- [ ] Threshold editing in browser
+- [ ] Alert rule customization
 
 **v1.0.0 - Production Ready**
 
 - [ ] Historical data visualization (charts)
 - [ ] Authentication/authorization
 - [ ] Mobile-responsive UI
+- [ ] Multi-server support
+- [ ] API rate limiting
+- [ ] Unit test coverage > 80%
 - [ ] Multi-server support
 - [ ] API rate limiting
 - [ ] Unit test coverage > 80%
