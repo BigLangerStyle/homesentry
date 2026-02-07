@@ -6,12 +6,50 @@
     <title>HomeSentry Dashboard</title>
     <link rel="stylesheet" href="/static/styles.css">
     <!-- No meta refresh - JavaScript handles polling now -->
+    <style>
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .header-left {
+            flex: 1;
+        }
+        .header-right {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .config-link {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: background-color 0.2s, transform 0.1s;
+            border: 2px solid var(--primary-color);
+        }
+        .config-link:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+    </style>
 </head>
 <body>
     <header>
-        <h1>🐕‍🦺 HomeSentry</h1>
-        <p class="header-subtitle">Server Health Monitoring Dashboard</p>
-        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">☀️</button>
+        <div class="header-content">
+            <div class="header-left">
+                <h1>🐕‍🦺 HomeSentry</h1>
+                <p class="header-subtitle">Server Health Monitoring Dashboard</p>
+            </div>
+            <div class="header-right">
+                <a href="/config" class="config-link">⚙️ Configuration</a>
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">☀️</button>
+            </div>
+        </div>
         <p class="header-status" id="last-updated">Loading...</p>
     </header>
 
@@ -104,6 +142,7 @@
 
     <footer>
         <p>HomeSentry v0.4.0 | <span id="footer-timestamp">{{ last_updated }}</span> |
+        <a href="/config">Configuration</a> |
         <a href="/docs" target="_blank">API Docs</a> |
         <a href="/healthz" target="_blank">Health Check</a></p>
     </footer>
