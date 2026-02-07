@@ -188,9 +188,17 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Web-based configuration UI (/config)
 - [x] Browser-based settings management with organized sections
 - [x] Per-module enable/disable toggles
-- [x] Sensitive field masking and validation
+- [x] Sensitive field masking with bullet characters (••••••••••••••••)
 - [x] Atomic .env file writes
 - [x] Configuration API endpoints (GET/POST /api/config)
+- [x] Full light mode support for config UI
+- [x] Module status badges (green "ENABLED" / gray "DISABLED")
+- [x] Number input spinners visible
+- [x] Custom dropdown styling for both themes
+- [x] Config reads from environment variables (proper Docker pattern)
+- [x] Immediate effect (updates both .env and process environment)
+- [x] Prominent config button in dashboard header
+- [x] Console logging for debugging
 
 ### In Progress (post-v0.5.0)
 
