@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Sleep schedule configuration**: Sleep schedule was disabled in `.env` - changed `SLEEP_SCHEDULE_ENABLED=false` to `true` to activate the feature
+- **Sleep schedule boundary condition**: Fixed end time comparison to use exclusive boundary (`<` instead of `<=`), ensuring alerts resume exactly at configured wake time rather than one minute after
+  - Sleep period is now `[start_time, end_time)` (half-open interval) matching standard time range conventions
+  - Morning summaries now send on schedule instead of being suppressed at their configured time
+  - Alert resumption happens immediately at wake time (e.g., 6:00 AM) instead of being delayed to 6:01 AM
+- **Wake time adjusted**: Changed `SLEEP_SCHEDULE_END` from 07:30 to 06:00 in `.env` to match user's intended midnight-6AM sleep schedule
+
+### Documentation
+- Updated `.env.example` sleep schedule section to clarify that END time is exclusive (alerts resume AT this time, not after)
+- Changed default wake time examples from 07:30 to 06:00 for consistency with common sleep schedules
+- Added inline comment explaining START is inclusive, END is exclusive
+
 ## [0.4.0] - 2026-02-01
 
 ### Fixed

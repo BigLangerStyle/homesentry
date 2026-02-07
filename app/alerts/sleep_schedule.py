@@ -110,12 +110,16 @@ def is_in_sleep_hours(current_time: datetime) -> Tuple[bool, str]:
     current_time_only = current_time.time()
     
     # Handle midnight-spanning sleep schedule (e.g., 23:00-07:00 or 00:00-07:30)
+    # FIX: Use < for end_time to exclude the wake moment
+    # Sleep period is [start_time, end_time) - includes start, excludes end
     if start_time <= end_time:
         # Normal case: 00:00-07:30
-        in_sleep = start_time <= current_time_only <= end_time
+        # Sleep from 00:00:00 up to (but not including) 07:30:00
+        in_sleep = start_time <= current_time_only < end_time
     else:
         # Midnight-spanning: 23:00-07:00
-        in_sleep = current_time_only >= start_time or current_time_only <= end_time
+        # Sleep from 23:00:00 up to 23:59:59, OR from 00:00:00 up to (but not including) 07:00:00
+        in_sleep = current_time_only >= start_time or current_time_only < end_time
     
     if in_sleep:
         return (True, f"Sleep schedule active ({start_time.strftime('%H:%M')}-{end_time.strftime('%H:%M')})")
