@@ -175,39 +175,6 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Updated README roadmap to reflect all shipped versions
 - [x] Updated CHANGELOG with complete v0.4.0 section
 
-### Completed (v0.5.0) - Installation & Configuration
-
-- [x] Interactive TUI setup installer (scripts/setup.sh)
-- [x] Automatic service detection (Docker, systemd, HTTP)
-- [x] Menu-driven module selection with pre-checked detected services
-- [x] Guided configuration screens for each module
-- [x] Discord webhook validation with test message
-- [x] Bare-metal service support (Plex, Pi-hole)
-- [x] Configuration preview and .env generation
-- [x] Eliminates manual .env editing for first-time setup
-- [x] Web-based configuration UI (/config)
-- [x] Browser-based settings management with organized sections
-- [x] Per-module enable/disable toggles
-- [x] Sensitive field masking with bullet characters (••••••••••••••••)
-- [x] Atomic .env file writes
-- [x] Configuration API endpoints (GET/POST /api/config)
-- [x] Full light mode support for config UI
-- [x] Module status badges (green "ENABLED" / gray "DISABLED")
-- [x] Number input spinners visible
-- [x] Custom dropdown styling for both themes
-- [x] Config reads from environment variables (proper Docker pattern)
-- [x] Immediate effect (updates both .env and process environment)
-- [x] Prominent config button in dashboard header
-- [x] Console logging for debugging
-
-### In Progress (post-v0.5.0)
-
-- [x] Replaced hardcoded app card registration in `main.py` with dynamic registration from discovered modules
-  - Added `CARD_METRICS` class attribute to `AppModule` base class
-  - Each module now self-declares its dashboard card metrics
-  - Dashboard card data built dynamically via `get_discovered_modules()` at query time
-  - New modules no longer require manual edits to `main.py`
-
 ### Future Enhancements
 
 **v0.6.0 - Advanced Configuration**
