@@ -55,6 +55,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Follows existing dashboard dark mode theme
   - No manual SSH required for configuration updates
 
+### Fixed
+- **Config UI improvements**
+  - Added full light mode support (all form fields, buttons, dropdowns readable in light mode)
+  - Added status badges to modules (green "ENABLED" / gray "DISABLED" pills in top-right corner)
+  - Restored number input spinner controls (up/down arrows visible)
+  - Improved dropdown styling with custom arrow icon for both light and dark modes
+  - Sensitive field masking uses bullet characters (`••••••••••••••••`) instead of ugly `***sensitive***` text
+  - Config reads from environment variables (proper Docker pattern) instead of parsing .env file
+  - Config updates both .env file AND current process environment for immediate effect
+  - Added console logging for debugging config load issues
+  - Prominent configuration button added to dashboard header (⚙️ Configuration)
+  - Better form field contrast and focus states in both themes
+
 ## [0.4.0] - 2026-02-01
 
 ### Fixed
