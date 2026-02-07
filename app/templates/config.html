@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration - HomeSentry</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <h1>⚙️ Configuration</h1>
+        <p class="header-subtitle">Manage HomeSentry Settings</p>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">☀️</button>
+        <p class="header-status"><a href="/" class="back-link">← Back to Dashboard</a></p>
+    </header>
+
+    <main class="config-main">
+        <!-- Sidebar Navigation -->
+        <nav class="config-sidebar">
+            <ul>
+                <li><a href="#core" class="nav-link active" data-section="core">Core</a></li>
+                <li><a href="#modules" class="nav-link" data-section="modules">Modules</a></li>
+                <li><a href="#infrastructure" class="nav-link" data-section="infrastructure">Infrastructure</a></li>
+                <li><a href="#advanced" class="nav-link" data-section="advanced">Advanced</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <div class="config-content">
+            <form id="config-form">
+                <!-- Core Section -->
+                <section id="core" class="config-section active">
+                    <h2>Core Settings</h2>
+                    <p class="section-description">Essential settings for HomeSentry operation</p>
+                    
+                    <div class="form-group">
+                        <label for="discord_webhook_url">Discord Webhook URL</label>
+                        <input type="text" id="discord_webhook_url" name="core.discord_webhook_url" 
+                               placeholder="https://discord.com/api/webhooks/...">
+                        <small class="help-text">Create a webhook in Discord: Server Settings → Integrations → Webhooks</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="poll_interval">Poll Interval (seconds)</label>
+                        <input type="number" id="poll_interval" name="core.poll_interval" value="60" min="30" max="600">
+                        <small class="help-text">How often to collect system metrics and check services</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="smart_poll_interval">SMART Poll Interval (seconds)</label>
+                        <input type="number" id="smart_poll_interval" name="core.smart_poll_interval" value="600" min="300" max="3600">
+                        <small class="help-text">How often to check SMART drive health</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="raid_poll_interval">RAID Poll Interval (seconds)</label>
+                        <input type="number" id="raid_poll_interval" name="core.raid_poll_interval" value="300" min="60" max="3600">
+                        <small class="help-text">How often to check RAID array health</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="log_level">Log Level</label>
+                        <select id="log_level" name="core.log_level">
+                            <option value="DEBUG">DEBUG</option>
+                            <option value="INFO" selected>INFO</option>
+                            <option value="WARNING">WARNING</option>
+                            <option value="ERROR">ERROR</option>
+                            <option value="CRITICAL">CRITICAL</option>
+                        </select>
+                        <small class="help-text">Logging verbosity level</small>
+                    </div>
+                </section>
+
+                <!-- Modules Section -->
+                <section id="modules" class="config-section">
+                    <h2>Application Modules</h2>
+                    <p class="section-description">Configure monitoring for your home server applications</p>
+                    
+                    <!-- Home Assistant Module -->
+                    <div class="module-subsection">
+                        <span class="module-status-badge" id="homeassistant_status">Disabled</span>
+                        <h3>
+                            <label class="module-toggle">
+                                <input type="checkbox" name="modules.homeassistant.enabled" id="homeassistant_enabled">
+                                Home Assistant
+                            </label>
+                        </h3>
+                        <div class="module-fields" id="homeassistant_fields">
+                            <div class="form-group">
+                                <label for="homeassistant_api_url">API URL</label>
+                                <input type="text" id="homeassistant_api_url" name="modules.homeassistant.api_url" 
+                                       placeholder="http://homeassistant:8123">
+                                <small class="help-text">Use container name if on same Docker network</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="homeassistant_api_token">API Token</label>
+                                <input type="password" id="homeassistant_api_token" name="modules.homeassistant.api_token">
+                                <small class="help-text">Generate from Home Assistant → Profile → Security</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="homeassistant_entity_count_warn">Entity Count Warning Threshold</label>
+                                <input type="number" id="homeassistant_entity_count_warn" name="modules.homeassistant.entity_count_warn" value="500">
+                            </div>
+                            <div class="form-group">
+                                <label for="homeassistant_entity_count_fail">Entity Count Critical Threshold</label>
+                                <input type="number" id="homeassistant_entity_count_fail" name="modules.homeassistant.entity_count_fail" value="1000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- qBittorrent Module -->
+                    <div class="module-subsection">
+                        <span class="module-status-badge" id="qbittorrent_status">Disabled</span>
+                        <h3>
+                            <label class="module-toggle">
+                                <input type="checkbox" name="modules.qbittorrent.enabled" id="qbittorrent_enabled">
+                                qBittorrent
+                            </label>
+                        </h3>
+                        <div class="module-fields" id="qbittorrent_fields">
+                            <div class="form-group">
+                                <label for="qbittorrent_api_url">Web UI URL</label>
+                                <input type="text" id="qbittorrent_api_url" name="modules.qbittorrent.api_url" 
+                                       placeholder="http://qbittorrent:8080">
+                            </div>
+                            <div class="form-group">
+                                <label for="qbittorrent_username">Username</label>
+                                <input type="text" id="qbittorrent_username" name="modules.qbittorrent.username" value="admin">
+                            </div>
+                            <div class="form-group">
+                                <label for="qbittorrent_password">Password</label>
+                                <input type="password" id="qbittorrent_password" name="modules.qbittorrent.password">
+                            </div>
+                            <div class="form-group">
+                                <label for="qbittorrent_active_torrents_warn">Active Torrents Warning</label>
+                                <input type="number" id="qbittorrent_active_torrents_warn" name="modules.qbittorrent.active_torrents_warn" value="10">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pi-hole Module -->
+                    <div class="module-subsection">
+                        <span class="module-status-badge" id="pihole_status">Disabled</span>
+                        <h3>
+                            <label class="module-toggle">
+                                <input type="checkbox" name="modules.pihole.enabled" id="pihole_enabled">
+                                Pi-hole
+                            </label>
+                        </h3>
+                        <div class="module-fields" id="pihole_fields">
+                            <div class="form-group">
+                                <label for="pihole_api_url">Admin API URL</label>
+                                <input type="text" id="pihole_api_url" name="modules.pihole.api_url" 
+                                       placeholder="http://192.168.1.8:80">
+                            </div>
+                            <div class="form-group">
+                                <label for="pihole_api_password">API Password</label>
+                                <input type="password" id="pihole_api_password" name="modules.pihole.api_password">
+                                <small class="help-text">Get from Pi-hole web UI → Settings → API</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="pihole_bare_metal" name="modules.pihole.bare_metal">
+                                    Running as bare-metal (not Docker)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Plex Module -->
+                    <div class="module-subsection">
+                        <span class="module-status-badge" id="plex_status">Disabled</span>
+                        <h3>
+                            <label class="module-toggle">
+                                <input type="checkbox" name="modules.plex.enabled" id="plex_enabled">
+                                Plex Media Server
+                            </label>
+                        </h3>
+                        <div class="module-fields" id="plex_fields">
+                            <div class="form-group">
+                                <label for="plex_api_url">Server URL</label>
+                                <input type="text" id="plex_api_url" name="modules.plex.api_url" 
+                                       placeholder="http://192.168.1.8:32400">
+                            </div>
+                            <div class="form-group">
+                                <label for="plex_api_token">X-Plex-Token</label>
+                                <input type="password" id="plex_api_token" name="modules.plex.api_token">
+                                <small class="help-text">Get from Plex Web → Account Settings</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="plex_bare_metal" name="modules.plex.bare_metal">
+                                    Running as bare-metal (not Docker)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Jellyfin Module -->
+                    <div class="module-subsection">
+                        <span class="module-status-badge" id="jellyfin_status">Disabled</span>
+                        <h3>
+                            <label class="module-toggle">
+                                <input type="checkbox" name="modules.jellyfin.enabled" id="jellyfin_enabled">
+                                Jellyfin Media Server
+                            </label>
+                        </h3>
+                        <div class="module-fields" id="jellyfin_fields">
+                            <div class="form-group">
+                                <label for="jellyfin_api_url">Server URL</label>
+                                <input type="text" id="jellyfin_api_url" name="modules.jellyfin.api_url" 
+                                       placeholder="http://192.168.1.8:8096">
+                            </div>
+                            <div class="form-group">
+                                <label for="jellyfin_api_key">API Key</label>
+                                <input type="password" id="jellyfin_api_key" name="modules.jellyfin.api_key">
+                                <small class="help-text">Generate from Jellyfin Dashboard → API Keys</small>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Infrastructure Section -->
+                <section id="infrastructure" class="config-section">
+                    <h2>Infrastructure Settings</h2>
+                    <p class="section-description">Configure monitoring thresholds for system resources</p>
+                    
+                    <h3>System Thresholds</h3>
+                    <div class="form-group">
+                        <label for="cpu_warn_threshold">CPU Warning Threshold (%)</label>
+                        <input type="number" id="cpu_warn_threshold" name="infrastructure.cpu_warn_threshold" value="80" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="cpu_fail_threshold">CPU Critical Threshold (%)</label>
+                        <input type="number" id="cpu_fail_threshold" name="infrastructure.cpu_fail_threshold" value="95" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="memory_warn_threshold">Memory Warning Threshold (%)</label>
+                        <input type="number" id="memory_warn_threshold" name="infrastructure.memory_warn_threshold" value="85" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="memory_fail_threshold">Memory Critical Threshold (%)</label>
+                        <input type="number" id="memory_fail_threshold" name="infrastructure.memory_fail_threshold" value="95" min="0" max="100">
+                    </div>
+
+                    <h3>Disk Space Thresholds</h3>
+                    <div class="form-group">
+                        <label for="disk_warn_percent">Disk Warning (% used)</label>
+                        <input type="number" id="disk_warn_percent" name="infrastructure.disk_warn_percent" value="85" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="disk_fail_percent">Disk Critical (% used)</label>
+                        <input type="number" id="disk_fail_percent" name="infrastructure.disk_fail_percent" value="95" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="disk_warn_gb">Disk Warning (GB free)</label>
+                        <input type="number" id="disk_warn_gb" name="infrastructure.disk_warn_gb" value="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="disk_fail_gb">Disk Critical (GB free)</label>
+                        <input type="number" id="disk_fail_gb" name="infrastructure.disk_fail_gb" value="10">
+                    </div>
+
+                    <h3>SMART Settings</h3>
+                    <div class="form-group">
+                        <label for="smart_devices">Devices to Monitor (comma-separated)</label>
+                        <input type="text" id="smart_devices" name="infrastructure.smart_devices" 
+                               placeholder="/dev/sda,/dev/sdb,/dev/sdc">
+                    </div>
+                    <div class="form-group">
+                        <label for="smart_temp_warn_threshold">Temperature Warning (°C)</label>
+                        <input type="number" id="smart_temp_warn_threshold" name="infrastructure.smart_temp_warn_threshold" value="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="smart_temp_fail_threshold">Temperature Critical (°C)</label>
+                        <input type="number" id="smart_temp_fail_threshold" name="infrastructure.smart_temp_fail_threshold" value="60">
+                    </div>
+                </section>
+
+                <!-- Advanced Section -->
+                <section id="advanced" class="config-section">
+                    <h2>Advanced Settings</h2>
+                    <p class="section-description">Configure alerts and maintenance windows</p>
+                    
+                    <h3>Alert Configuration</h3>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="alerts_enabled" name="advanced.alerts_enabled" checked>
+                            Enable Discord Alerts
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="alert_cooldown_minutes">Alert Cooldown (minutes)</label>
+                        <input type="number" id="alert_cooldown_minutes" name="advanced.alert_cooldown_minutes" value="30" min="5" max="120">
+                        <small class="help-text">Minimum time between repeat alerts for the same issue</small>
+                    </div>
+
+                    <h3>Sleep Schedule</h3>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="sleep_schedule_enabled" name="advanced.sleep_schedule_enabled">
+                            Enable Sleep Schedule
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="sleep_schedule_start">Sleep Start Time (HH:MM)</label>
+                        <input type="time" id="sleep_schedule_start" name="advanced.sleep_schedule_start" value="00:00">
+                    </div>
+                    <div class="form-group">
+                        <label for="sleep_schedule_end">Sleep End Time (HH:MM)</label>
+                        <input type="time" id="sleep_schedule_end" name="advanced.sleep_schedule_end" value="07:30">
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="sleep_summary_enabled" name="advanced.sleep_summary_enabled" checked>
+                            Enable Morning Summary
+                        </label>
+                    </div>
+                </section>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" id="test-btn" class="btn btn-secondary">Test Configuration</button>
+                    <button type="button" id="reset-btn" class="btn btn-secondary">Reset</button>
+                    <button type="submit" id="save-btn" class="btn btn-primary">Save Changes</button>
+                </div>
+
+                <!-- Status Messages -->
+                <div id="status-message" class="status-message" style="display:none;"></div>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <p>HomeSentry v0.4.0 | Configuration Management</p>
+    </footer>
+
+    <!-- Configuration JavaScript -->
+    <script>
+    (function() {
+        "use strict";
+
+        // ---- Theme Toggle ----
+        (function initTheme() {
+            var saved = localStorage.getItem("homesentry-theme");
+            if (saved === "dark") {
+                document.body.classList.add("dark-mode");
+                document.getElementById("theme-toggle").textContent = "🌙";
+            } else if (saved === null) {
+                if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+                    document.body.classList.add("dark-mode");
+                    document.getElementById("theme-toggle").textContent = "🌙";
+                }
+            }
+        })();
+
+        document.getElementById("theme-toggle").addEventListener("click", function() {
+            var isDark = document.body.classList.toggle("dark-mode");
+            this.textContent = isDark ? "🌙" : "☀️";
+            localStorage.setItem("homesentry-theme", isDark ? "dark" : "light");
+        });
+
+        // ---- Navigation ----
+        var navLinks = document.querySelectorAll(".nav-link");
+        var sections = document.querySelectorAll(".config-section");
+
+        navLinks.forEach(function(link) {
+            link.addEventListener("click", function(e) {
+                e.preventDefault();
+                var targetSection = this.getAttribute("data-section");
+
+                navLinks.forEach(function(l) { l.classList.remove("active"); });
+                sections.forEach(function(s) { s.classList.remove("active"); });
+
+                this.classList.add("active");
+                document.getElementById(targetSection).classList.add("active");
+            });
+        });
+
+        // ---- Module Toggle ----
+        function setupModuleToggles() {
+            var moduleToggles = document.querySelectorAll(".module-toggle input[type='checkbox']");
+            moduleToggles.forEach(function(checkbox) {
+                checkbox.addEventListener("change", function() {
+                    var moduleName = this.id.replace("_enabled", "");
+                    var fieldsDiv = document.getElementById(moduleName + "_fields");
+                    var inputs = fieldsDiv.querySelectorAll("input, select");
+                    var statusBadge = document.getElementById(moduleName + "_status");
+
+                    if (this.checked) {
+                        fieldsDiv.style.opacity = "1";
+                        inputs.forEach(function(input) { input.disabled = false; });
+                        if (statusBadge) {
+                            statusBadge.textContent = "Enabled";
+                            statusBadge.classList.add("enabled");
+                        }
+                    } else {
+                        fieldsDiv.style.opacity = "0.5";
+                        inputs.forEach(function(input) { input.disabled = true; });
+                        if (statusBadge) {
+                            statusBadge.textContent = "Disabled";
+                            statusBadge.classList.remove("enabled");
+                        }
+                    }
+                });
+
+                // Trigger initial state
+                checkbox.dispatchEvent(new Event("change"));
+            });
+        }
+
+        // ---- Load Configuration ----
+        async function loadConfig() {
+            try {
+                console.log("Loading configuration from /api/config...");
+                var response = await fetch("/api/config");
+                
+                if (!response.ok) {
+                    throw new Error("HTTP " + response.status + ": " + response.statusText);
+                }
+                
+                var config = await response.json();
+                console.log("Configuration loaded:", config);
+
+                // Populate core settings
+                if (config.core) {
+                    console.log("Populating core settings:", config.core);
+                    for (var key in config.core) {
+                        var input = document.querySelector('[name="core.' + key + '"]');
+                        if (input) {
+                            input.value = config.core[key];
+                            console.log("Set core." + key + " = " + config.core[key]);
+                        }
+                    }
+                }
+
+                // Populate modules
+                if (config.modules) {
+                    console.log("Populating module settings:", config.modules);
+                    for (var moduleName in config.modules) {
+                        var moduleConfig = config.modules[moduleName];
+                        var enabledCheckbox = document.getElementById(moduleName + "_enabled");
+
+                        if (enabledCheckbox) {
+                            enabledCheckbox.checked = moduleConfig.enabled || false;
+                            console.log("Module " + moduleName + " enabled: " + enabledCheckbox.checked);
+                            enabledCheckbox.dispatchEvent(new Event("change"));
+
+                            for (var fieldKey in moduleConfig) {
+                                if (fieldKey === "enabled") continue;
+                                var input = document.querySelector('[name="modules.' + moduleName + '.' + fieldKey + '"]');
+                                if (input) {
+                                    if (input.type === "checkbox") {
+                                        input.checked = moduleConfig[fieldKey] === "true" || moduleConfig[fieldKey] === true;
+                                    } else {
+                                        input.value = moduleConfig[fieldKey];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Populate infrastructure
+                if (config.infrastructure) {
+                    console.log("Populating infrastructure settings:", config.infrastructure);
+                    for (var key in config.infrastructure) {
+                        var input = document.querySelector('[name="infrastructure.' + key + '"]');
+                        if (input) {
+                            input.value = config.infrastructure[key];
+                        }
+                    }
+                }
+
+                // Populate advanced
+                if (config.advanced) {
+                    console.log("Populating advanced settings:", config.advanced);
+                    for (var key in config.advanced) {
+                        var input = document.querySelector('[name="advanced.' + key + '"]');
+                        if (input) {
+                            if (input.type === "checkbox") {
+                                input.checked = config.advanced[key] === "true" || config.advanced[key] === true;
+                            } else {
+                                input.value = config.advanced[key];
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to load configuration:", error);
+                showMessage("error", "Failed to load configuration: " + error.message);
+            }
+        }
+
+        // ---- Collect Form Data ----
+        function collectFormData() {
+            var formData = {
+                core: {},
+                modules: {},
+                infrastructure: {},
+                advanced: {}
+            };
+
+            // Collect core settings
+            document.querySelectorAll('[name^="core."]').forEach(function(input) {
+                var key = input.name.replace("core.", "");
+                formData.core[key] = input.value;
+            });
+
+            // Collect module settings
+            var moduleNames = ["homeassistant", "qbittorrent", "pihole", "plex", "jellyfin"];
+            moduleNames.forEach(function(moduleName) {
+                var enabled = document.getElementById(moduleName + "_enabled").checked;
+                formData.modules[moduleName] = { enabled: enabled };
+
+                if (enabled) {
+                    document.querySelectorAll('[name^="modules.' + moduleName + '."]').forEach(function(input) {
+                        var key = input.name.replace("modules." + moduleName + ".", "");
+                        if (key !== "enabled") {
+                            if (input.type === "checkbox") {
+                                formData.modules[moduleName][key] = input.checked ? "true" : "false";
+                            } else {
+                                formData.modules[moduleName][key] = input.value;
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Collect infrastructure settings
+            document.querySelectorAll('[name^="infrastructure."]').forEach(function(input) {
+                var key = input.name.replace("infrastructure.", "");
+                formData.infrastructure[key] = input.value;
+            });
+
+            // Collect advanced settings
+            document.querySelectorAll('[name^="advanced."]').forEach(function(input) {
+                var key = input.name.replace("advanced.", "");
+                if (input.type === "checkbox") {
+                    formData.advanced[key] = input.checked ? "true" : "false";
+                } else {
+                    formData.advanced[key] = input.value;
+                }
+            });
+
+            return formData;
+        }
+
+        // ---- Show Status Message ----
+        function showMessage(type, message) {
+            var msgDiv = document.getElementById("status-message");
+            msgDiv.className = "status-message " + type;
+            msgDiv.textContent = message;
+            msgDiv.style.display = "block";
+
+            setTimeout(function() {
+                msgDiv.style.display = "none";
+            }, 5000);
+        }
+
+        // ---- Test Configuration ----
+        document.getElementById("test-btn").addEventListener("click", async function() {
+            var formData = collectFormData();
+
+            try {
+                var response = await fetch("/api/config/validate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData)
+                });
+
+                var result = await response.json();
+
+                if (result.valid) {
+                    showMessage("success", "Configuration is valid ✓");
+                } else {
+                    var errorMsg = "Validation errors:\n";
+                    for (var field in result.errors) {
+                        errorMsg += "- " + field + ": " + result.errors[field] + "\n";
+                    }
+                    showMessage("error", errorMsg);
+                }
+            } catch (error) {
+                showMessage("error", "Validation failed: " + error.message);
+            }
+        });
+
+        // ---- Reset Form ----
+        document.getElementById("reset-btn").addEventListener("click", function() {
+            if (confirm("Reset all changes to last saved configuration?")) {
+                loadConfig();
+                showMessage("info", "Configuration reset to last saved state");
+            }
+        });
+
+        // ---- Save Configuration ----
+        document.getElementById("config-form").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            var formData = collectFormData();
+
+            try {
+                var response = await fetch("/api/config", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData)
+                });
+
+                var result = await response.json();
+
+                if (result.success) {
+                    showMessage("success", "Configuration saved successfully! Changes will take effect on next poll cycle (60 seconds) or restart the container for immediate effect.");
+                } else {
+                    var errorMsg = "Save failed:\n";
+                    for (var field in result.errors) {
+                        errorMsg += "- " + field + ": " + result.errors[field] + "\n";
+                    }
+                    showMessage("error", errorMsg);
+                }
+            } catch (error) {
+                showMessage("error", "Failed to save configuration: " + error.message);
+            }
+        });
+
+        // ---- Prevent non-numeric input in number fields ----
+        function setupNumberFieldValidation() {
+            var numberInputs = document.querySelectorAll('input[type="number"]');
+            numberInputs.forEach(function(input) {
+                input.addEventListener('keypress', function(e) {
+                    // Allow: backspace, delete, tab, escape, enter
+                    if ([8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+                        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                        (e.keyCode === 65 && e.ctrlKey === true) ||
+                        (e.keyCode === 67 && e.ctrlKey === true) ||
+                        (e.keyCode === 86 && e.ctrlKey === true) ||
+                        (e.keyCode === 88 && e.ctrlKey === true)) {
+                        return;
+                    }
+                    // Ensure it's a number
+                    if ((e.which < 48 || e.which > 57)) {
+                        e.preventDefault();
+                    }
+                });
+
+                // Also validate on input (for paste events)
+                input.addEventListener('input', function(e) {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+            });
+        }
+
+        // ---- Initialize ----
+        setupModuleToggles();
+        setupNumberFieldValidation();
+        loadConfig();
+    })();
+    </script>
+
+    <style>
+    /* Config-specific styles using existing CSS custom properties */
+    .config-main {
+        display: flex;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .config-sidebar {
+        flex: 0 0 200px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 1rem;
+        height: fit-content;
+        position: sticky;
+        top: 2rem;
+    }
+
+    .config-sidebar ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .config-sidebar li {
+        margin-bottom: 0.5rem;
+    }
+
+    .nav-link {
+        display: block;
+        padding: 0.75rem 1rem;
+        color: var(--text-primary);
+        text-decoration: none;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+        border: 1px solid transparent;
+    }
+
+    .nav-link:hover {
+        background: var(--hover-bg);
+        border-color: var(--card-border);
+    }
+
+    .nav-link.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .config-content {
+        flex: 1;
+    }
+
+    .config-section {
+        display: none;
+    }
+
+    .config-section.active {
+        display: block;
+    }
+
+    .section-description {
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="password"],
+    .form-group input[type="number"],
+    .form-group input[type="time"],
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid var(--card-border);
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+        font-size: 1rem;
+        transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .form-group input:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    /* Style select dropdowns for better visibility in both modes */
+    .form-group select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1em;
+        padding-right: 2.5rem;
+    }
+
+    .form-group select option {
+        background: var(--card-bg);
+        color: var(--text-primary);
+        padding: 0.5rem;
+    }
+
+    .help-text {
+        display: block;
+        margin-top: 0.25rem;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    .module-subsection {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .module-toggle {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .module-toggle input[type="checkbox"] {
+        margin-right: 0.5rem;
+    }
+
+    .module-fields {
+        margin-top: 1rem;
+        transition: opacity 0.2s;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+        margin-right: 0.5rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--card-border);
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn:active {
+        transform: translateY(0);
+    }
+
+    .btn-primary {
+        background: var(--primary-color);
+        color: white;
+        border: 2px solid var(--primary-color);
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-hover);
+        border-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+        background: var(--card-bg);
+        color: var(--text-primary);
+        border: 2px solid var(--card-border);
+    }
+
+    .btn-secondary:hover {
+        background: var(--hover-bg);
+        border-color: var(--text-primary);
+    }
+
+    .status-message {
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 4px;
+        white-space: pre-line;
+    }
+
+    .status-message.success {
+        background: var(--status-ok-bg);
+        border: 1px solid var(--status-ok);
+        color: var(--status-ok);
+    }
+
+    .status-message.error {
+        background: var(--status-fail-bg);
+        border: 1px solid var(--status-fail);
+        color: var(--status-fail);
+    }
+
+    .status-message.info {
+        background: var(--status-warn-bg);
+        border: 1px solid var(--status-warn);
+        color: var(--status-warn);
+    }
+
+    .back-link {
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
+
+    /* ============================================================
+       LIGHT MODE OVERRIDES
+       Fix visibility issues when not in dark mode
+       ============================================================ */
+    body:not(.dark-mode) .config-sidebar {
+        background: #f5f5f5;
+        border-color: #ddd;
+    }
+
+    body:not(.dark-mode) .nav-link {
+        color: #333;
+    }
+
+    body:not(.dark-mode) .nav-link:hover {
+        background: #e8e8e8;
+        border-color: #ccc;
+    }
+
+    body:not(.dark-mode) .nav-link.active {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    body:not(.dark-mode) .section-description {
+        color: #666;
+    }
+
+    body:not(.dark-mode) .form-group input[type="text"],
+    body:not(.dark-mode) .form-group input[type="password"],
+    body:not(.dark-mode) .form-group input[type="number"],
+    body:not(.dark-mode) .form-group input[type="time"],
+    body:not(.dark-mode) .form-group select {
+        background: white;
+        border-color: #ccc;
+        color: #333;
+    }
+
+    body:not(.dark-mode) .form-group input:focus,
+    body:not(.dark-mode) .form-group select:focus {
+        border-color: #007bff;
+        background: #f9f9f9;
+    }
+
+    body:not(.dark-mode) .form-group input:disabled {
+        background: #e9ecef;
+        color: #6c757d;
+    }
+
+    body:not(.dark-mode) .help-text {
+        color: #666;
+    }
+
+    body:not(.dark-mode) .form-group select option {
+        background: white;
+        color: #333;
+    }
+
+    body:not(.dark-mode) .module-subsection {
+        background: #f9f9f9;
+        border-color: #ddd;
+    }
+
+    body:not(.dark-mode) .btn-primary {
+        background: #007bff;
+        border-color: #007bff;
+    }
+
+    body:not(.dark-mode) .btn-primary:hover {
+        background: #0056b3;
+        border-color: #0056b3;
+    }
+
+    body:not(.dark-mode) .btn-secondary {
+        background: white;
+        color: #333;
+        border-color: #ccc;
+    }
+
+    body:not(.dark-mode) .btn-secondary:hover {
+        background: #f8f9fa;
+        border-color: #333;
+    }
+
+    /* ============================================================
+       MODULE TOGGLE IMPROVEMENTS
+       Make it clearer that checkbox enables/disables the module
+       ============================================================ */
+    .module-toggle {
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        margin: -0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .module-toggle:hover {
+        background: rgba(0, 123, 255, 0.1);
+    }
+
+    .module-toggle input[type="checkbox"] {
+        margin-right: 0.75rem;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .module-subsection h3 {
+        margin: 0 0 1rem 0;
+    }
+
+    /* Add "Enabled" badge next to module name */
+    .module-toggle::after {
+        content: "disabled";
+        margin-left: auto;
+        padding: 0.25rem 0.75rem;
+        background: #6c757d;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 12px;
+        text-transform: uppercase;
+    }
+
+    .module-toggle input[type="checkbox"]:checked + .module-toggle::after,
+    .module-toggle input[type="checkbox"]:checked ~ .module-toggle::after {
+        content: "enabled";
+        background: #28a745;
+    }
+
+    /* Better approach: style the label text based on checkbox state */
+    .module-subsection {
+        position: relative;
+    }
+
+    .module-status-badge {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        padding: 0.25rem 0.75rem;
+        background: #6c757d;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 12px;
+        text-transform: uppercase;
+        transition: background-color 0.3s;
+    }
+
+    .module-status-badge.enabled {
+        background: #28a745;
+    }
+    </style>
+</body>
+</html>
