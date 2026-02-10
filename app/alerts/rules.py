@@ -19,6 +19,7 @@ from app.alerts.discord import (
 )
 from app.alerts.maintenance import should_suppress_alert as should_suppress_maintenance
 from app.alerts.sleep_schedule import should_suppress_for_sleep, queue_sleep_event
+from app.alerts.grace_period import check_grace_period
 
 logger = logging.getLogger(__name__)
 
@@ -245,6 +246,22 @@ async def process_alert(
     
     prev_status = last_event["new_status"] if last_event else None
     last_notified_ts = last_event.get("notified_ts") if last_event else None
+    
+    # Check grace period BEFORE proceeding with alert logic
+    # This prevents alerts on transient flaps (brief network hiccups, etc.)
+    should_proceed, grace_reason = await check_grace_period(
+        event_key=event_key,
+        current_status=new_status,
+        prev_status=prev_status
+    )
+    
+    if not should_proceed:
+        logger.info(
+            f"Alert suppressed for {event_key} due to grace period: {grace_reason}"
+        )
+        return False
+    
+    logger.info(f"Grace period check passed for {event_key}: {grace_reason}")
     
     # Check if we should alert
     if not await should_alert(event_key, prev_status, new_status, last_notified_ts):

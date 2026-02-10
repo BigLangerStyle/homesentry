@@ -34,6 +34,9 @@ POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))
 SMART_POLL_INTERVAL = int(os.getenv("SMART_POLL_INTERVAL", "600"))
 RAID_POLL_INTERVAL = int(os.getenv("RAID_POLL_INTERVAL", "120"))  # 2 minutes default
 
+# Tracking variable for morning summary (prevents duplicates)
+_last_summary_sent: datetime = None
+
 # Validate intervals (minimum 10 seconds to prevent hammering)
 if POLL_INTERVAL < 10:
     logger.warning(f"POLL_INTERVAL too low ({POLL_INTERVAL}s), using 10s minimum")
@@ -264,13 +267,21 @@ async def check_morning_summary() -> None:
     
     This function:
     1. Checks if current time matches configured SLEEP_SUMMARY_TIME
-    2. Generates summary from queued sleep events
-    3. Sends summary to Discord
-    4. Clears processed sleep events
+    2. Prevents duplicate sends within 5 minutes
+    3. Generates summary from queued sleep events
+    4. Sends summary to Discord
+    5. Clears processed sleep events
     
     Runs every scheduler cycle (typically every 60 seconds) and sends
     summary when the configured wake time is reached.
+    
+    Duplicate Prevention:
+    - Tracks last send time in module-level variable
+    - Skips if summary already sent within last 5 minutes
+    - Prevents duplicate sends when scheduler runs at 5:59 and 6:00
     """
+    global _last_summary_sent
+    
     from datetime import time
     from app.alerts.sleep_schedule import generate_morning_summary
     from app.alerts.discord import send_alert_async
@@ -307,6 +318,15 @@ async def check_morning_summary() -> None:
     )
     
     if time_diff <= 1:
+        # Check if already sent recently (prevents duplicates)
+        if _last_summary_sent:
+            time_since_last = (now - _last_summary_sent).total_seconds()
+            if time_since_last < 300:  # 5 minutes
+                logger.debug(
+                    f"Morning summary already sent {time_since_last:.0f}s ago, skipping duplicate"
+                )
+                return
+        
         logger.info("Morning summary time reached, generating report...")
         
         try:
@@ -318,6 +338,7 @@ async def check_morning_summary() -> None:
                 if webhook_url:
                     success = await send_alert_async(webhook_url, embed)
                     if success:
+                        _last_summary_sent = now  # Update last sent time
                         logger.info("Morning summary sent successfully")
                     else:
                         logger.error("Failed to send morning summary")

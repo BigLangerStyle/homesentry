@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-02-10
+
+### Added
+
+**Sustained State Checking with Grace Period**
+- **Grace period tracking**: New `app/alerts/grace_period.py` module implements sustained state checking to prevent alerts on transient flaps
+- **Configurable threshold**: `STATE_CHANGE_GRACE_CHECKS=3` env variable controls how many consecutive bad checks are required before alerting
+- **Intelligent suppression**: Brief service hiccups (e.g., OK→FAIL→OK within 1-2 checks) are completely ignored and don't create events
+- **Immediate recovery alerts**: Recovery to OK status always alerts immediately (no grace period for good news)
+- **In-memory tracking**: Pending state changes tracked in memory, only logged to database after grace period threshold is met
+- **Comprehensive logging**: Grace period decisions logged at INFO level for troubleshooting
+
+**Example behavior:**
+- Service flaps (1-2 checks): No alert, no database event, completely silent
+- Sustained failure (3+ consecutive checks): Alert proceeds normally after threshold
+- Recovery during grace period: Pending state discarded, no alert sent
+- Recovery after alerting: Immediate recovery notification sent
+
+### Fixed
+
+**Duplicate Morning Summary**
+- **Added last-sent tracker**: Module-level `_last_summary_sent` variable in `scheduler.py` prevents duplicate morning summaries
+- **5-minute window**: Skips summary if already sent within last 5 minutes
+- **Fixes issue**: Eliminated duplicate summaries at 5:59 AM and 6:00 AM when scheduler runs on both sides of the wake time boundary
+
+### Documentation
+- Updated `.env.example` with detailed explanation of `STATE_CHANGE_GRACE_CHECKS` including examples
+- Added comprehensive docstrings to `grace_period.py` explaining the sustained state checking pattern
+- Updated module docstring in `check_morning_summary()` to document duplicate prevention logic
+
+## [0.5.0] - 2026-02-01
+
 ### Fixed
 - **Sleep schedule configuration**: Sleep schedule was disabled in `.env` - changed `SLEEP_SCHEDULE_ENABLED=false` to `true` to activate the feature
 - **Sleep schedule boundary condition**: Fixed end time comparison to use exclusive boundary (`<` instead of `<=`), ensuring alerts resume exactly at configured wake time rather than one minute after
