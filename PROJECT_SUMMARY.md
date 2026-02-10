@@ -1,8 +1,8 @@
 # HomeSentry - Project Summary
 
-**Version:** 0.5.0  
+**Version:** 0.6.0  
 **Status:** Production Ready  
-**Last Updated:** February 1, 2026  
+**Last Updated:** February 10, 2026  
 **Target Platform:** Linux (Ubuntu/Debian) + Docker  
 **Primary Language:** Python 3.11+  
 
@@ -174,6 +174,49 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Updated dashboard footer to v0.4.0
 - [x] Updated README roadmap to reflect all shipped versions
 - [x] Updated CHANGELOG with complete v0.4.0 section
+
+### Completed (v0.5.0) - Installation & Configuration
+
+- [x] Interactive TUI setup installer (scripts/setup.sh)
+- [x] Automatic service detection (Docker, systemd, HTTP)
+- [x] Menu-driven module selection with pre-checked detected services
+- [x] Guided configuration screens for each module
+- [x] Discord webhook validation with test message
+- [x] Bare-metal service support (Plex, Pi-hole)
+- [x] Configuration preview and .env generation
+- [x] Eliminates manual .env editing for first-time setup
+- [x] Web-based configuration UI (/config)
+- [x] Browser-based settings management with organized sections
+- [x] Per-module enable/disable toggles
+- [x] Sensitive field masking with bullet characters (••••••••••••••••)
+- [x] Atomic .env file writes
+- [x] Configuration API endpoints (GET/POST /api/config)
+- [x] Full light mode support for config UI
+- [x] Module status badges (green "ENABLED" / gray "DISABLED")
+- [x] Number input spinners visible
+- [x] Custom dropdown styling for both themes
+- [x] Config reads from environment variables (proper Docker pattern)
+- [x] Immediate effect (updates both .env and process environment)
+- [x] Prominent config button in dashboard header
+- [x] Console logging for debugging
+- [x] Replaced hardcoded app card registration in `main.py` with dynamic registration from discovered modules
+- [x] Added `CARD_METRICS` class attribute to `AppModule` base class
+- [x] Each module now self-declares its dashboard card metrics
+- [x] Dashboard card data built dynamically via `get_discovered_modules()` at query time
+- [x] New modules no longer require manual edits to `main.py`
+
+### Completed (v0.6.0) - Sustained State Checking
+
+- [x] Grace period tracking module (`app/alerts/grace_period.py`)
+- [x] Configurable grace period via `STATE_CHANGE_GRACE_CHECKS` environment variable
+- [x] In-memory tracking of pending state changes
+- [x] Brief flaps (1-2 checks) completely ignored - no alerts, no database events
+- [x] Sustained failures (3+ consecutive checks) alert normally after threshold
+- [x] Immediate recovery alerts (no grace period for good news)
+- [x] Integration with existing alert processing in `rules.py`
+- [x] Fixed duplicate morning summary issue in `scheduler.py`
+- [x] Added last-sent tracker to prevent duplicate summaries within 5-minute window
+- [x] Comprehensive logging of grace period decisions
 
 ### Future Enhancements
 
