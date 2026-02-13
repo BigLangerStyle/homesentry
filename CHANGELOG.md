@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+**Morning Summary Timestamp Display**
+- **Activity Log timestamps**: Changed format from 24-hour (`05:01`) to 12-hour with AM/PM (`5:01 AM`) for clarity
+- **Timezone conversion**: Fixed UTC-to-local timezone conversion — timestamps now display in server's local time instead of UTC
+- **Example**: Router reboot at 5:01 AM CST now correctly displays as `5:01 AM` instead of `11:01 AM` (UTC)
+- **No logic changes**: Only affects display formatting in Discord morning summary — event collection and storage remain unchanged
+
 **Duplicate Morning Summary**
 - **Added last-sent tracker**: Module-level `_last_summary_sent` variable in `scheduler.py` prevents duplicate morning summaries
 - **5-minute window**: Skips summary if already sent within last 5 minutes
