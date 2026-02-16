@@ -17,14 +17,15 @@ Think of it as your server's guardian angel: quiet when everything's fine, loud 
 
 ### Key Features
 
-✅ **Available Now (v0.4.0):**
+✅ **Available Now (v0.6.0):**
 - **System Monitoring** - Real-time CPU, RAM, and disk usage tracking
 - **Service Checks** - HTTP health checks for Plex, Jellyfin, Pi-hole, and other web services
 - **Docker Monitoring** - Container health, restart counts, and resource usage
 - **SMART Health** - Hard drive health monitoring with predictive failure detection
 - **RAID Status** - Track RAID array health, disk status, and rebuild progress
-- **Smart Alerts** - Discord webhooks with state-change detection (no spam!)
+- **Smart Alerts** - Discord webhooks with sustained state checking (no spam from transient flaps!)
 - **Web Dashboard** - Clean, responsive UI showing current status at a glance
+- **Configuration UI** - Web-based settings management with module toggles
 - **Autonomous Operation** - Background scheduler runs 24/7, alerts automatically
 - **Historical Data** - SQLite database tracks all metrics over time
 
@@ -361,11 +362,19 @@ If you prefer running without Docker:
 ### v0.4.0 (February 1, 2026) ✅ Shipped
 - [x] Polish release — 22 fixes across code quality, configuration, and documentation
 
-### v0.5.0 (Future)
-- [ ] Interactive installation wizard
-- [ ] Auto-detection of services
-- [ ] Modular collector system
-- [ ] Configuration UI
+### v0.5.0 (February 10, 2026) ✅ Shipped
+- [x] Interactive installation wizard (TUI setup with auto-detection)
+- [x] Web-based configuration UI (/config page)
+- [x] Browser-based module enable/disable toggles
+- [x] Bare-metal service support (Plex, Pi-hole)
+- [x] Immediate configuration updates without restart
+
+### v0.6.0 (February 13, 2026) ✅ Shipped
+- [x] Sustained state checking (grace period for transient flaps)
+- [x] Fixed duplicate morning summaries
+- [x] Fixed morning summary timestamps (12-hour with AM/PM)
+- [x] Fixed maintenance window filtering in sleep schedule
+- [x] Security: Removed .env from Git tracking and history
 
 ### v1.0.0 (Future)
 - [ ] Historical charts

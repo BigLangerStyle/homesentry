@@ -7,15 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Security
-- **Removed .env from Git tracking** - The `.env` file containing sensitive configuration (Discord webhooks, API keys, service credentials) is no longer tracked in version control
-  - Added `.env` to `.gitignore` to prevent future commits of sensitive data
-  - `.env.example` remains in repository as a template for new installations
-  - Existing installations: Local `.env` files are preserved and remain functional
-  - New installations: Users should copy `.env.example` to `.env` and configure with their credentials
-  - **Important**: This change removes `.env` from future tracking but does not purge it from Git history. If needed, rotate Discord webhook URLs in Discord server settings for maximum security.
-
-## [0.6.0] - 2026-02-10
+## [0.6.0] - 2026-02-13
 
 ### Added
 
@@ -54,12 +46,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Visibility**: Summary shows count of excluded maintenance events (e.g., "• 12 maintenance events excluded")
 - **Audit trail preserved**: Maintenance events still logged to database, just excluded from Discord summary display
 
+### Security
+- **Removed .env from Git tracking** - The `.env` file containing sensitive configuration (Discord webhooks, API keys, service credentials) is no longer tracked in version control
+  - Purged `.env` from entire Git history using BFG Repo-Cleaner (all 159 commits cleaned)
+  - Added `.env` to `.gitignore` to prevent future commits of sensitive data
+  - `.env.example` remains in repository as a template for new installations
+  - Force-pushed cleaned history to GitHub
+  - Existing installations: Local `.env` files are preserved and remain functional
+  - New installations: Users should copy `.env.example` to `.env` and configure with their credentials
+
 ### Documentation
 - Updated `.env.example` with detailed explanation of `STATE_CHANGE_GRACE_CHECKS` including examples
 - Added comprehensive docstrings to `grace_period.py` explaining the sustained state checking pattern
 - Updated module docstring in `check_morning_summary()` to document duplicate prevention logic
 
-## [0.5.0] - 2026-02-01
+## [0.5.0] - 2026-02-10
 
 ### Fixed
 - **Sleep schedule configuration**: Sleep schedule was disabled in `.env` - changed `SLEEP_SCHEDULE_ENABLED=false` to `true` to activate the feature
