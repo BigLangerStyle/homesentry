@@ -222,10 +222,14 @@ async def generate_morning_summary() -> Optional[Dict[str, Any]]:
     """
     Generate morning summary Discord embed from queued sleep events.
     
+    Filters out events that occurred during maintenance windows to prevent
+    clutter from planned maintenance activities (e.g., router reboots).
+    
     Returns:
         Discord embed dict or None if no events or summary disabled
     """
     from app.storage import get_sleep_events, clear_sleep_events
+    from app.alerts.maintenance import should_suppress_alert
     
     # Get sleep schedule times for summary period
     start_time, end_time, enabled = get_sleep_schedule()
@@ -240,10 +244,43 @@ async def generate_morning_summary() -> Optional[Dict[str, Any]]:
         return None
     
     # Get events from last sleep period
-    events = await get_sleep_events()
+    all_events = await get_sleep_events()
+    
+    # Filter out maintenance window events
+    filtered_events = []
+    maintenance_count = 0
+    
+    for event in all_events:
+        # Parse event timestamp
+        try:
+            event_time = datetime.fromisoformat(event['ts'])
+        except (ValueError, KeyError, TypeError):
+            # If timestamp parsing fails, include the event (fail-safe)
+            filtered_events.append(event)
+            logger.warning(f"Could not parse timestamp for event, including in summary: {event}")
+            continue
+        
+        # Check if event occurred during a maintenance window
+        suppress, reason = should_suppress_alert(
+            category=event.get('category', 'unknown'),
+            name=event.get('name', 'unknown'),
+            status=event.get('new_status', 'UNKNOWN'),
+            current_time=event_time
+        )
+        
+        if not suppress:
+            # Event not during maintenance - include in summary
+            filtered_events.append(event)
+        else:
+            # Event during maintenance - exclude from summary
+            maintenance_count += 1
+            logger.debug(f"Excluding maintenance event from summary: {event.get('name')} at {event_time} - {reason}")
+    
+    # Use filtered events for the rest of the summary generation
+    events = filtered_events
     
     if not events:
-        # No activity overnight - send "quiet night" summary
+        # No activity overnight (after filtering maintenance) - send "quiet night" summary
         embed = {
             "title": "🌅 Good Morning!",
             "description": f"Period: {start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
@@ -262,6 +299,14 @@ async def generate_morning_summary() -> Optional[Dict[str, Any]]:
             ],
             "timestamp": datetime.utcnow().isoformat()
         }
+        
+        # Add note about filtered maintenance events if any
+        if maintenance_count > 0:
+            embed["fields"].insert(1, {
+                "name": "🔧 Maintenance Events",
+                "value": f"Excluded {maintenance_count} event(s) during scheduled maintenance windows",
+                "inline": False
+            })
         
         # Clear sleep events even though there are none (cleanup)
         await clear_sleep_events()
@@ -309,6 +354,14 @@ async def generate_morning_summary() -> Optional[Dict[str, Any]]:
             activity_lines.append(f"{status_emoji} {hour} - {name}: {prev} → {new}")
     
     # Build embed
+    activity_summary = f"• {len(events)} events logged\n"
+    activity_summary += f"• {len(service_events)} service events\n"
+    activity_summary += f"• {len(ongoing_issues)} ongoing issues"
+    
+    # Add maintenance count note if any events were filtered
+    if maintenance_count > 0:
+        activity_summary += f"\n• {maintenance_count} maintenance events excluded"
+    
     embed = {
         "title": "🌅 Overnight Activity Summary",
         "description": f"Period: {start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}",
@@ -316,11 +369,7 @@ async def generate_morning_summary() -> Optional[Dict[str, Any]]:
         "fields": [
             {
                 "name": "📊 Activity Overview",
-                "value": (
-                    f"• {len(events)} events logged\n"
-                    f"• {len(service_events)} service events\n"
-                    f"• {len(ongoing_issues)} ongoing issues"
-                ),
+                "value": activity_summary,
                 "inline": False
             }
         ],
