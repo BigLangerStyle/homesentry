@@ -38,6 +38,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **5-minute window**: Skips summary if already sent within last 5 minutes
 - **Fixes issue**: Eliminated duplicate summaries at 5:59 AM and 6:00 AM when scheduler runs on both sides of the wake time boundary
 
+**Maintenance Window Filtering in Morning Summaries**
+- **Sleep + maintenance conflict**: Events occurring during maintenance windows (e.g., 5:00-5:15 AM router reboot) are now properly excluded from morning summaries
+- **Architectural fix**: Morning summary generation now calls `should_suppress_alert()` with event timestamps to check maintenance windows
+- **Previous behavior**: During sleep hours, ALL events were queued regardless of maintenance windows — router reboots generated 12+ events in morning summary
+- **New behavior**: Events during maintenance windows are filtered out and counted separately — "Quiet Night" summary when only maintenance events occurred
+- **Visibility**: Summary shows count of excluded maintenance events (e.g., "• 12 maintenance events excluded")
+- **Audit trail preserved**: Maintenance events still logged to database, just excluded from Discord summary display
+
 ### Documentation
 - Updated `.env.example` with detailed explanation of `STATE_CHANGE_GRACE_CHECKS` including examples
 - Added comprehensive docstrings to `grace_period.py` explaining the sustained state checking pattern
