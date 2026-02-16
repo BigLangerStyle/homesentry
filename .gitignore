@@ -135,9 +135,12 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-# TEMPORARY: .env is being tracked for development convenience
-# TODO: Remove .env from tracking before project finalization
-# .env
+# .env contains sensitive data (Discord webhooks, API keys) and must never be committed
+.env
+
+# Keep .env.example as a template
+!.env.example
+
 .envrc
 .venv
 env/
