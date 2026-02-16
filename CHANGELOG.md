@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-02-13
+
+### Added
+
+**Sustained State Checking with Grace Period**
+- **Grace period tracking**: New `app/alerts/grace_period.py` module implements sustained state checking to prevent alerts on transient flaps
+- **Configurable threshold**: `STATE_CHANGE_GRACE_CHECKS=3` env variable controls how many consecutive bad checks are required before alerting
+- **Intelligent suppression**: Brief service hiccups (e.g., OK→FAIL→OK within 1-2 checks) are completely ignored and don't create events
+- **Immediate recovery alerts**: Recovery to OK status always alerts immediately (no grace period for good news)
+- **In-memory tracking**: Pending state changes tracked in memory, only logged to database after grace period threshold is met
+- **Comprehensive logging**: Grace period decisions logged at INFO level for troubleshooting
+
+**Example behavior:**
+- Service flaps (1-2 checks): No alert, no database event, completely silent
+- Sustained failure (3+ consecutive checks): Alert proceeds normally after threshold
+- Recovery during grace period: Pending state discarded, no alert sent
+- Recovery after alerting: Immediate recovery notification sent
+
+### Fixed
+
+**Morning Summary Timestamp Display**
+- **Activity Log timestamps**: Changed format from 24-hour (`05:01`) to 12-hour with AM/PM (`5:01 AM`) for clarity
+- **Timezone conversion**: Fixed UTC-to-local timezone conversion — timestamps now display in server's local time instead of UTC
+- **Example**: Router reboot at 5:01 AM CST now correctly displays as `5:01 AM` instead of `11:01 AM` (UTC)
+- **No logic changes**: Only affects display formatting in Discord morning summary — event collection and storage remain unchanged
+
+**Duplicate Morning Summary**
+- **Added last-sent tracker**: Module-level `_last_summary_sent` variable in `scheduler.py` prevents duplicate morning summaries
+- **5-minute window**: Skips summary if already sent within last 5 minutes
+- **Fixes issue**: Eliminated duplicate summaries at 5:59 AM and 6:00 AM when scheduler runs on both sides of the wake time boundary
+
+**Maintenance Window Filtering in Morning Summaries**
+- **Sleep + maintenance conflict**: Events occurring during maintenance windows (e.g., 5:00-5:15 AM router reboot) are now properly excluded from morning summaries
+- **Architectural fix**: Morning summary generation now calls `should_suppress_alert()` with event timestamps to check maintenance windows
+- **Previous behavior**: During sleep hours, ALL events were queued regardless of maintenance windows — router reboots generated 12+ events in morning summary
+- **New behavior**: Events during maintenance windows are filtered out and counted separately — "Quiet Night" summary when only maintenance events occurred
+- **Visibility**: Summary shows count of excluded maintenance events (e.g., "• 12 maintenance events excluded")
+- **Audit trail preserved**: Maintenance events still logged to database, just excluded from Discord summary display
+
+### Security
+- **Removed .env from Git tracking** - The `.env` file containing sensitive configuration (Discord webhooks, API keys, service credentials) is no longer tracked in version control
+  - Purged `.env` from entire Git history using BFG Repo-Cleaner (all 159 commits cleaned)
+  - Added `.env` to `.gitignore` to prevent future commits of sensitive data
+  - `.env.example` remains in repository as a template for new installations
+  - Force-pushed cleaned history to GitHub
+  - Existing installations: Local `.env` files are preserved and remain functional
+  - New installations: Users should copy `.env.example` to `.env` and configure with their credentials
+
+### Documentation
+- Updated `.env.example` with detailed explanation of `STATE_CHANGE_GRACE_CHECKS` including examples
+- Added comprehensive docstrings to `grace_period.py` explaining the sustained state checking pattern
+- Updated module docstring in `check_morning_summary()` to document duplicate prevention logic
+
+## [0.5.0] - 2026-02-10
+
+### Fixed
+- **Sleep schedule configuration**: Sleep schedule was disabled in `.env` - changed `SLEEP_SCHEDULE_ENABLED=false` to `true` to activate the feature
+- **Sleep schedule boundary condition**: Fixed end time comparison to use exclusive boundary (`<` instead of `<=`), ensuring alerts resume exactly at configured wake time rather than one minute after
+  - Sleep period is now `[start_time, end_time)` (half-open interval) matching standard time range conventions
+  - Morning summaries now send on schedule instead of being suppressed at their configured time
+  - Alert resumption happens immediately at wake time (e.g., 6:00 AM) instead of being delayed to 6:01 AM
+- **Wake time adjusted**: Changed `SLEEP_SCHEDULE_END` from 07:30 to 06:00 in `.env` to match user's intended midnight-6AM sleep schedule
+
+### Documentation
+- Updated `.env.example` sleep schedule section to clarify that END time is exclusive (alerts resume AT this time, not after)
+- Changed default wake time examples from 07:30 to 06:00 for consistency with common sleep schedules
+- Added inline comment explaining START is inclusive, END is exclusive
+
 ## [0.4.0] - 2026-02-01
 
 ### Fixed
