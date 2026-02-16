@@ -62,6 +62,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.0] - 2026-02-10
 
+### Added
+
+**Interactive TUI Setup Installer**
+- **First-time setup without manual .env editing**: New `scripts/setup.sh` provides 850-line interactive installer using whiptail/dialog
+- **Automatic service detection**: Scans for Docker containers, systemd services, and HTTP endpoints to pre-populate module selection
+- **Menu-driven module selection**: Pre-checked detected services with checkbox interface for user confirmation
+- **Per-module configuration screens**: Guided field-by-field configuration with validation and help text
+- **Bare-metal service support**: Detects Plex and Pi-hole running as systemd services (not just Docker containers)
+- **Discord webhook testing**: Sends live test message to validate webhook URL before saving configuration
+- **Complete .env generation**: Produces ready-to-use .env file with infrastructure defaults and user-provided credentials
+- **SSH-friendly**: Works over SSH without browser requirement, perfect for headless server setup
+- **Zero manual editing**: Clone → run installer → docker compose up → monitoring active
+
+**Web-Based Configuration UI**
+- **Browser-based settings management**: New `/config` page accessible from dashboard header button
+- **Structured form layout**: Settings grouped by section (Infrastructure, Modules, Polling, Alerting, Sleep/Maintenance)
+- **Module enable/disable toggles**: Per-module switches with visual status badges (green "ENABLED" / gray "DISABLED")
+- **Sensitive field masking**: Passwords, tokens, and API keys masked with bullet characters (••••••••••••••••) for security
+- **Full light/dark mode support**: Matches dashboard theme automatically, custom styling for dropdowns and number spinners
+- **Atomic .env file writes**: Uses temp file + rename pattern to prevent partial writes during crashes
+- **Immediate effect**: Updates both .env file and process environment for most settings (container restarts may be required for some changes)
+- **Docker-compatible pattern**: Reads from environment variables, respects Docker's immutable container philosophy
+- **No SSH required**: Ongoing configuration changes possible through web browser after initial setup
+
+**Dynamic Module Registration**
+- **Self-contained modules**: New `CARD_METRICS` class attribute on `AppModule` base class lets each module declare its own dashboard card metrics
+- **Automatic dashboard integration**: `get_latest_dashboard_metrics()` builds app card data dynamically from discovered modules at query time
+- **No manual main.py edits**: Dropped the hardcoded `APP_PREFIXES`, `APP_DISPLAY_NAMES`, `APP_CARD_METRICS` dicts that required manual updates
+- **Module-driven architecture**: Modules define their own display metadata, main.py consumes it without needing to know specifics
+- **Enables easy expansion**: New modules can be added by dropping a Python file in `app/collectors/modules/` without touching core code
+
 ### Fixed
 - **Sleep schedule configuration**: Sleep schedule was disabled in `.env` - changed `SLEEP_SCHEDULE_ENABLED=false` to `true` to activate the feature
 - **Sleep schedule boundary condition**: Fixed end time comparison to use exclusive boundary (`<` instead of `<=`), ensuring alerts resume exactly at configured wake time rather than one minute after
@@ -74,6 +105,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `.env.example` sleep schedule section to clarify that END time is exclusive (alerts resume AT this time, not after)
 - Changed default wake time examples from 07:30 to 06:00 for consistency with common sleep schedules
 - Added inline comment explaining START is inclusive, END is exclusive
+
+### Impact
+**User Experience:**
+- First-time setup: `git clone` → `./scripts/setup.sh` → `docker compose up` → done
+- Ongoing config: Click dashboard button → edit form → save → changes applied
+- No SSH or terminal required for configuration after initial setup
+
+**Developer Experience:**
+- New modules: Drop `.py` file → add fields to `module_fields.py` → automatically integrated
+- No manual registration in main.py
+- Clear separation: modules define data, dashboard consumes it
 
 ## [0.4.0] - 2026-02-01
 
