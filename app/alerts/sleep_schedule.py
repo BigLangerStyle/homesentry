@@ -279,12 +279,18 @@ async def generate_morning_summary() -> Optional[Dict[str, Any]]:
     # Build activity summary
     activity_lines = []
     
+    # Calculate UTC to local time offset once
+    # (Database stores UTC, display in server's local time)
+    local_offset = datetime.now() - datetime.utcnow()
+    
     # Group events by time for readability
     event_groups: Dict[str, List[Dict[str, Any]]] = {}
     for event in events:
         try:
             event_time = datetime.fromisoformat(event['ts'])
-            hour = event_time.strftime('%H:%M')
+            # Convert UTC timestamp to local time
+            local_event_time = event_time + local_offset
+            hour = local_event_time.strftime('%I:%M %p')  # 12-hour format with AM/PM
         except:
             hour = "??:??"
         
