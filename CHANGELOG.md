@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Removed .env from Git tracking** - The `.env` file containing sensitive configuration (Discord webhooks, API keys, service credentials) is no longer tracked in version control
+  - Added `.env` to `.gitignore` to prevent future commits of sensitive data
+  - `.env.example` remains in repository as a template for new installations
+  - Existing installations: Local `.env` files are preserved and remain functional
+  - New installations: Users should copy `.env.example` to `.env` and configure with their credentials
+  - **Important**: This change removes `.env` from future tracking but does not purge it from Git history. If needed, rotate Discord webhook URLs in Discord server settings for maximum security.
+
 ## [0.6.0] - 2026-02-10
 
 ### Added
