@@ -189,34 +189,56 @@ Release chat responsibilities:
 
 Release chat outputs must always include:
 
-Task: <title>
-Branch name: feature/<n>
-Parent branch: release/<version>
+1. **Brief handoff summary** - One-sentence description of what this task accomplishes
+2. **Task description as a downloadable .md file** with format: `TASK_<feature-name>.md`
+3. **Files to upload list** - the exact files the task will touch
+4. **PowerShell zip command** to package those files
 
-Context:
+### Handoff Format Example:
 
-* ...
+```
+## Task Handoff: feature/sustained-state-checking
 
-Requirements:
+**Summary:** Implement grace period for state changes to ignore transient flaps and only alert on sustained issues (3+ consecutive bad checks).
 
-* [ ] ...
+**Task description file:** TASK_sustained_state_checking.md (download below)
 
-Files to upload:
+**Files to upload:**
+1. app/alerts/rules.py
+2. app/scheduler.py
+3. app/collectors/services.py
+4. .env.example
+5. CHANGELOG.md
+6. PROJECT_SUMMARY.md
 
-1. PROJECT_SUMMARY.md
-2. <the exact files this task will touch>
-3. CHANGELOG.md (if needed)
-4. .env.example (only if adding config)
+**PowerShell zip command:**
+```powershell
+cd "C:\Users\slanger\Documents\Git\homesentry"
+Compress-Archive -Path app/alerts/rules.py, app/scheduler.py, app/collectors/services.py, .env.example, CHANGELOG.md, PROJECT_SUMMARY.md -DestinationPath feature_sustained_state_checking_files.zip -Force
+```
 
-Note: The task description itself is NOT a file. It is produced as chat output by the release chat and pasted inline by the user into the feature chat. It does not appear in the zip or the upload list.
+[Present TASK_sustained_state_checking.md file for download]
+```
+
+### Task Description File Contents
+
+The task description file should include:
+- Branch name and parent branch at the top
+- Project context (what HomeSentry is, stack, deployment model)
+- Clear statement that uploaded files are source of truth
+- Context section explaining why this feature exists
+- Requirements checklist with clear deliverables
+- Technical details with implementation guidance
+- Files to create/modify list
+- Acceptance criteria and testing plan
 
 ---
 
 ## Packaging the File List as a Zip
 
-Once Claude produces a "Files to upload" list, the user can package it into a single zip for upload to the next chat. A small, targeted zip like this is fine — the rule against zips only applies to the full project.
+Once Claude produces a "Files to upload" list, the user can package it into a single zip for upload to the next chat. A small, targeted zip like this is fine â€” the rule against zips only applies to the full project.
 
-Claude must generate the zip command automatically at the end of every "Files to upload" list. Use PowerShell — `zip` is not installed in Git Bash. Example:
+Claude must generate the zip command automatically at the end of every "Files to upload" list. Use PowerShell â€” `zip` is not installed in Git Bash. Example:
 
 ```powershell
 cd "C:\Users\slanger\Documents\Git\homesentry"
@@ -229,20 +251,20 @@ Rules for the generated command:
 * Zip filename describes what it contains (e.g. `release_v050_files.zip`, `feature_setup_wizard_files.zip`)
 * File paths are exactly as they appear in the repo (forward slashes, works in PowerShell)
 * Never includes `.env`, `data/`, or files not in the "Files to upload" list
-* Directory structure must be preserved in the zip — the receiving chat sees files at their repo-relative paths. This matters when the same filename appears at multiple depths (e.g. `app/collectors/__init__.py` vs `app/collectors/modules/__init__.py`). PowerShell's `Compress-Archive` preserves relative paths automatically when run from the repo root, so no extra flags are needed — but the paths in `-Path` must be the full repo-relative paths, never bare filenames.
+* Directory structure must be preserved in the zip â€” the receiving chat sees files at their repo-relative paths. This matters when the same filename appears at multiple depths (e.g. `app/collectors/__init__.py` vs `app/collectors/modules/__init__.py`). PowerShell's `Compress-Archive` preserves relative paths automatically when run from the repo root, so no extra flags are needed â€” but the paths in `-Path` must be the full repo-relative paths, never bare filenames.
 
 ---
 
 ## Known Zip Pitfall: Flat Extraction
 
-**Problem:** Even when `Compress-Archive` is run correctly from the repo root with full paths, the zip can still land flat when extracted — all `.py` files end up in the same directory with no subdirectory structure. This happens when PowerShell resolves the paths before compressing, or when the zip tool on extraction doesn't recreate folders.
+**Problem:** Even when `Compress-Archive` is run correctly from the repo root with full paths, the zip can still land flat when extracted â€” all `.py` files end up in the same directory with no subdirectory structure. This happens when PowerShell resolves the paths before compressing, or when the zip tool on extraction doesn't recreate folders.
 
 **Impact on Claude:** When files land flat, Claude has to spend its first several steps figuring out which file maps to which repo path. It can usually infer this from context (e.g. it knows `base.py` lives in `app/collectors/modules/`) but this is wasted orientation time that burns tokens before any real work starts.
 
 **How to verify your zip preserved structure:** After running `Compress-Archive`, check with:
 
 ```powershell
-# Lists contents with their paths — you should see app/collectors/modules/base.py, NOT just base.py
+# Lists contents with their paths â€” you should see app/collectors/modules/base.py, NOT just base.py
 & "C:\Program Files\Git\usr\bin\unzip.exe" -l feature_my_task_files.zip
 ```
 
@@ -261,7 +283,7 @@ $files = @(
 Compress-Archive -Path $files -DestinationPath feature_my_task_files.zip -Force
 ```
 
-**If the zip IS flat and you can't easily re-zip:** Just upload it anyway. Claude can recover — but it helps to mention it. A one-liner like "zip landed flat again" saves Claude from spending tokens on the detective work.
+**If the zip IS flat and you can't easily re-zip:** Just upload it anyway. Claude can recover â€” but it helps to mention it. A one-liner like "zip landed flat again" saves Claude from spending tokens on the detective work.
 
 ---
 
@@ -272,7 +294,7 @@ Compress-Archive -Path $files -DestinationPath feature_my_task_files.zip -Force
 **Rule:** The task description produced by the release chat must be pasted inline directly after the chat intro block. The two together form one copy-paste unit. Example:
 
 ```
-## HomeSentry — feature/app-card-registration-from-modules
+## HomeSentry â€” feature/app-card-registration-from-modules
 
 This is the **feature implementation** chat for HomeSentry.
 ...
@@ -293,7 +315,7 @@ The three lookup tables in get_latest_dashboard_metrics() ...
 - [ ] ...
 ```
 
-If Claude receives only the intro block with no task description, it should say so immediately rather than guess — one quick clarification is faster than inferring wrong.
+If Claude receives only the intro block with no task description, it should say so immediately rather than guess â€” one quick clarification is faster than inferring wrong.
 
 ---
 
@@ -301,9 +323,9 @@ If Claude receives only the intro block with no task description, it should say 
 
 When a feature chat finishes and the user wants to hand results back to the release chat, Claude must produce two things:
 
-1. **A summary block** — a compact description of what was done, what was tested, and what's ready. The release chat pastes this as context when it resumes.
+1. **A summary block** â€” a compact description of what was done, what was tested, and what's ready. The release chat pastes this as context when it resumes.
 
-2. **No zip needed for the handoff itself.** The release chat doesn't need the modified source files — those are already committed to the feature branch. The release chat only needs to know *what happened* so it can produce the next task description.
+2. **No zip needed for the handoff itself.** The release chat doesn't need the modified source files â€” those are already committed to the feature branch. The release chat only needs to know *what happened* so it can produce the next task description.
 
 The summary block format:
 
@@ -333,13 +355,13 @@ When handing off to a new chat (release or feature), Claude must produce a short
 Claude generates this at the end of every handoff, in a clearly labeled block. Template:
 
 ```markdown
-## HomeSentry — [release/v0.5.0 | feature/setup-wizard]
+## HomeSentry â€” [release/v0.5.0 | feature/setup-wizard]
 
 This is the **[release orchestration | feature implementation]** chat for HomeSentry.
 
 **Project:** Self-hosted home server health monitor. Python/FastAPI, SQLite, Docker. Runs on a Linux MediaServer, developed on Windows in Cursor.
 
-**Workflow rules:** `.agent/workflows/claude_workflow.md` (in the Project files — read it first).
+**Workflow rules:** `.agent/workflows/claude_workflow.md` (in the Project files â€” read it first).
 
 **What this chat does:**
 - [Release chat: Define scope, produce task descriptions and file lists for feature chats. No implementation work.]
@@ -350,10 +372,10 @@ This is the **[release orchestration | feature implementation]** chat for HomeSe
 
 Rules:
 
-* Claude fills in the bracketed choices — never leaves them as options for the user to pick
+* Claude fills in the bracketed choices â€” never leaves them as options for the user to pick
 * The block is short enough to paste as a single message, not a file upload
 * It goes at the very end of the handoff output, after the zip command
-* The task description is pasted inline directly after the chat intro block — the two together form a single copy-paste block. The task description is never uploaded as a file.
+* The task description is pasted inline directly after the chat intro block â€” the two together form a single copy-paste block. The task description is never uploaded as a file.
 
 ---
 
