@@ -632,13 +632,22 @@
                                 yAxis.min = 0;
                                 yAxis.max = 100;
                             }
-                            // Disk-free metrics: apply 10% padding below min value
-                            // so a 0.7 GB change on a 2057 GB volume doesn't fill the whole chart
+                            // Disk-free metrics: enforce a minimum y-axis range so tiny
+                            // absolute changes don't look dramatic on large volumes.
+                            // Uses the larger of 10 GB or 5% of the max value, centered
+                            // around the data midpoint.
                             else if (metricName.includes("disk") && metricName.includes("free") && metricName.includes("GB")) {
                                 var numericValues = values.filter(function(v) { return v !== null && v !== undefined; });
                                 if (numericValues.length > 0) {
                                     var dataMin = Math.min.apply(null, numericValues);
-                                    yAxis.min = Math.floor(dataMin * 0.9);
+                                    var dataMax = Math.max.apply(null, numericValues);
+                                    var dataRange = dataMax - dataMin;
+                                    var minRange = Math.max(10, dataMax * 0.05);
+                                    if (dataRange < minRange) {
+                                        var center = (dataMax + dataMin) / 2;
+                                        yAxis.min = Math.max(0, center - (minRange / 2));
+                                        yAxis.max = center + (minRange / 2);
+                                    }
                                 }
                             }
                             return yAxis;
