@@ -7,23 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-02-17
+## [0.7.0] - 2026-02-16
 
 ### Added
 
 **Historical Data Charts**
-- **New `get_metric_history()` function in `app/storage/db.py`**: queries `metrics_samples` for a named metric over a configurable lookback window, groups rows into evenly-sized time buckets using SQLite's `strftime()` and unix-epoch integer division, and returns `{ts, value}` pairs ready for Chart.js
-- **New `get_available_chart_metrics()` function in `app/storage/db.py`**: discovers chartable metrics that actually have data in the past 7 days; dynamically detects disk mount-point names from the database so the chart selector is always accurate
-- **New `GET /api/metrics/history/available` endpoint**: returns list of chartable metric names with display labels and units; dashboard uses this to build the chart grid dynamically
-- **New `GET /api/metrics/history?metric=cpu_percent&hours=24` endpoint**: returns `{labels, values, unit, count}` JSON for a single metric over 1–168 hours; bucket count auto-scales (36 for ≤6h, 60 for ≤24h, 84 for 7d)
-- **"Historical Trends" section in `dashboard.html`**: rendered below the Infrastructure Layer with a 2-column chart grid
-- **Four default charts**: CPU %, RAM %, and any disk-free-GB metrics found in the database
-- **Time range selector**: 6h / 24h / 7d buttons in the section header; clicking refreshes all charts simultaneously
-- **Chart.js 4.4.1** loaded from cdnjs CDN (no build step, no new Python dependencies)
-- **Dark mode support**: chart grid lines, tick labels, legend, and dataset colors all update when the theme toggle is clicked
-- **Chart styles in `styles.css`**: `.trends-layer`, `.chart-grid`, `.chart-wrapper`, `.range-btn` with full dark-mode-compatible CSS variables
+- **New API endpoint** `GET /api/metrics/history/available` — dynamically discovers chartable metrics that have data in the database, returning labels and units for each
+- **New API endpoint** `GET /api/metrics/history?metric=&hours=` — returns bucketed time-series JSON ready for Chart.js; auto-scales to 36/60/84 data points for 6h/24h/7d ranges respectively
+- **New `get_metric_history()` function** in `app/storage/db.py` — SQLite time bucketing using strftime for efficient aggregation across arbitrary time ranges
+- **New `get_available_chart_metrics()` function** in `app/storage/db.py` — queries distinct metric names from `metrics_samples` to dynamically build the available metrics list
+- **"Historical Trends" dashboard section** — appears below Infrastructure Layer with a 2-column chart grid
+- **Chart.js 4.4.1 via CDN** — no new Python dependencies required
+- **Default charts**: CPU %, RAM %, and disk free GB for all mounted paths with data (e.g., `/host`, `/mnt/Array`)
+- **Time range selector**: 6h / 24h / 7d buttons — refreshes all charts simultaneously on click
+- **Dark mode support**: Chart grid lines, tick labels, and legends update automatically on theme toggle via CSS variables
+- **Chart container CSS** added to `styles.css` with full dark mode CSS variable support
 
-## [0.6.0] - 2026-02-13
+**Implementation notes:**
+- Metric names use underscores matching actual database values (e.g., `memory_percent`, `disk_mnt_Array_free_gb`)
+- Bucketing resolution scales with time range to keep chart density consistent
+
+
 
 ### Added
 
@@ -78,37 +82,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.0] - 2026-02-10
 
-### Added
-
-**Interactive TUI Setup Installer**
-- **First-time setup without manual .env editing**: New `scripts/setup.sh` provides 850-line interactive installer using whiptail/dialog
-- **Automatic service detection**: Scans for Docker containers, systemd services, and HTTP endpoints to pre-populate module selection
-- **Menu-driven module selection**: Pre-checked detected services with checkbox interface for user confirmation
-- **Per-module configuration screens**: Guided field-by-field configuration with validation and help text
-- **Bare-metal service support**: Detects Plex and Pi-hole running as systemd services (not just Docker containers)
-- **Discord webhook testing**: Sends live test message to validate webhook URL before saving configuration
-- **Complete .env generation**: Produces ready-to-use .env file with infrastructure defaults and user-provided credentials
-- **SSH-friendly**: Works over SSH without browser requirement, perfect for headless server setup
-- **Zero manual editing**: Clone → run installer → docker compose up → monitoring active
-
-**Web-Based Configuration UI**
-- **Browser-based settings management**: New `/config` page accessible from dashboard header button
-- **Structured form layout**: Settings grouped by section (Infrastructure, Modules, Polling, Alerting, Sleep/Maintenance)
-- **Module enable/disable toggles**: Per-module switches with visual status badges (green "ENABLED" / gray "DISABLED")
-- **Sensitive field masking**: Passwords, tokens, and API keys masked with bullet characters (••••••••••••••••) for security
-- **Full light/dark mode support**: Matches dashboard theme automatically, custom styling for dropdowns and number spinners
-- **Atomic .env file writes**: Uses temp file + rename pattern to prevent partial writes during crashes
-- **Immediate effect**: Updates both .env file and process environment for most settings (container restarts may be required for some changes)
-- **Docker-compatible pattern**: Reads from environment variables, respects Docker's immutable container philosophy
-- **No SSH required**: Ongoing configuration changes possible through web browser after initial setup
-
-**Dynamic Module Registration**
-- **Self-contained modules**: New `CARD_METRICS` class attribute on `AppModule` base class lets each module declare its own dashboard card metrics
-- **Automatic dashboard integration**: `get_latest_dashboard_metrics()` builds app card data dynamically from discovered modules at query time
-- **No manual main.py edits**: Dropped the hardcoded `APP_PREFIXES`, `APP_DISPLAY_NAMES`, `APP_CARD_METRICS` dicts that required manual updates
-- **Module-driven architecture**: Modules define their own display metadata, main.py consumes it without needing to know specifics
-- **Enables easy expansion**: New modules can be added by dropping a Python file in `app/collectors/modules/` without touching core code
-
 ### Fixed
 - **Sleep schedule configuration**: Sleep schedule was disabled in `.env` - changed `SLEEP_SCHEDULE_ENABLED=false` to `true` to activate the feature
 - **Sleep schedule boundary condition**: Fixed end time comparison to use exclusive boundary (`<` instead of `<=`), ensuring alerts resume exactly at configured wake time rather than one minute after
@@ -121,17 +94,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `.env.example` sleep schedule section to clarify that END time is exclusive (alerts resume AT this time, not after)
 - Changed default wake time examples from 07:30 to 06:00 for consistency with common sleep schedules
 - Added inline comment explaining START is inclusive, END is exclusive
-
-### Impact
-**User Experience:**
-- First-time setup: `git clone` → `./scripts/setup.sh` → `docker compose up` → done
-- Ongoing config: Click dashboard button → edit form → save → changes applied
-- No SSH or terminal required for configuration after initial setup
-
-**Developer Experience:**
-- New modules: Drop `.py` file → add fields to `module_fields.py` → automatically integrated
-- No manual registration in main.py
-- Clear separation: modules define data, dashboard consumes it
 
 ## [0.4.0] - 2026-02-01
 
@@ -507,9 +469,13 @@ Initial release establishing the foundation for HomeSentry with system monitorin
 
 ## Version History Summary
 
+- **v0.7.0** (Released 2026-02-16) - Historical charts: time-series visualization with Chart.js, 6h/24h/7d range selector
+- **v0.6.0** (Released 2026-02-13) - Sustained state checking, morning summary fixes, .env security cleanup
+- **v0.5.0** (Released 2026-02-10) - Interactive TUI installer, web config UI, dynamic module registration
 - **v0.4.0** (Released 2026-02-01) - Polish release: 22 fixes across code quality, configuration, and documentation
 - **v0.3.0** (Released 2026-01-31) - Plugin architecture and app-specific modules
 - **v0.2.0** (Released 2026-01-27) - Infrastructure monitoring (Docker, SMART, RAID)
 - **v0.1.0** (Released 2026-01-25) - MVP with system monitoring, service checks, Discord alerts
-- **v0.5.0** (Future) - Interactive installer, configuration UI
-- **v1.0.0** (Future) - Historical charts, authentication, production polish
+- **v0.8.0** (In progress) - Polish release: docs, data retention, dashboard UX
+- **v0.9.0** (Future) - Authentication, API rate limiting, unit tests
+- **v1.0.0** (Future) - Multi-server support, mobile UI, production hardening
