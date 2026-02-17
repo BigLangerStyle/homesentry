@@ -212,9 +212,9 @@ Files to upload:
 
 ## Packaging the File List as a Zip
 
-Once Claude produces a "Files to upload" list, the user can package it into a single zip for upload to the next chat. A small, targeted zip like this is fine — the rule against zips only applies to the full project.
+Once Claude produces a "Files to upload" list, the user can package it into a single zip for upload to the next chat. A small, targeted zip like this is fine â€” the rule against zips only applies to the full project.
 
-Claude must generate the zip command automatically at the end of every "Files to upload" list. Use PowerShell — `zip` is not installed in Git Bash. Example:
+Claude must generate the zip command automatically at the end of every "Files to upload" list. Use PowerShell â€” `zip` is not installed in Git Bash. Example:
 
 ```powershell
 cd "C:\Users\slanger\Documents\Git\homesentry"
@@ -232,7 +232,7 @@ Rules for the generated command:
 
 ## Complete Handoff Format
 
-There are two distinct handoff scenarios. Use the right one — they are not interchangeable.
+There are two distinct handoff scenarios. Use the right one â€” they are not interchangeable.
 
 ---
 
@@ -240,7 +240,7 @@ There are two distinct handoff scenarios. Use the right one — they are not int
 
 Use this when spinning up a brand new chat that has no context yet.
 
-Produce three outputs in this order:
+Produce two outputs in this order:
 
 #### 1. Git Commands
 
@@ -276,36 +276,30 @@ Rules:
 * Only includes files from the "Files to upload" list
 * Never includes `.env`, `data/`, or files not relevant to the task
 
-#### 3. Chat Intro Block
+#### Task Description File Format
 
-Short markdown block to paste as the first message in the new chat:
+Task descriptions must be self-contained and include:
 
-```markdown
-## HomeSentry — [branch name]
+1. **Project Context** section at top:
+   - What HomeSentry is (self-hosted home server health monitor)
+   - Tech stack (Python/FastAPI, SQLite, Docker)
+   - Where it runs (Linux MediaServer, developed on Windows in Cursor)
+   - Reference to workflow doc in Project files
+   - "Uploaded files are source of truth" reminder
 
-This is the **[release orchestration | feature implementation]** chat for HomeSentry.
+2. **Task Context** section explaining what this task does and why
 
-**Project:** Self-hosted home server health monitor. Python/FastAPI, SQLite, Docker. Runs on a Linux MediaServer, developed on Windows in Cursor.
+3. **Requirements**, **Files to Create/Modify**, **Acceptance Criteria** (existing structure)
 
-**Workflow rules:** `.agent/workflows/claude_workflow.md` (in the Project files — read it first).
+4. **Suggested Commit Message** section at end with ready-to-use conventional commit format
 
-**What this chat does:**
-- [Release chat: Define scope, produce task descriptions and file lists for feature chats. No implementation work.]
-- [Feature chat: Implement the task described below. Stay inside the uploaded files only.]
-
-**Uploaded files are the source of truth.** Do not guess at code you haven't seen. If you need a file not uploaded, ask for exactly that one file.
-```
-
-Rules:
-* Claude fills in all bracketed choices — never leaves them as options for the user
-* Block is short enough to paste as a single message, not a file upload
-* Does not repeat task descriptions — those live in uploaded files
+No separate chat intro block needed — the task description file is uploaded directly to the new chat.
 
 ---
 
 ### Handoff B: Back to an EXISTING chat
 
-Use this when a feature chat is done and needs to report back to the release chat that spawned it. The release chat already has full context — it does not need git commands, zip commands, or an intro block.
+Use this when a feature chat is done and needs to report back to the release chat that spawned it. The release chat already has full context â€” it does not need git commands, zip commands, or an intro block.
 
 Produce one output only: a short markdown status update the user can paste into the existing chat.
 
@@ -314,20 +308,20 @@ Format:
 ```markdown
 **Completed: feature/<name>**
 
-<2–4 sentence summary of what was implemented and any decisions made.>
+<2â€“4 sentence summary of what was implemented and any decisions made.>
 
 Files committed:
-- `path/to/file.py` — what changed
-- `path/to/CHANGELOG.md` — what was documented
+- `path/to/file.py` â€” what changed
+- `path/to/CHANGELOG.md` â€” what was documented
 
-<Any notes the release chat needs to know — gotchas, follow-up items, corrections to the task description, etc.>
+<Any notes the release chat needs to know â€” gotchas, follow-up items, corrections to the task description, etc.>
 ```
 
 Rules:
-* No git commands — the user already ran them
-* No zip command — no new chat is being created
-* No intro block — the receiving chat already exists
-* Keep it short — the release chat needs a status update, not a full report
+* No git commands â€” the user already ran them
+* No zip command â€” no new chat is being created
+* No intro block â€” the receiving chat already exists
+* Keep it short â€” the release chat needs a status update, not a full report
 * If the task description contained an error, call it out explicitly so the release chat can correct future task descriptions
 
 ---
