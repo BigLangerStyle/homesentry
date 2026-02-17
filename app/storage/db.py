@@ -656,7 +656,7 @@ async def get_metric_history(
 
     Args:
         metric_name:  Exact name stored in metrics_samples.name
-                      (e.g. "cpu_percent", "ram_percent",
+                      (e.g. "cpu_percent", "memory_percent",
                       "disk_/mnt/Array_free_gb").
         hours:        How far back to look (default 24).
         bucket_count: Number of data points to return (default 60).
@@ -737,33 +737,34 @@ async def get_available_chart_metrics() -> List[Dict[str, Any]]:
     """
     Return the list of numeric metric names that have data in the database.
 
-    Queries the distinct ``name`` values in metrics_samples where
-    value_num is not null and data exists in the past 7 days.  Only
-    returns names that are known chart-worthy metrics (system + disk
-    categories), so that container/SMART/RAID metrics with low cardinality
-    don't clutter the chart selector.
+    Queries distinct names in metrics_samples where value_num is not null
+    and data exists in the past 7 days.  Only returns system + disk metrics
+    so that Docker/SMART/RAID metrics don't clutter the chart selector.
 
     Returns:
         List of dicts with keys:
-            ``name``  – the raw metric name stored in the DB
-            ``label`` – a human-readable display label
-            ``unit``  – unit string for the y-axis (e.g. "%", "GB")
+            ``name``  - the raw metric name stored in the DB
+            ``label`` - a human-readable display label
+            ``unit``  - unit string for the y-axis (e.g. "%" or "GB")
 
     Examples:
         >>> metrics = await get_available_chart_metrics()
         >>> [m["name"] for m in metrics]
-        ["cpu_percent", "ram_percent", "disk_/mnt/Array_free_gb"]
+        ["cpu_percent", "memory_percent", "disk_mnt_Array_free_gb"]
     """
-    # Fixed catalogue of chartable metrics with their display metadata.
-    # Only metrics whose names can actually appear in metrics_samples are listed.
+    # Fixed catalogue of chartable metrics.
+    # RAM is stored as "memory_percent" by the system collector.
     CHARTABLE_METRICS = [
-        {"name": "cpu_percent",      "label": "CPU Usage",    "unit": "%"},
-        {"name": "ram_percent",      "label": "RAM Usage",    "unit": "%"},
-        {"name": "disk_free_gb",     "label": "Disk Free",    "unit": "GB"},
+        {"name": "cpu_percent",    "label": "CPU Usage", "unit": "%"},
+        {"name": "memory_percent", "label": "RAM Usage", "unit": "%"},
     ]
 
-    # Disk metrics use the mount-point in the name, e.g. "disk_/mnt/Array_free_gb".
-    # Query the DB for any disk_*_free_gb names that have recent data and add them.
+    # Disk free-GB metrics encode the mount-point in the name.
+    # Examples from the system collector:
+    #   disk_host_free_gb       -> /host
+    #   disk_mnt_Array_free_gb  -> /mnt/Array
+    # Strategy: strip "disk_" prefix and "_free_gb" suffix, prepend "/",
+    # and replace remaining underscores with "/" to reconstruct the path.
     db = None
     try:
         db = await get_connection()
@@ -774,7 +775,7 @@ async def get_available_chart_metrics() -> List[Dict[str, Any]]:
             SELECT DISTINCT name
             FROM metrics_samples
             WHERE category = 'disk'
-              AND name LIKE '%_free_gb'
+              AND name LIKE 'disk_%_free_gb'
               AND value_num IS NOT NULL
               AND ts >= datetime('now', '-7 days')
             ORDER BY name ASC
@@ -782,7 +783,6 @@ async def get_available_chart_metrics() -> List[Dict[str, Any]]:
         )
         rows = await cursor.fetchall()
 
-        # Build a set of names already in the catalogue so we don't duplicate
         known_names = {m["name"] for m in CHARTABLE_METRICS}
 
         for row in rows:
@@ -790,26 +790,24 @@ async def get_available_chart_metrics() -> List[Dict[str, Any]]:
             if raw_name in known_names:
                 continue
             known_names.add(raw_name)
-            # Extract mount-point from name like "disk_/mnt/Array_free_gb"
-            # Strip leading "disk_" and trailing "_free_gb" to get the path.
-            mount = raw_name
-            if mount.startswith("disk_"):
-                mount = mount[len("disk_"):]
-            if mount.endswith("_free_gb"):
-                mount = mount[: -len("_free_gb")]
-            # Restore the path separators (underscores that were slashes).
-            # The collector stores "/" as "_", so "/mnt/Array" → "_mnt_Array".
-            # We detect this by checking if it starts with "_".
-            if mount.startswith("_"):
-                mount = mount.replace("_", "/")
+
+            # Strip "disk_" prefix and "_free_gb" suffix to get the path segment.
+            # e.g. "disk_mnt_Array_free_gb" -> "mnt_Array"
+            #      "disk_host_free_gb"      -> "host"
+            middle = raw_name[len("disk_"):-len("_free_gb")]
+
+            # Reconstruct the filesystem path: prepend "/" and replace "_" with "/".
+            # "mnt_Array" -> "/mnt/Array"
+            # "host"      -> "/host"
+            mount = "/" + middle.replace("_", "/")
 
             CHARTABLE_METRICS.append({
                 "name": raw_name,
-                "label": f"Disk Free ({mount})",
+                "label": "Disk Free (" + mount + ")",
                 "unit": "GB",
             })
 
-        # Finally filter down to only metrics that actually have data.
+        # Filter down to only metrics that actually have data.
         cursor2 = await db.execute(
             """
             SELECT DISTINCT name
@@ -825,15 +823,15 @@ async def get_available_chart_metrics() -> List[Dict[str, Any]]:
             m for m in CHARTABLE_METRICS if m["name"] in names_with_data
         ]
 
-        logger.debug(f"get_available_chart_metrics → {len(available)} metrics with data")
+        logger.debug("get_available_chart_metrics -> %d metrics with data", len(available))
         return available
 
     except Exception as e:
-        logger.error(f"Failed to get available chart metrics: {e}", exc_info=True)
-        # Return the static list as a safe fallback; JS will handle empty series
+        logger.error("Failed to get available chart metrics: %s", e, exc_info=True)
+        # Safe fallback so the dashboard doesn't break on DB errors
         return [
-            {"name": "cpu_percent", "label": "CPU Usage", "unit": "%"},
-            {"name": "ram_percent", "label": "RAM Usage", "unit": "%"},
+            {"name": "cpu_percent",    "label": "CPU Usage", "unit": "%"},
+            {"name": "memory_percent", "label": "RAM Usage", "unit": "%"},
         ]
     finally:
         if db:

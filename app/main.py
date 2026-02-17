@@ -595,7 +595,7 @@ async def get_chartable_metrics():
         {
             "metrics": [
                 {"name": "cpu_percent",           "label": "CPU Usage",               "unit": "%"},
-                {"name": "ram_percent",            "label": "RAM Usage",               "unit": "%"},
+                {"name": "memory_percent",         "label": "RAM Usage",               "unit": "%"},
                 {"name": "disk_/mnt/Array_free_gb","label": "Disk Free (/mnt/Array)", "unit": "GB"}
             ]
         }
@@ -619,7 +619,7 @@ async def get_metric_history_endpoint(metric: str, hours: int = 24):
 
     Args:
         metric: Metric name as stored in metrics_samples.name
-                (e.g. ``cpu_percent``, ``ram_percent``,
+                (e.g. ``cpu_percent``, ``memory_percent``,
                 ``disk_/mnt/Array_free_gb``).
         hours:  Lookback window in hours (default 24, max 168 = 7 days).
 
@@ -655,7 +655,7 @@ async def get_metric_history_endpoint(metric: str, hours: int = 24):
     # Look up display unit from the available-metrics catalogue
     UNITS = {
         "cpu_percent": "%",
-        "ram_percent": "%",
+        "memory_percent": "%",
     }
     unit = UNITS.get(metric, "GB" if "free_gb" in metric else "")
 
