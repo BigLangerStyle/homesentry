@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-02-16
+## [0.8.0] - 2026-02-17
+
+### Added
+
+**Dashboard UX Improvements**
+- **"Last refreshed" indicator** — displays `Last refreshed: HH:MM:SS AM/PM TZ` in the dashboard header, updated each time the JavaScript polling cycle completes; uses 12-hour AM/PM format with timezone abbreviation (e.g., "2:47:03 PM CST")
+- **Chart empty-state handling** — when a metric returns no data for the selected time range, the chart container now shows a friendly "No data yet — check back after the next collection cycle" message instead of a blank canvas; implemented by checking `data.count === 0` before calling `new Chart()`
+- **Disk-free chart y-axis padding** — disk-free charts (metrics containing "disk", "free", "GB") now apply 10% padding below the minimum data value to prevent dramatic-looking charts from small absolute changes on large volumes; percentage charts (CPU %, RAM %) remain locked to 0–100 range
+- **Disk-free chart minimum y-axis range** — replaces the 10% padding approach; disk-free charts now enforce a minimum axis span of `max(10 GB, 5% of max value)`, centered around the data midpoint; prevents a 0.1 GB change on a 45 GB volume from filling the entire chart height, while a 3 GB change on a 2,057 GB array is shown in a ~103 GB context; percentage charts unaffected
+
+**Data Retention — Nightly metrics_samples Cleanup**
+- **New `delete_old_metrics(retention_days)` function** in `app/storage/db.py` — deletes rows from `metrics_samples` and `service_status` older than the configured retention window; returns a tuple of deleted row counts; the `events` table is intentionally left untouched
+- **New `run_nightly_cleanup()` async function** in `app/scheduler.py` — reads `METRICS_RETENTION_DAYS` from environment, calls `delete_old_metrics()`, logs deleted counts at INFO level; logs a WARNING and skips cleanup if retention is set to 0 (disabled)
+- **Nightly cleanup wired into main scheduler loop** — fires once per day at 3:00 AM using a `_last_cleanup_date` date tracker (same pattern as the morning summary deduplication); does not run on every cycle
+- **New `METRICS_RETENTION_DAYS` environment variable** (default: `30`) — controls how many days of historical metrics to retain; set to `0` to disable cleanup entirely
+
+
 
 ### Added
 
@@ -469,6 +485,7 @@ Initial release establishing the foundation for HomeSentry with system monitorin
 
 ## Version History Summary
 
+- **v0.8.0** (Released 2026-02-17) - Polish release: docs catch-up, data retention, dashboard UX improvements
 - **v0.7.0** (Released 2026-02-16) - Historical charts: time-series visualization with Chart.js, 6h/24h/7d range selector
 - **v0.6.0** (Released 2026-02-13) - Sustained state checking, morning summary fixes, .env security cleanup
 - **v0.5.0** (Released 2026-02-10) - Interactive TUI installer, web config UI, dynamic module registration
@@ -476,6 +493,5 @@ Initial release establishing the foundation for HomeSentry with system monitorin
 - **v0.3.0** (Released 2026-01-31) - Plugin architecture and app-specific modules
 - **v0.2.0** (Released 2026-01-27) - Infrastructure monitoring (Docker, SMART, RAID)
 - **v0.1.0** (Released 2026-01-25) - MVP with system monitoring, service checks, Discord alerts
-- **v0.8.0** (In progress) - Polish release: docs, data retention, dashboard UX
 - **v0.9.0** (Future) - Authentication, API rate limiting, unit tests
 - **v1.0.0** (Future) - Multi-server support, mobile UI, production hardening

@@ -4,7 +4,7 @@
 
 This document teaches and enforces a compaction-proof workflow for using Claude with this repo.
 
-Claude must act like a calm coach who walks the user through the process step-by-step until the user says itâ€™s â€œold hat.â€
+Claude must act like a calm coach who walks the user through the process step-by-step until the user says it's "old hat."
 
 Core goal: avoid full-project uploads and avoid relying on chat memory. Use scoped context plus authoritative docs.
 
@@ -52,7 +52,7 @@ Rationale:
 * Prevents manual copy/paste errors
 * Keeps Git commits atomic and reviewable
 * Reduces cognitive overhead for the user
-* Matches the userâ€™s preferred AI-assisted workflow
+* Matches the user's preferred AI-assisted workflow
 
 If a file is too large to safely return in full:
 
@@ -74,11 +74,11 @@ You must:
 
 When the user says something like:
 
-* â€œI get it nowâ€
-* â€œThis is old hatâ€
-* â€œStop the training wheelsâ€
+* "I get it now"
+* "This is old hat"
+* "Stop the training wheels"
 
-Then you can switch to â€œnormal modeâ€ and stop walking through each step.
+Then you can switch to "normal mode" and stop walking through each step.
 
 Until then, always coach.
 
@@ -185,12 +185,12 @@ Release chat responsibilities:
 
 * Define scope for the release
 * Produce one Task Description at a time
-* Produce a â€œFiles to uploadâ€ list for the next feature chat
+* Produce a "Files to upload" list for the next feature chat
 
 Release chat outputs must always include:
 
 Task: <title>
-Branch name: feature/<name>
+Branch name: feature/<n>
 Parent branch: release/<version>
 
 Context:
@@ -212,9 +212,9 @@ Files to upload:
 
 ## Packaging the File List as a Zip
 
-Once Claude produces a "Files to upload" list, the user can package it into a single zip for upload to the next chat. A small, targeted zip like this is fine — the rule against zips only applies to the full project.
+Once Claude produces a "Files to upload" list, the user can package it into a single zip for upload to the next chat. A small, targeted zip like this is fine â€” the rule against zips only applies to the full project.
 
-Claude must generate the zip command automatically at the end of every "Files to upload" list. Use PowerShell — `zip` is not installed in Git Bash. Example:
+Claude must generate the zip command automatically at the end of every "Files to upload" list. Use PowerShell â€” `zip` is not installed in Git Bash. Example:
 
 ```powershell
 cd "C:\Users\slanger\Documents\Git\homesentry"
@@ -232,9 +232,17 @@ Rules for the generated command:
 
 ## Complete Handoff Format
 
-When handing off to a new release or feature chat, Claude must produce three distinct outputs in this order:
+There are two distinct handoff scenarios. Use the right one â€” they are not interchangeable.
 
-### 1. Git Commands
+---
+
+### Handoff A: To a NEW chat (release or feature)
+
+Use this when spinning up a brand new chat that has no context yet.
+
+Produce two outputs in this order:
+
+#### 1. Git Commands
 
 Commands to create and push the branch. For release branches:
 
@@ -254,7 +262,7 @@ git checkout -b feature/descriptive-name
 git push origin feature/descriptive-name
 ```
 
-### 2. PowerShell Zip Command
+#### 2. PowerShell Zip Command
 
 Command to package the context files for upload:
 
@@ -268,59 +276,82 @@ Rules:
 * Only includes files from the "Files to upload" list
 * Never includes `.env`, `data/`, or files not relevant to the task
 
-### 3. Chat Intro Block
+#### Task Description File Format
 
-Short markdown block to paste as the first message in the new chat:
+Task descriptions must be self-contained and include:
 
-```markdown
-## HomeSentry — [branch name]
+1. **Project Context** section at top:
+   - What HomeSentry is (self-hosted home server health monitor)
+   - Tech stack (Python/FastAPI, SQLite, Docker)
+   - Where it runs (Linux MediaServer, developed on Windows in Cursor)
+   - Reference to workflow doc in Project files
+   - "Uploaded files are source of truth" reminder
 
-This is the **[release orchestration | feature implementation]** chat for HomeSentry.
+2. **Task Context** section explaining what this task does and why
 
-**Project:** Self-hosted home server health monitor. Python/FastAPI, SQLite, Docker. Runs on a Linux MediaServer, developed on Windows in Cursor.
+3. **Requirements**, **Files to Create/Modify**, **Acceptance Criteria** (existing structure)
 
-**Workflow rules:** `.agent/workflows/claude_workflow.md` (in the Project files — read it first).
+4. **Suggested Commit Message** section at end with ready-to-use conventional commit format
 
-**What this chat does:**
-- [Release chat: Define scope, produce task descriptions and file lists for feature chats. No implementation work.]
-- [Feature chat: Implement the task described below. Stay inside the uploaded files only.]
-
-**Uploaded files are the source of truth.** Do not guess at code you haven't seen. If you need a file not uploaded, ask for exactly that one file.
-```
-
-Rules:
-* Claude fills in all bracketed choices — never leaves them as options for the user
-* Block is short enough to paste as a single message, not a file upload
-* Does not repeat task descriptions — those live in uploaded files
+No separate chat intro block needed — the task description file is uploaded directly to the new chat.
 
 ---
 
-## Standard â€œTraining Wheelsâ€ Prompts
+### Handoff B: Back to an EXISTING chat
+
+Use this when a feature chat is done and needs to report back to the release chat that spawned it. The release chat already has full context â€” it does not need git commands, zip commands, or an intro block.
+
+Produce one output only: a short markdown status update the user can paste into the existing chat.
+
+Format:
+
+```markdown
+**Completed: feature/<name>**
+
+<2â€“4 sentence summary of what was implemented and any decisions made.>
+
+Files committed:
+- `path/to/file.py` â€” what changed
+- `path/to/CHANGELOG.md` â€” what was documented
+
+<Any notes the release chat needs to know â€” gotchas, follow-up items, corrections to the task description, etc.>
+```
+
+Rules:
+* No git commands â€” the user already ran them
+* No zip command â€” no new chat is being created
+* No intro block â€” the receiving chat already exists
+* Keep it short â€” the release chat needs a status update, not a full report
+* If the task description contained an error, call it out explicitly so the release chat can correct future task descriptions
+
+---
+
+## Standard "Training Wheels" Prompts
 
 ### Prompt A: Starting a task
 
-â€œCool. Before we code, I want to keep this compaction-proof.
-Tell me the task in one sentence, then Iâ€™ll give you an exact â€˜Files to uploadâ€™ list.â€
+"Cool. Before we code, I want to keep this compaction-proof.
+Tell me the task in one sentence, then I'll give you an exact 'Files to upload' list."
 
 ### Prompt B: After files are uploaded
 
-â€œGot them. Iâ€™m going to stay inside these files only.
-If I need anything else, Iâ€™ll ask for one specific file.â€
+"Got them. I'm going to stay inside these files only.
+If I need anything else, I'll ask for one specific file."
 
 ### Prompt C: Before commit
 
-â€œHereâ€™s the exact commit set and tests. Run these and paste the output back.â€
+"Here's the exact commit set and tests. Run these and paste the output back."
 
 ### Prompt D: If user tries to upload a full zip
 
-â€œLetâ€™s not do the full zip. It tends to break compaction.
-Instead, upload only these files: ...â€
+"Let's not do the full zip. It tends to break compaction.
+Instead, upload only these files: ..."
 
 ---
 
 ## When to Stop Coaching
 
-Only stop the step-by-step walkthrough when the user explicitly says theyâ€™ve got it.
+Only stop the step-by-step walkthrough when the user explicitly says they've got it.
 
 If unsure, keep coaching.
 

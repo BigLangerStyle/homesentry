@@ -17,7 +17,7 @@ Think of it as your server's guardian angel: quiet when everything's fine, loud 
 
 ### Key Features
 
-✅ **Available Now (v0.6.0):**
+✅ **Available Now (v0.8.0):**
 - **System Monitoring** - Real-time CPU, RAM, and disk usage tracking
 - **Service Checks** - HTTP health checks for Plex, Jellyfin, Pi-hole, and other web services
 - **Docker Monitoring** - Container health, restart counts, and resource usage
@@ -26,12 +26,13 @@ Think of it as your server's guardian angel: quiet when everything's fine, loud 
 - **Smart Alerts** - Discord webhooks with sustained state checking (no spam from transient flaps!)
 - **Web Dashboard** - Clean, responsive UI showing current status at a glance
 - **Configuration UI** - Web-based settings management with module toggles
+- **Historical Charts** - Time-series visualization with Chart.js, 6h/24h/7d range selector
 - **Autonomous Operation** - Background scheduler runs 24/7, alerts automatically
 - **Historical Data** - SQLite database tracks all metrics over time
 
 🔮 **Coming Soon:**
-- **Configuration UI** - Web-based configuration and module management (v0.5.0)
-- **Historical Charts** - Visualize metrics over time (v1.0.0)
+- **Data Retention** - Configurable automatic cleanup of old metrics (v0.8.0)
+- **Authentication** - Login and access control (v0.9.0)
 
 ---
 
@@ -376,8 +377,19 @@ If you prefer running without Docker:
 - [x] Fixed maintenance window filtering in sleep schedule
 - [x] Security: Removed .env from Git tracking and history
 
+### v0.7.0 (February 16, 2026) ✅ Shipped
+- [x] Historical Trends section in dashboard with Chart.js 4.4.1
+- [x] Bucketed time-series API (`/api/metrics/history`)
+- [x] Dynamic chart metric discovery (`/api/metrics/history/available`)
+- [x] 2-column chart grid with 6h / 24h / 7d time range selector
+- [x] Dark mode chart colors with CSS variable support
+
+### v0.8.0 (February 2026) ✅ Shipped
+- [x] Docs catch-up — version strings, README roadmap, CHANGELOG summary all updated to reflect shipped state
+- [x] Data retention — nightly cleanup job for `metrics_samples` with `METRICS_RETENTION_DAYS` config
+- [x] Dashboard UX improvements — footer version, chart empty-state handling
+
 ### v1.0.0 (Future)
-- [ ] Historical charts
 - [ ] Authentication
 - [ ] Mobile-responsive UI
 - [ ] Multi-server support

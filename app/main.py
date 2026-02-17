@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="HomeSentry",
     description="Home server health monitoring dashboard",
-    version="0.1.0",
+    version="0.8.0",
     docs_url="/docs",  # Swagger UI at /docs
     redoc_url="/redoc",  # ReDoc at /redoc
 )
@@ -88,7 +88,7 @@ async def startup_event():
     global scheduler_task
     
     logger.info("=" * 60)
-    logger.info("HomeSentry v0.1.0 starting up...")
+    logger.info("HomeSentry v0.8.0 starting up...")
     logger.info("=" * 60)
     logger.info(f"Log level: {LOG_LEVEL}")
     logger.info(f"Database path: {os.getenv('DATABASE_PATH', '/app/data/homesentry.db')}")

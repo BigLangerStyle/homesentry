@@ -13,7 +13,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0;
         }
         .header-left {
             flex: 1;
@@ -46,13 +46,15 @@
             <div class="header-left">
                 <h1>🐕‍🦺 HomeSentry</h1>
                 <p class="header-subtitle">Server Health Monitoring Dashboard</p>
+                <p class="last-refreshed" id="last-refreshed">Last refreshed: —</p>
             </div>
             <div class="header-right">
                 <a href="/config" class="config-link">⚙️ Configuration</a>
                 <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">☀️</button>
             </div>
         </div>
-        <p class="header-status" id="last-updated">Loading...</p>
+        <!-- last-updated is hidden; value still written by JS for legacy compat -->
+        <span id="last-updated" style="display:none;"></span>
     </header>
 
     <main>
@@ -166,7 +168,7 @@
     </main>
 
     <footer>
-        <p>HomeSentry v0.4.0 | <span id="footer-timestamp">{{ last_updated }}</span> |
+        <p>HomeSentry v0.8.0 | <span id="footer-timestamp">{{ last_updated }}</span> |
         <a href="/config">Configuration</a> |
         <a href="/docs" target="_blank">API Docs</a> |
         <a href="/healthz" target="_blank">Health Check</a></p>
@@ -371,6 +373,13 @@
 
             var now = new Date();
             var ts = now.toLocaleString();
+            var refreshTime = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZoneName: 'short'
+            });
+            document.getElementById("last-refreshed").textContent = "Last refreshed: " + refreshTime;
             document.getElementById("last-updated").textContent = "Last updated: " + ts;
             document.getElementById("footer-timestamp").textContent = ts;
         }
@@ -550,7 +559,7 @@
 
         // ---- Build a single Chart.js config ----
 
-        function buildChartConfig(label, unit, labels, values, colorIdx) {
+        function buildChartConfig(metricName, label, unit, labels, values, colorIdx) {
             var colors = chartColors();
             var c = colors.lineColors[colorIdx % colors.lineColors.length];
 
@@ -607,19 +616,71 @@
                             },
                             grid: { color: colors.gridColor },
                         },
-                        y: {
-                            ticks: { color: colors.tickColor },
-                            grid: { color: colors.gridColor },
-                            title: {
-                                display: !!unit,
-                                text: unit,
-                                color: colors.titleColor,
-                                font: { size: 11 },
-                            },
-                        },
+                        y: (function() {
+                            var yAxis = {
+                                ticks: { color: colors.tickColor },
+                                grid: { color: colors.gridColor },
+                                title: {
+                                    display: !!unit,
+                                    text: unit,
+                                    color: colors.titleColor,
+                                    font: { size: 11 },
+                                },
+                            };
+                            // Percentage metrics: lock to 0–100 range
+                            if (unit === "%" || metricName.includes("percent") || metricName.includes("cpu") || metricName.includes("ram")) {
+                                yAxis.min = 0;
+                                yAxis.max = 100;
+                            }
+                            // Disk-free metrics: enforce a minimum y-axis range so tiny
+                            // absolute changes don't look dramatic on large volumes.
+                            // Uses the larger of 10 GB or 5% of the max value, centered
+                            // around the data midpoint.
+                            else if (metricName.includes("disk") && metricName.includes("free") && metricName.includes("GB")) {
+                                var numericValues = values.filter(function(v) { return v !== null && v !== undefined; });
+                                if (numericValues.length > 0) {
+                                    var dataMin = Math.min.apply(null, numericValues);
+                                    var dataMax = Math.max.apply(null, numericValues);
+                                    var dataRange = dataMax - dataMin;
+                                    var minRange = Math.max(10, dataMax * 0.05);
+                                    if (dataRange < minRange) {
+                                        var center = (dataMax + dataMin) / 2;
+                                        yAxis.min = Math.max(0, center - (minRange / 2));
+                                        yAxis.max = center + (minRange / 2);
+                                    }
+                                }
+                            }
+                            return yAxis;
+                        })(),
                     },
                 },
             };
+        }
+
+        // ---- Show empty state when a metric has no data for the selected range ----
+
+        function renderChartEmptyState(metricName, label) {
+            var grid = document.getElementById("chart-grid");
+
+            // Destroy any existing chart instance for this metric
+            if (chartInstances[metricName]) {
+                chartInstances[metricName].destroy();
+                delete chartInstances[metricName];
+            }
+
+            var wrapper = document.getElementById("chart-wrap-" + metricName);
+            if (!wrapper) {
+                wrapper = document.createElement("div");
+                wrapper.id = "chart-wrap-" + metricName;
+                wrapper.className = "chart-wrapper";
+                grid.appendChild(wrapper);
+            }
+
+            wrapper.innerHTML =
+                '<p class="chart-empty-state">' +
+                '<span class="chart-empty-title">' + label + '</span>' +
+                'No data yet — check back after the next collection cycle.' +
+                '</p>';
         }
 
         // ---- Create or update a single chart ----
@@ -642,7 +703,7 @@
                 canvas = document.getElementById("chart-canvas-" + metricName);
             }
 
-            var config = buildChartConfig(label, unit, labels, values, colorIdx);
+            var config = buildChartConfig(metricName, label, unit, labels, values, colorIdx);
 
             if (chartInstances[metricName]) {
                 // Update existing chart data without full re-create
@@ -662,6 +723,9 @@
                 chart.options.scales.y.title.color = colors.titleColor;
                 chart.options.plugins.legend.labels.color = colors.titleColor;
                 chart.options.plugins.legend.labels.font = { size: 12 };
+                // Re-apply y-axis min/max from rebuilt config
+                chart.options.scales.y.min = config.options.scales.y.min;
+                chart.options.scales.y.max = config.options.scales.y.max;
                 chart.update();
             } else {
                 chartInstances[metricName] = new Chart(canvas, config);
@@ -705,6 +769,8 @@
                     var data = await resp.json();
                     if (data.count > 0) {
                         renderChart(m.name, m.label, m.unit, data.labels, data.values, i);
+                    } else {
+                        renderChartEmptyState(m.name, m.label);
                     }
                 } catch (e) {
                     console.error("Failed to fetch chart data for " + m.name + ":", e);
