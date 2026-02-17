@@ -21,6 +21,8 @@ from app.storage import (
     get_latest_metrics,
     get_latest_service_status,
     get_latest_events,
+    get_metric_history,
+    get_available_chart_metrics,
 )
 from app.collectors import (
     collect_all_system_metrics,
@@ -570,6 +572,116 @@ async def get_latest_dashboard_metrics():
             "raid": [],
             "services": {},
             "timestamp": datetime.now().isoformat(),
+            "error": str(e),
+        }
+
+
+@app.get("/api/metrics/history/available")
+async def get_chartable_metrics():
+    """
+    Return the list of metrics that have historical data available for charting.
+
+    The dashboard uses this to populate the chart selector.  Only numeric,
+    system-level metrics (CPU, RAM, disk) are returned — Docker/SMART/RAID
+    metrics are excluded because their cardinality makes them poor chart
+    candidates.
+
+    Returns:
+        dict with key ``metrics``: list of objects each containing
+        ``name``, ``label``, and ``unit`` fields.
+
+    Example response::
+
+        {
+            "metrics": [
+                {"name": "cpu_percent",           "label": "CPU Usage",               "unit": "%"},
+                {"name": "ram_percent",            "label": "RAM Usage",               "unit": "%"},
+                {"name": "disk_/mnt/Array_free_gb","label": "Disk Free (/mnt/Array)", "unit": "GB"}
+            ]
+        }
+    """
+    try:
+        metrics = await get_available_chart_metrics()
+        return {"metrics": metrics}
+    except Exception as e:
+        logger.error(f"Failed to get available chart metrics: {e}", exc_info=True)
+        return {"metrics": [], "error": str(e)}
+
+
+@app.get("/api/metrics/history")
+async def get_metric_history_endpoint(metric: str, hours: int = 24):
+    """
+    Return bucketed time-series data for a single metric.
+
+    Suitable for Chart.js line charts.  The response contains parallel
+    ``labels`` and ``values`` arrays for direct use as Chart.js dataset
+    data, plus a ``unit`` string for the y-axis label.
+
+    Args:
+        metric: Metric name as stored in metrics_samples.name
+                (e.g. ``cpu_percent``, ``ram_percent``,
+                ``disk_/mnt/Array_free_gb``).
+        hours:  Lookback window in hours (default 24, max 168 = 7 days).
+
+    Returns:
+        dict with keys ``labels`` (list of ISO-8601 time strings),
+        ``values`` (list of floats), ``unit`` (string), ``metric`` (name),
+        ``hours`` (effective window), and ``count`` (number of data points).
+
+    Example::
+
+        GET /api/metrics/history?metric=cpu_percent&hours=24
+
+        {
+            "metric": "cpu_percent",
+            "hours": 24,
+            "unit": "%",
+            "labels": ["2026-02-15T10:00", "2026-02-15T10:24", ...],
+            "values": [12.5, 14.2, 11.8, ...],
+            "count": 60
+        }
+    """
+    # Clamp hours: minimum 1, maximum 168 (7 days)
+    hours = max(1, min(hours, 168))
+
+    # Choose bucket count based on window so charts don't get too dense
+    if hours <= 6:
+        bucket_count = 36       # ~10-min buckets for 6h window
+    elif hours <= 24:
+        bucket_count = 60       # ~24-min buckets for 24h window
+    else:
+        bucket_count = 84       # ~2-hour buckets for 7d window
+
+    # Look up display unit from the available-metrics catalogue
+    UNITS = {
+        "cpu_percent": "%",
+        "ram_percent": "%",
+    }
+    unit = UNITS.get(metric, "GB" if "free_gb" in metric else "")
+
+    try:
+        rows = await get_metric_history(metric, hours=hours, bucket_count=bucket_count)
+        labels = [r["ts"] for r in rows]
+        values = [r["value"] for r in rows]
+
+        return {
+            "metric": metric,
+            "hours": hours,
+            "unit": unit,
+            "labels": labels,
+            "values": values,
+            "count": len(rows),
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get metric history for {metric!r}: {e}", exc_info=True)
+        return {
+            "metric": metric,
+            "hours": hours,
+            "unit": unit,
+            "labels": [],
+            "values": [],
+            "count": 0,
             "error": str(e),
         }
 

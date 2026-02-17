@@ -14,6 +14,8 @@ This module provides database operations for HomeSentry:
 - insert_sleep_event() - Insert event into sleep queue
 - get_sleep_events() - Get all queued sleep events
 - clear_sleep_events() - Clear sleep events after summary sent
+- get_metric_history() - Query bucketed time-series data for charting
+- get_available_chart_metrics() - List metrics that have chart-worthy data
 """
 
 from .db import (
@@ -30,6 +32,8 @@ from .db import (
     insert_sleep_event,
     get_sleep_events,
     clear_sleep_events,
+    get_metric_history,
+    get_available_chart_metrics,
 )
 
 __all__ = [
@@ -46,4 +50,6 @@ __all__ = [
     "insert_sleep_event",
     "get_sleep_events",
     "clear_sleep_events",
+    "get_metric_history",
+    "get_available_chart_metrics",
 ]

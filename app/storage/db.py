@@ -640,3 +640,201 @@ async def clear_sleep_events() -> bool:
     finally:
         if db:
             await db.close()
+
+
+async def get_metric_history(
+    metric_name: str,
+    hours: int = 24,
+    bucket_count: int = 60,
+) -> List[Dict[str, Any]]:
+    """
+    Get bucketed time-series history for a named metric.
+
+    Queries metrics_samples for a given metric name over the past N hours,
+    groups rows into evenly-sized time buckets, and returns the average value
+    per bucket.  The result is suitable for rendering with Chart.js.
+
+    Args:
+        metric_name:  Exact name stored in metrics_samples.name
+                      (e.g. "cpu_percent", "ram_percent",
+                      "disk_/mnt/Array_free_gb").
+        hours:        How far back to look (default 24).
+        bucket_count: Number of data points to return (default 60).
+
+    Returns:
+        List of dicts with keys ``ts`` (ISO-8601 string, local time)
+        and ``value`` (float average, rounded to 2 decimal places).
+        Empty list on error or when no data is available.
+
+    Examples:
+        >>> rows = await get_metric_history("cpu_percent", hours=24, bucket_count=60)
+        >>> rows[0]
+        {"ts": "2026-02-16T08:00", "value": 12.34}
+    """
+    db = None
+    try:
+        # Calculate the number of minutes per bucket so SQLite can group rows.
+        # total_minutes / bucket_count gives minutes-per-bucket; minimum 1.
+        total_minutes = hours * 60
+        minutes_per_bucket = max(1, total_minutes // bucket_count)
+
+        # Build an ISO-8601 interval string accepted by SQLite's datetime modifier.
+        lookback = f"-{hours} hours"
+
+        db = await get_connection()
+        db.row_factory = aiosqlite.Row
+
+        # SQLite bucketing: round each ts down to the nearest bucket boundary
+        # by integer-dividing the unix timestamp, then multiplying back.
+        # strftime('%Y-%m-%dT%H:%M', ...) produces the ISO string Chart.js wants.
+        query = """
+            SELECT
+                strftime(
+                    '%Y-%m-%dT%H:%M',
+                    datetime(
+                        (strftime('%s', ts) / (? * 60)) * (? * 60),
+                        'unixepoch', 'localtime'
+                    )
+                ) AS bucket,
+                ROUND(AVG(value_num), 2) AS avg_value
+            FROM metrics_samples
+            WHERE name = ?
+              AND value_num IS NOT NULL
+              AND ts >= datetime('now', ?)
+            GROUP BY bucket
+            ORDER BY bucket ASC
+        """
+
+        cursor = await db.execute(
+            query,
+            (minutes_per_bucket, minutes_per_bucket, metric_name, lookback),
+        )
+        rows = await cursor.fetchall()
+
+        result = [
+            {"ts": row["bucket"], "value": row["avg_value"]}
+            for row in rows
+            if row["bucket"] is not None and row["avg_value"] is not None
+        ]
+
+        logger.debug(
+            f"get_metric_history({metric_name!r}, {hours}h, {bucket_count} buckets)"
+            f" → {len(result)} points"
+        )
+        return result
+
+    except Exception as e:
+        logger.error(
+            f"Failed to get metric history for {metric_name!r}: {e}", exc_info=True
+        )
+        return []
+    finally:
+        if db:
+            await db.close()
+
+
+async def get_available_chart_metrics() -> List[Dict[str, Any]]:
+    """
+    Return the list of numeric metric names that have data in the database.
+
+    Queries the distinct ``name`` values in metrics_samples where
+    value_num is not null and data exists in the past 7 days.  Only
+    returns names that are known chart-worthy metrics (system + disk
+    categories), so that container/SMART/RAID metrics with low cardinality
+    don't clutter the chart selector.
+
+    Returns:
+        List of dicts with keys:
+            ``name``  – the raw metric name stored in the DB
+            ``label`` – a human-readable display label
+            ``unit``  – unit string for the y-axis (e.g. "%", "GB")
+
+    Examples:
+        >>> metrics = await get_available_chart_metrics()
+        >>> [m["name"] for m in metrics]
+        ["cpu_percent", "ram_percent", "disk_/mnt/Array_free_gb"]
+    """
+    # Fixed catalogue of chartable metrics with their display metadata.
+    # Only metrics whose names can actually appear in metrics_samples are listed.
+    CHARTABLE_METRICS = [
+        {"name": "cpu_percent",      "label": "CPU Usage",    "unit": "%"},
+        {"name": "ram_percent",      "label": "RAM Usage",    "unit": "%"},
+        {"name": "disk_free_gb",     "label": "Disk Free",    "unit": "GB"},
+    ]
+
+    # Disk metrics use the mount-point in the name, e.g. "disk_/mnt/Array_free_gb".
+    # Query the DB for any disk_*_free_gb names that have recent data and add them.
+    db = None
+    try:
+        db = await get_connection()
+        db.row_factory = aiosqlite.Row
+
+        cursor = await db.execute(
+            """
+            SELECT DISTINCT name
+            FROM metrics_samples
+            WHERE category = 'disk'
+              AND name LIKE '%_free_gb'
+              AND value_num IS NOT NULL
+              AND ts >= datetime('now', '-7 days')
+            ORDER BY name ASC
+            """
+        )
+        rows = await cursor.fetchall()
+
+        # Build a set of names already in the catalogue so we don't duplicate
+        known_names = {m["name"] for m in CHARTABLE_METRICS}
+
+        for row in rows:
+            raw_name = row["name"]
+            if raw_name in known_names:
+                continue
+            known_names.add(raw_name)
+            # Extract mount-point from name like "disk_/mnt/Array_free_gb"
+            # Strip leading "disk_" and trailing "_free_gb" to get the path.
+            mount = raw_name
+            if mount.startswith("disk_"):
+                mount = mount[len("disk_"):]
+            if mount.endswith("_free_gb"):
+                mount = mount[: -len("_free_gb")]
+            # Restore the path separators (underscores that were slashes).
+            # The collector stores "/" as "_", so "/mnt/Array" → "_mnt_Array".
+            # We detect this by checking if it starts with "_".
+            if mount.startswith("_"):
+                mount = mount.replace("_", "/")
+
+            CHARTABLE_METRICS.append({
+                "name": raw_name,
+                "label": f"Disk Free ({mount})",
+                "unit": "GB",
+            })
+
+        # Finally filter down to only metrics that actually have data.
+        cursor2 = await db.execute(
+            """
+            SELECT DISTINCT name
+            FROM metrics_samples
+            WHERE value_num IS NOT NULL
+              AND ts >= datetime('now', '-7 days')
+            """
+        )
+        rows2 = await cursor2.fetchall()
+        names_with_data = {row["name"] for row in rows2}
+
+        available = [
+            m for m in CHARTABLE_METRICS if m["name"] in names_with_data
+        ]
+
+        logger.debug(f"get_available_chart_metrics → {len(available)} metrics with data")
+        return available
+
+    except Exception as e:
+        logger.error(f"Failed to get available chart metrics: {e}", exc_info=True)
+        # Return the static list as a safe fallback; JS will handle empty series
+        return [
+            {"name": "cpu_percent", "label": "CPU Usage", "unit": "%"},
+            {"name": "ram_percent", "label": "RAM Usage", "unit": "%"},
+        ]
+    finally:
+        if db:
+            await db.close()

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-02-17
+
+### Added
+
+**Historical Data Charts**
+- **New `get_metric_history()` function in `app/storage/db.py`**: queries `metrics_samples` for a named metric over a configurable lookback window, groups rows into evenly-sized time buckets using SQLite's `strftime()` and unix-epoch integer division, and returns `{ts, value}` pairs ready for Chart.js
+- **New `get_available_chart_metrics()` function in `app/storage/db.py`**: discovers chartable metrics that actually have data in the past 7 days; dynamically detects disk mount-point names from the database so the chart selector is always accurate
+- **New `GET /api/metrics/history/available` endpoint**: returns list of chartable metric names with display labels and units; dashboard uses this to build the chart grid dynamically
+- **New `GET /api/metrics/history?metric=cpu_percent&hours=24` endpoint**: returns `{labels, values, unit, count}` JSON for a single metric over 1–168 hours; bucket count auto-scales (36 for ≤6h, 60 for ≤24h, 84 for 7d)
+- **"Historical Trends" section in `dashboard.html`**: rendered below the Infrastructure Layer with a 2-column chart grid
+- **Four default charts**: CPU %, RAM %, and any disk-free-GB metrics found in the database
+- **Time range selector**: 6h / 24h / 7d buttons in the section header; clicking refreshes all charts simultaneously
+- **Chart.js 4.4.1** loaded from cdnjs CDN (no build step, no new Python dependencies)
+- **Dark mode support**: chart grid lines, tick labels, legend, and dataset colors all update when the theme toggle is clicked
+- **Chart styles in `styles.css`**: `.trends-layer`, `.chart-grid`, `.chart-wrapper`, `.range-btn` with full dark-mode-compatible CSS variables
+
 ## [0.6.0] - 2026-02-13
 
 ### Added

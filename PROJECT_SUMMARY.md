@@ -1,6 +1,6 @@
 # HomeSentry - Project Summary
 
-**Version:** 0.6.0  
+**Version:** 0.7.0  
 **Status:** Production Ready  
 **Last Updated:** February 13, 2026  
 **Target Platform:** Linux (Ubuntu/Debian) + Docker  
@@ -217,6 +217,19 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Fixed duplicate morning summary issue in `scheduler.py`
 - [x] Added last-sent tracker to prevent duplicate summaries within 5-minute window
 - [x] Comprehensive logging of grace period decisions
+
+### Completed (v0.7.0) - Historical Data Charts
+
+- [x] New `get_metric_history()` function in `app/storage/db.py` with SQLite time bucketing
+- [x] New `get_available_chart_metrics()` function — dynamically discovers chartable metrics with data
+- [x] `GET /api/metrics/history/available` endpoint — returns chartable metrics list with labels + units
+- [x] `GET /api/metrics/history?metric=&hours=` endpoint — returns bucketed time-series JSON for Chart.js
+- [x] "Historical Trends" section in dashboard.html below Infrastructure Layer
+- [x] 2-column chart grid with Chart.js 4.4.1 (CDN, no Python dependency changes)
+- [x] Default charts: CPU %, RAM %, disk-free-GB (all mounts with data)
+- [x] Time range selector: 6h / 24h / 7d — refreshes all charts on click
+- [x] Dark mode chart colors — grid lines, ticks, legend update on theme toggle
+- [x] Chart container CSS in styles.css with dark mode CSS variable support
 
 ### Future Enhancements
 

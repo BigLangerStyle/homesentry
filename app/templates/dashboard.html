@@ -6,6 +6,8 @@
     <title>HomeSentry Dashboard</title>
     <link rel="stylesheet" href="/static/styles.css">
     <!-- No meta refresh - JavaScript handles polling now -->
+    <!-- Chart.js for historical trend charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
         .header-content {
             display: flex;
@@ -105,6 +107,29 @@
             <div class="infra-subsection">
                 <h3 class="subsection-title">RAID Arrays</h3>
                 <div class="status-grid" id="raid-grid"></div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             HISTORICAL TRENDS
+             Chart.js line charts for CPU, RAM, Disk over time.
+             Time range selector (6h / 24h / 7d) refreshes all charts.
+             ============================================================ -->
+        <section class="layer-section trends-layer" id="trends-section">
+            <div class="layer-header">
+                <h2>📈 Historical Trends</h2>
+                <span class="layer-badge trends-badge">Time Series</span>
+                <div class="chart-range-selector" id="chart-range-selector">
+                    <button class="range-btn" data-hours="6">6h</button>
+                    <button class="range-btn active" data-hours="24">24h</button>
+                    <button class="range-btn" data-hours="168">7d</button>
+                </div>
+            </div>
+            <p class="no-data" id="trends-no-data" style="display:none;">
+                No historical data yet. Charts will appear after metrics have been collected for a while.
+            </p>
+            <div class="chart-grid" id="chart-grid">
+                <!-- Chart canvases inserted by JavaScript -->
             </div>
         </section>
 
@@ -477,6 +502,242 @@
         }
 
         document.addEventListener("DOMContentLoaded", startPolling);
+
+        // ============================================================
+        // HISTORICAL TRENDS — Chart.js integration
+        // ============================================================
+
+        // Active time-range in hours (updated by selector buttons)
+        var currentRangeHours = 24;
+
+        // Holds Chart.js instances keyed by metric name so we can
+        // update or destroy them without re-creating the canvas.
+        var chartInstances = {};
+
+        // ---- Dark-mode helpers ----
+
+        function isDarkMode() {
+            return document.body.classList.contains("dark-mode");
+        }
+
+        // Return a Chart.js color palette appropriate for the current theme.
+        function chartColors() {
+            if (isDarkMode()) {
+                return {
+                    gridColor:  "rgba(255,255,255,0.08)",
+                    tickColor:  "#a6adc8",
+                    titleColor: "#cdd6f4",
+                    lineColors: [
+                        { border: "#89b4fa", background: "rgba(137,180,250,0.15)" },  // blue
+                        { border: "#a6e3a1", background: "rgba(166,227,161,0.15)" },  // green
+                        { border: "#f38ba8", background: "rgba(243,139,168,0.15)" },  // red
+                        { border: "#fab387", background: "rgba(250,179,135,0.15)" },  // peach
+                    ],
+                };
+            }
+            return {
+                gridColor:  "rgba(0,0,0,0.06)",
+                tickColor:  "#6b7280",
+                titleColor: "#111827",
+                lineColors: [
+                    { border: "#2563eb", background: "rgba(37,99,235,0.10)" },
+                    { border: "#10b981", background: "rgba(16,185,129,0.10)" },
+                    { border: "#ef4444", background: "rgba(239,68,68,0.10)" },
+                    { border: "#f59e0b", background: "rgba(245,158,11,0.10)" },
+                ],
+            };
+        }
+
+        // ---- Build a single Chart.js config ----
+
+        function buildChartConfig(label, unit, labels, values, colorIdx) {
+            var colors = chartColors();
+            var c = colors.lineColors[colorIdx % colors.lineColors.length];
+
+            return {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label + (unit ? " (" + unit + ")" : ""),
+                        data: values,
+                        borderColor: c.border,
+                        backgroundColor: c.background,
+                        borderWidth: 2,
+                        pointRadius: labels.length > 60 ? 0 : 3,
+                        pointHoverRadius: 5,
+                        fill: true,
+                        tension: 0.3,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 400 },
+                    interaction: { mode: "index", intersect: false },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { color: colors.titleColor, font: { size: 12 } },
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    var v = ctx.parsed.y;
+                                    if (v === null || v === undefined) return "";
+                                    return " " + v.toLocaleString(undefined, { maximumFractionDigits: 1 }) + (unit ? " " + unit : "");
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: colors.tickColor,
+                                maxTicksLimit: 8,
+                                maxRotation: 0,
+                                autoSkip: true,
+                                callback: function(value, index) {
+                                    // Show only HH:MM from the ISO timestamp
+                                    var ts = this.getLabelForValue(value);
+                                    if (!ts) return "";
+                                    var parts = ts.split("T");
+                                    return parts.length > 1 ? parts[1] : ts;
+                                },
+                            },
+                            grid: { color: colors.gridColor },
+                        },
+                        y: {
+                            ticks: { color: colors.tickColor },
+                            grid: { color: colors.gridColor },
+                            title: {
+                                display: !!unit,
+                                text: unit,
+                                color: colors.titleColor,
+                                font: { size: 11 },
+                            },
+                        },
+                    },
+                },
+            };
+        }
+
+        // ---- Create or update a single chart ----
+
+        function renderChart(metricName, label, unit, labels, values, colorIdx) {
+            var grid = document.getElementById("chart-grid");
+
+            // Find or create the wrapper div and canvas
+            var wrapper = document.getElementById("chart-wrap-" + metricName);
+            var canvas;
+            if (!wrapper) {
+                wrapper = document.createElement("div");
+                wrapper.id = "chart-wrap-" + metricName;
+                wrapper.className = "chart-wrapper";
+                canvas = document.createElement("canvas");
+                canvas.id = "chart-canvas-" + metricName;
+                wrapper.appendChild(canvas);
+                grid.appendChild(wrapper);
+            } else {
+                canvas = document.getElementById("chart-canvas-" + metricName);
+            }
+
+            var config = buildChartConfig(label, unit, labels, values, colorIdx);
+
+            if (chartInstances[metricName]) {
+                // Update existing chart data without full re-create
+                var chart = chartInstances[metricName];
+                chart.data.labels = config.data.labels;
+                chart.data.datasets[0].data = config.data.datasets[0].data;
+                chart.data.datasets[0].label = config.data.datasets[0].label;
+                // Re-apply colors in case dark mode changed
+                var colors = chartColors();
+                var c = colors.lineColors[colorIdx % colors.lineColors.length];
+                chart.data.datasets[0].borderColor = c.border;
+                chart.data.datasets[0].backgroundColor = c.background;
+                chart.options.scales.x.ticks.color = colors.tickColor;
+                chart.options.scales.x.grid.color = colors.gridColor;
+                chart.options.scales.y.ticks.color = colors.tickColor;
+                chart.options.scales.y.grid.color = colors.gridColor;
+                chart.options.scales.y.title.color = colors.titleColor;
+                chart.options.plugins.legend.labels.color = colors.titleColor;
+                chart.options.plugins.legend.labels.font = { size: 12 };
+                chart.update();
+            } else {
+                chartInstances[metricName] = new Chart(canvas, config);
+            }
+        }
+
+        // ---- Load and render all charts for the current time range ----
+
+        async function loadCharts() {
+            // Step 1: discover which metrics have data
+            var availResp, availData;
+            try {
+                availResp = await fetch("/api/metrics/history/available");
+                availData = await availResp.json();
+            } catch (e) {
+                console.error("Failed to fetch available chart metrics:", e);
+                return;
+            }
+
+            var metrics = availData.metrics || [];
+            var noDataEl = document.getElementById("trends-no-data");
+            var grid = document.getElementById("chart-grid");
+
+            if (metrics.length === 0) {
+                noDataEl.style.display = "block";
+                grid.style.display = "none";
+                return;
+            }
+            noDataEl.style.display = "none";
+            grid.style.display = "";
+
+            // Step 2: fetch history for each metric and render a chart
+            for (var i = 0; i < metrics.length; i++) {
+                var m = metrics[i];
+                try {
+                    var resp = await fetch(
+                        "/api/metrics/history?metric=" +
+                        encodeURIComponent(m.name) +
+                        "&hours=" + currentRangeHours
+                    );
+                    var data = await resp.json();
+                    if (data.count > 0) {
+                        renderChart(m.name, m.label, m.unit, data.labels, data.values, i);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch chart data for " + m.name + ":", e);
+                }
+            }
+        }
+
+        // ---- Time-range selector wiring ----
+
+        document.addEventListener("DOMContentLoaded", function() {
+            var buttons = document.querySelectorAll(".range-btn");
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].addEventListener("click", function() {
+                    // Update active class
+                    for (var j = 0; j < buttons.length; j++) {
+                        buttons[j].classList.remove("active");
+                    }
+                    this.classList.add("active");
+
+                    currentRangeHours = parseInt(this.getAttribute("data-hours"), 10);
+                    loadCharts();
+                });
+            }
+
+            // Initial chart load
+            loadCharts();
+        });
+
+        // Re-apply chart colors whenever dark mode is toggled
+        document.getElementById("theme-toggle").addEventListener("click", function() {
+            // Brief delay to let body class update first
+            setTimeout(loadCharts, 50);
+        });
 
     })();
     </script>
