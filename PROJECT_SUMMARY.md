@@ -236,7 +236,7 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 **v0.8.0 - Polish Release** *(in progress — intentionally long-running)*
 
 - [x] Docs catch-up — CHANGELOG Version History Summary, PROJECT_SUMMARY Future Enhancements, README roadmap, MODULES.md all need updating
-- [ ] Data retention — `metrics_samples` grows forever; add nightly cleanup job with `METRICS_RETENTION_DAYS` env var (default 30)
+- [x] Data retention — `metrics_samples` grows forever; add nightly cleanup job with `METRICS_RETENTION_DAYS` env var (default 30)
 - [ ] Dashboard UX — footer version string; add "Last refreshed" indicator; verify chart empty-state handling
 - [ ] Additional polish items to be added as they surface during normal use
 
