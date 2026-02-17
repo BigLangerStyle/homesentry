@@ -231,14 +231,20 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Dark mode chart colors — grid lines, ticks, legend update on theme toggle
 - [x] Chart container CSS in styles.css with dark mode CSS variable support
 
+### Completed (v0.8.0) - Polish Release
+
+- [x] Docs catch-up — version strings updated across CHANGELOG, PROJECT_SUMMARY, README, dashboard footer, main.py
+- [x] Data retention — nightly cleanup job with `METRICS_RETENTION_DAYS` env var (default 30 days)
+  - New `delete_old_metrics()` function in db.py
+  - Runs once per day at 3 AM via scheduler.py
+  - Prevents unbounded database growth
+- [x] Dashboard UX improvements
+  - "Last refreshed" timestamp indicator in header (12-hour AM/PM + timezone)
+  - Chart empty-state message when no data available
+  - Minimum y-axis range for disk-free charts (10 GB or 5% of max value)
+  - Prevents tiny absolute changes from looking dramatic on large volumes
+
 ### Future Enhancements
-
-**v0.8.0 - Polish Release** *(in progress — intentionally long-running)*
-
-- [x] Docs catch-up — CHANGELOG Version History Summary, PROJECT_SUMMARY Future Enhancements, README roadmap, MODULES.md all need updating
-- [x] Data retention — `metrics_samples` grows forever; add nightly cleanup job with `METRICS_RETENTION_DAYS` env var (default 30)
-- [x] Dashboard UX — "Last refreshed" indicator, chart empty-state message, disk-free y-axis minimum range
-- [ ] Additional polish items to be added as they surface during normal use
 
 **v0.9.0 - Security & Reliability**
 
