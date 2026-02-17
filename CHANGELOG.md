@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Dashboard UX Improvements**
+- **"Last refreshed" indicator** — displays `Last refreshed: HH:MM:SS AM/PM TZ` in the dashboard header, updated each time the JavaScript polling cycle completes; uses 12-hour AM/PM format with timezone abbreviation (e.g., "2:47:03 PM CST")
+- **Chart empty-state handling** — when a metric returns no data for the selected time range, the chart container now shows a friendly "No data yet — check back after the next collection cycle" message instead of a blank canvas; implemented by checking `data.count === 0` before calling `new Chart()`
+- **Disk-free chart y-axis padding** — disk-free charts (metrics containing "disk", "free", "GB") now apply 10% padding below the minimum data value to prevent dramatic-looking charts from small absolute changes on large volumes; percentage charts (CPU %, RAM %) remain locked to 0–100 range
+
 **Data Retention — Nightly metrics_samples Cleanup**
 - **New `delete_old_metrics(retention_days)` function** in `app/storage/db.py` — deletes rows from `metrics_samples` and `service_status` older than the configured retention window; returns a tuple of deleted row counts; the `events` table is intentionally left untouched
 - **New `run_nightly_cleanup()` async function** in `app/scheduler.py` — reads `METRICS_RETENTION_DAYS` from environment, calls `delete_old_metrics()`, logs deleted counts at INFO level; logs a WARNING and skips cleanup if retention is set to 0 (disabled)
