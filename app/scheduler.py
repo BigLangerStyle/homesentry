@@ -14,8 +14,8 @@ The scheduler:
 import logging
 import asyncio
 import os
-from datetime import datetime
-from typing import Dict, Any
+from datetime import date, datetime
+from typing import Dict, Any, Optional
 
 from app.collectors import (
     collect_all_system_metrics,
@@ -36,6 +36,7 @@ RAID_POLL_INTERVAL = int(os.getenv("RAID_POLL_INTERVAL", "120"))  # 2 minutes de
 
 # Tracking variable for morning summary (prevents duplicates)
 _last_summary_sent: datetime = None
+_last_cleanup_date: Optional[date] = None  # Tracks last nightly cleanup date
 
 # Validate intervals (minimum 10 seconds to prevent hammering)
 if POLL_INTERVAL < 10:
@@ -348,6 +349,46 @@ async def check_morning_summary() -> None:
             logger.error(f"Error generating/sending morning summary: {e}", exc_info=True)
 
 
+async def run_nightly_cleanup() -> None:
+    """
+    Delete metrics_samples and service_status rows beyond the retention window.
+
+    Reads METRICS_RETENTION_DAYS from the environment (default: 30).
+    Setting it to 0 disables cleanup entirely (logs a WARNING).
+
+    Intended to run once per day at 3:00 AM, called from the main scheduler
+    loop.  Uses _last_cleanup_date to ensure it fires only once even if the
+    scheduler wakes up multiple times within the same minute.
+    """
+    from app.storage.db import delete_old_metrics
+
+    retention_days_str = os.getenv("METRICS_RETENTION_DAYS", "30").strip()
+    try:
+        retention_days = int(retention_days_str)
+    except ValueError:
+        logger.warning(
+            "Invalid METRICS_RETENTION_DAYS value '%s' — using default 30",
+            retention_days_str,
+        )
+        retention_days = 30
+
+    if retention_days <= 0:
+        logger.warning(
+            "METRICS_RETENTION_DAYS is %d — nightly cleanup is DISABLED. "
+            "metrics_samples will grow indefinitely.",
+            retention_days,
+        )
+        return
+
+    logger.info("Running nightly data retention cleanup (retention: %d days)...", retention_days)
+    metrics_deleted, service_deleted = await delete_old_metrics(retention_days)
+    logger.info(
+        "Nightly cleanup complete: %d metrics_samples + %d service_status rows removed",
+        metrics_deleted,
+        service_deleted,
+    )
+
+
 async def run_scheduler() -> None:
     """
     Main scheduler loop - runs forever until cancelled.
@@ -416,7 +457,15 @@ async def run_scheduler() -> None:
             
             # Check for morning summary (run every cycle)
             await check_morning_summary()
-            
+
+            # Run nightly data retention cleanup at 3:00 AM (once per day)
+            global _last_cleanup_date
+            today = datetime.now().date()
+            from datetime import time as _time
+            if _last_cleanup_date != today and datetime.now().time() >= _time(3, 0):
+                await run_nightly_cleanup()
+                _last_cleanup_date = today
+
             # Calculate elapsed time
             elapsed = (datetime.now() - start_time).total_seconds()
             logger.info(f"Collection cycle #{cycle_count} completed in {elapsed:.2f}s")

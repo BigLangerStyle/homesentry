@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-02-16
+## [0.8.0] - 2026-02-17
+
+### Added
+
+**Data Retention — Nightly metrics_samples Cleanup**
+- **New `delete_old_metrics(retention_days)` function** in `app/storage/db.py` — deletes rows from `metrics_samples` and `service_status` older than the configured retention window; returns a tuple of deleted row counts; the `events` table is intentionally left untouched
+- **New `run_nightly_cleanup()` async function** in `app/scheduler.py` — reads `METRICS_RETENTION_DAYS` from environment, calls `delete_old_metrics()`, logs deleted counts at INFO level; logs a WARNING and skips cleanup if retention is set to 0 (disabled)
+- **Nightly cleanup wired into main scheduler loop** — fires once per day at 3:00 AM using a `_last_cleanup_date` date tracker (same pattern as the morning summary deduplication); does not run on every cycle
+- **New `METRICS_RETENTION_DAYS` environment variable** (default: `30`) — controls how many days of historical metrics to retain; set to `0` to disable cleanup entirely
+
+
 
 ### Added
 

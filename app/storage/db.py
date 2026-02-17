@@ -836,3 +836,53 @@ async def get_available_chart_metrics() -> List[Dict[str, Any]]:
     finally:
         if db:
             await db.close()
+
+
+async def delete_old_metrics(retention_days: int) -> tuple[int, int]:
+    """
+    Delete metrics and service status rows older than retention_days days.
+
+    This is the nightly cleanup function that prevents unbounded table growth.
+    Both metrics_samples and service_status are pruned; the events table is
+    intentionally left alone because it only grows on state changes and is
+    tiny by comparison.
+
+    Args:
+        retention_days: Number of days of history to keep.  Must be > 0.
+
+    Returns:
+        Tuple of (metrics_deleted, service_status_deleted) row counts.
+    """
+    db = None
+    try:
+        db = await get_connection()
+
+        cutoff_expr = f"datetime('now', '-{retention_days} days')"
+
+        cursor = await db.execute(
+            f"DELETE FROM metrics_samples WHERE ts < {cutoff_expr}"
+        )
+        metrics_deleted: int = cursor.rowcount
+
+        cursor2 = await db.execute(
+            f"DELETE FROM service_status WHERE ts < {cutoff_expr}"
+        )
+        service_deleted: int = cursor2.rowcount
+
+        await db.commit()
+
+        logger.info(
+            "Data retention cleanup: removed %d metrics_samples rows and "
+            "%d service_status rows older than %d days",
+            metrics_deleted,
+            service_deleted,
+            retention_days,
+        )
+        return metrics_deleted, service_deleted
+
+    except Exception as e:
+        logger.error("Failed to run data retention cleanup: %s", e, exc_info=True)
+        return 0, 0
+    finally:
+        if db:
+            await db.close()
