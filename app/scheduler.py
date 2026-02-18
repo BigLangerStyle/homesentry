@@ -14,7 +14,7 @@ The scheduler:
 import logging
 import asyncio
 import os
-from datetime import date, datetime
+from datetime import date, datetime, time as _time
 from typing import Dict, Any, Optional
 
 from app.collectors import (
@@ -403,6 +403,7 @@ async def run_scheduler() -> None:
     The scheduler runs in the background as an asyncio task and is cancelled
     during application shutdown.
     """
+    global _last_cleanup_date
     logger.info("=" * 60)
     logger.info("Scheduler started - autonomous monitoring active")
     logger.info(f"Poll interval: {POLL_INTERVAL} seconds")
@@ -459,9 +460,7 @@ async def run_scheduler() -> None:
             await check_morning_summary()
 
             # Run nightly data retention cleanup at 3:00 AM (once per day)
-            global _last_cleanup_date
             today = datetime.now().date()
-            from datetime import time as _time
             if _last_cleanup_date != today and datetime.now().time() >= _time(3, 0):
                 await run_nightly_cleanup()
                 _last_cleanup_date = today

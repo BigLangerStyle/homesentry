@@ -604,7 +604,7 @@ async def get_sleep_events() -> List[Dict[str, Any]]:
             if event.get('details_json'):
                 try:
                     event['details'] = json.loads(event['details_json'])
-                except:
+                except (json.JSONDecodeError, ValueError):
                     event['details'] = None
             events.append(event)
         
@@ -857,15 +857,17 @@ async def delete_old_metrics(retention_days: int) -> tuple[int, int]:
     try:
         db = await get_connection()
 
-        cutoff_expr = f"datetime('now', '-{retention_days} days')"
+        param = (str(retention_days),)
 
         cursor = await db.execute(
-            f"DELETE FROM metrics_samples WHERE ts < {cutoff_expr}"
+            "DELETE FROM metrics_samples WHERE ts < datetime('now', '-' || ? || ' days')",
+            param,
         )
         metrics_deleted: int = cursor.rowcount
 
         cursor2 = await db.execute(
-            f"DELETE FROM service_status WHERE ts < {cutoff_expr}"
+            "DELETE FROM service_status WHERE ts < datetime('now', '-' || ? || ' days')",
+            param,
         )
         service_deleted: int = cursor2.rowcount
 
