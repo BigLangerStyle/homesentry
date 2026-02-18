@@ -17,7 +17,6 @@ from .discord import (
 )
 
 from .rules import (
-    check_state_change,
     process_alert,
     generate_event_key,
     should_alert,
@@ -33,7 +32,6 @@ __all__ = [
     "get_status_color",
     "get_status_emoji",
     # Alert rules functions
-    "check_state_change",
     "process_alert",
     "generate_event_key",
     "should_alert",
