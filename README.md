@@ -17,7 +17,7 @@ Think of it as your server's guardian angel: quiet when everything's fine, loud 
 
 ### Key Features
 
-✅ **Available Now (v0.8.0):**
+✅ **Available Now (v0.9.0):**
 - **System Monitoring** - Real-time CPU, RAM, and disk usage tracking
 - **Service Checks** - HTTP health checks for Plex, Jellyfin, Pi-hole, and other web services
 - **Docker Monitoring** - Container health, restart counts, and resource usage
@@ -388,6 +388,11 @@ If you prefer running without Docker:
 - [x] Docs catch-up — version strings, README roadmap, CHANGELOG summary all updated to reflect shipped state
 - [x] Data retention — nightly cleanup job for `metrics_samples` with `METRICS_RETENTION_DAYS` config
 - [x] Dashboard UX improvements — footer version, chart empty-state handling
+
+### v0.9.0 (February 2026) ✅ Shipped
+- [x] Parameterized SQL in `delete_old_metrics()` — replaced f-string SQL with parameterized queries
+- [x] Specific exception handling in `get_sleep_events()` — replaced bare `except:` with specific types
+- [x] Version bump to 0.9.0 across all tracking files
 
 ### v1.0.0 (Future)
 - [ ] Authentication

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-02-18
+
+### Changed
+
+**db.py Code Quality Cleanup**
+- **Parameterized SQL in `delete_old_metrics()`** — replaced f-string SQL interpolation with a parameterized query using SQLite's `datetime('now', '-' || ? || ' days')` form; applies to both the `metrics_samples` DELETE and the `service_status` DELETE; eliminates a non-idiomatic pattern even though `retention_days` is always an integer
+- **Specific exception type in `get_sleep_events()`** — replaced bare `except:` with `except (json.JSONDecodeError, ValueError):` to avoid swallowing unrelated exceptions during JSON parsing of `details_json\`
+
+**Version Bump**
+- Bumped version string to `0.9.0` in `app/main.py` (FastAPI constructor and startup log line)
+
 ## [0.8.0] - 2026-02-17
 
 ### Added

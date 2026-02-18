@@ -1,8 +1,8 @@
 # HomeSentry - Project Summary
 
-**Version:** 0.7.0  
+**Version:** 0.9.0  
 **Status:** Production Ready  
-**Last Updated:** February 16, 2026  
+**Last Updated:** February 18, 2026  
 **Target Platform:** Linux (Ubuntu/Debian) + Docker  
 **Primary Language:** Python 3.11+  
 
@@ -244,9 +244,15 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
   - Minimum y-axis range for disk-free charts (10 GB or 5% of max value)
   - Prevents tiny absolute changes from looking dramatic on large volumes
 
+### Completed (v0.9.0) - Code Quality Release
+
+- [x] Parameterized SQL in `delete_old_metrics()` — replaced f-string SQL with parameterized queries for both `metrics_samples` and `service_status` DELETEs
+- [x] Specific exception types in `get_sleep_events()` — replaced bare `except:` with `except (json.JSONDecodeError, ValueError):`
+- [x] Version bump to 0.9.0 across all version-tracking files (main.py, CHANGELOG.md, PROJECT_SUMMARY.md, README.md)
+
 ### Future Enhancements
 
-**v0.9.0 - Security & Reliability**
+**v1.0.0 - Production Ready (formerly v0.9.0 Security & Reliability)**
 
 - [ ] Authentication/authorization
 - [ ] API rate limiting
