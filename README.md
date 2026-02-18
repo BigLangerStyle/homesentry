@@ -9,6 +9,12 @@ A Python-based health monitoring dashboard for home servers that watches your in
 
 ---
 
+## Dashboard
+
+![HomeSentry Dashboard](docs/screenshots/dashboard.png)
+
+---
+
 ## What is HomeSentry?
 
 HomeSentry is a self-hosted monitoring solution designed specifically for home lab environments. It continuously monitors your server's health and sends Discord notifications when issues are detected—before they become disasters.
@@ -30,9 +36,10 @@ Think of it as your server's guardian angel: quiet when everything's fine, loud 
 - **Autonomous Operation** - Background scheduler runs 24/7, alerts automatically
 - **Historical Data** - SQLite database tracks all metrics over time
 
-🔮 **Coming Soon:**
-- **Data Retention** - Configurable automatic cleanup of old metrics (v0.8.0)
-- **Authentication** - Login and access control (v0.9.0)
+🔮 **Coming Soon (v1.0.0):**
+- **Authentication** - Login and access control
+- **Mobile-responsive UI** - Optimised layout for phones and tablets
+- **Multi-server support** - Monitor more than one machine
 
 ---
 
