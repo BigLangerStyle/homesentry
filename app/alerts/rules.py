@@ -134,49 +134,6 @@ async def should_alert(
     return True
 
 
-async def check_state_change(
-    event_key: str,
-    new_status: str,
-    details: Dict[str, Any]
-) -> Optional[Dict[str, Any]]:
-    """
-    Check if status changed and return event details.
-    
-    This function queries the database for the previous state and determines
-    if there has been a state change.
-    
-    Args:
-        event_key: Unique event identifier
-        new_status: New status (OK/WARN/FAIL)
-        details: Additional context for the event
-    
-    Returns:
-        Dict with event details if state changed, None otherwise
-        
-    Example:
-        >>> result = await check_state_change("service_plex", "FAIL", {"error": "timeout"})
-        >>> if result:
-        ...     print(f"Status changed from {result['prev_status']} to {result['new_status']}")
-    """
-    # Get last event for this key
-    last_event = await get_latest_event_by_key(event_key)
-    
-    prev_status = last_event["new_status"] if last_event else None
-    
-    # Check if status changed
-    if prev_status == new_status:
-        logger.debug(f"No state change for {event_key}: {new_status}")
-        return None
-    
-    return {
-        "event_key": event_key,
-        "prev_status": prev_status,
-        "new_status": new_status,
-        "last_notified_ts": last_event.get("notified_ts") if last_event else None,
-        "details": details
-    }
-
-
 async def process_alert(
     category: str,
     name: str,
