@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.9.0] - 2026-02-18
+## [1.0.0] - 2026-02-21
+
+### Fixed
+
+**Recent Alerts — Append-Only Event Log**
+- **Root cause:** `events` table had a `UNIQUE` constraint on `event_key` and used `INSERT OR REPLACE`, meaning each monitored item kept only one row — its current state. On a healthy system, Recent Alerts showed only recovery events (WARN→OK, FAIL→OK) because degradation events were silently overwritten when the service recovered.
+- **Schema migration (v1.0.0):** Recreated `events` table without the `UNIQUE` constraint on `event_key` via the standard SQLite table-recreation pattern (create `events_new` → copy rows → drop old → rename). Existing data is preserved. Indexes recreated identically.
+- **`insert_event()` in `db.py`:** Changed `INSERT OR REPLACE` to plain `INSERT` — every state change now appends a new row.
+- **No changes to state-tracking logic:** `get_latest_event_by_key()` already uses `ORDER BY ts DESC LIMIT 1` and continues to return the correct current state. `get_latest_events()` already orders by `ts DESC` and now returns full history across all keys. `update_event_notified()` already targets `MAX(ts)` per key and is unaffected.
+- **Result:** Recent Alerts now shows a genuine history of state changes — both degradation (OK→FAIL) and recovery (FAIL→OK) events are visible, in chronological order.
+
+
 
 ### Changed
 
