@@ -27,6 +27,7 @@ from .models import (
     INSERT_SCHEMA_VERSION,
     migrate_to_v030,
     migrate_to_v031,
+    migrate_to_v100,
 )
 
 logger = logging.getLogger(__name__)
@@ -104,6 +105,12 @@ async def init_database() -> bool:
             if current_version == "0.3.0":
                 logger.info(f"Migrating database from v0.3.0 to v0.3.1")
                 await migrate_to_v031(db)
+                await db.execute(INSERT_SCHEMA_VERSION, ("0.3.1",))
+                current_version = "0.3.1"
+
+            if current_version == "0.3.1":
+                logger.info(f"Migrating database from v0.3.1 to v1.0.0")
+                await migrate_to_v100(db)
             
             # Update schema version to current
             await db.execute(INSERT_SCHEMA_VERSION, (SCHEMA_VERSION,))
@@ -230,10 +237,12 @@ async def insert_event(
     sleep_suppressed: bool = False,
 ) -> bool:
     """
-    Insert or update a state-change event in the database.
-    
-    Events are uniquely identified by event_key. If an event with the same key
-    already exists, it will be replaced (using INSERT OR REPLACE).
+    Insert a state-change event into the append-only event log.
+
+    Each state change for an event_key gets its own row. Multiple rows per
+    key are expected and correct — this is how alert history is built.
+    State-tracking reads use get_latest_event_by_key(), which returns the
+    most recent row via ORDER BY ts DESC LIMIT 1.
     
     Args:
         event_key: Unique event identifier (e.g., 'service_plex', 'disk_/mnt/array')
@@ -258,7 +267,7 @@ async def insert_event(
         db = await get_connection()
         await db.execute(
             """
-            INSERT OR REPLACE INTO events 
+            INSERT INTO events 
             (event_key, prev_status, new_status, message, notified, notified_ts, 
              maintenance_suppressed, sleep_suppressed)
             VALUES (?, ?, ?, ?, 0, NULL, ?, ?)

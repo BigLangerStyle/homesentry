@@ -4,10 +4,10 @@ Database schema definitions for HomeSentry
 This module contains SQL schema definitions for all database tables.
 Tables are designed to store metrics, service status, and state-change events.
 
-Schema Version: 0.3.1
+Schema Version: 1.0.0
 """
 
-SCHEMA_VERSION = "0.3.1"
+SCHEMA_VERSION = "1.0.0"
 
 # =============================================================================
 # Metrics Samples Table
@@ -84,13 +84,14 @@ CREATE_EVENTS_TABLE = """
 CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ts DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    event_key TEXT NOT NULL UNIQUE,
+    event_key TEXT NOT NULL,
     prev_status TEXT,
     new_status TEXT NOT NULL,
     message TEXT NOT NULL,
     notified BOOLEAN NOT NULL DEFAULT 0,
     notified_ts DATETIME,
-    maintenance_suppressed BOOLEAN NOT NULL DEFAULT 0
+    maintenance_suppressed BOOLEAN NOT NULL DEFAULT 0,
+    sleep_suppressed BOOLEAN NOT NULL DEFAULT 0
 );
 """
 
@@ -183,6 +184,66 @@ async def migrate_to_v030(db):
             
     except Exception as e:
         logger.error(f"Failed to migrate to v0.3.0: {e}", exc_info=True)
+        raise
+
+
+async def migrate_to_v100(db):
+    """
+    Migrate database from v0.3.1 to v1.0.0.
+
+    Removes the UNIQUE constraint on event_key in the events table so the
+    table becomes append-only — every state change gets its own row.
+
+    SQLite does not support DROP CONSTRAINT, so the migration uses the
+    standard table-recreation pattern:
+      1. Create events_new without the UNIQUE constraint
+      2. Copy all existing rows
+      3. Drop the old table
+      4. Rename events_new → events
+      5. Recreate indexes
+
+    Args:
+        db: aiosqlite database connection
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    try:
+        logger.info("Creating events_new table without UNIQUE constraint on event_key")
+        await db.execute("""
+            CREATE TABLE events_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                event_key TEXT NOT NULL,
+                prev_status TEXT,
+                new_status TEXT NOT NULL,
+                message TEXT NOT NULL,
+                notified BOOLEAN NOT NULL DEFAULT 0,
+                notified_ts DATETIME,
+                maintenance_suppressed BOOLEAN NOT NULL DEFAULT 0,
+                sleep_suppressed BOOLEAN NOT NULL DEFAULT 0
+            )
+        """)
+
+        logger.info("Copying existing events rows to events_new")
+        await db.execute("INSERT INTO events_new SELECT * FROM events")
+
+        logger.info("Dropping old events table")
+        await db.execute("DROP TABLE events")
+
+        logger.info("Renaming events_new to events")
+        await db.execute("ALTER TABLE events_new RENAME TO events")
+
+        logger.info("Recreating events indexes")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_events_key ON events(event_key)")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_events_ts ON events(ts)")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_events_notified ON events(notified)")
+
+        await db.commit()
+        logger.info("Successfully migrated to schema v1.0.0 (events table is now append-only)")
+
+    except Exception as e:
+        logger.error(f"Failed to migrate to v1.0.0: {e}", exc_info=True)
         raise
 
 
