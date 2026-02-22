@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-02-21
 
+### Added
+
+**UI Polish — v1.0.0 Dashboard Improvements**
+- **Chart gradient fills** — replaced flat `rgba` fill with a canvas linear gradient (line color at 35% opacity at top → transparent at baseline) using Chart.js 4.x `backgroundColor` callback pattern; gradient correctly re-renders on dark/light mode toggle
+- **Recent Alerts direction indicators** — each alert row now shows a colored direction badge: `↓ Recovery` (green) for OK transitions, `↑ Failure` / `↑ Degraded` (red) for degradation, `⚠ Warning` (amber) for WARN state; rows also have a matching left-border color accent
+- **Recent Alerts relative timestamps** — event times now show human-readable relative format ("2h ago", "just now") with the raw SQLite timestamp as a hover tooltip (`title` attribute); timestamps refresh every 60 seconds so they stay current
+- **Footer version updated** — footer now correctly shows `v1.0.0`
+- **Header subtitle sizing** — `header-subtitle` reduced to `0.9375rem` and `last-refreshed` to `0.75rem` for clear visual hierarchy under the `h1`
+- **Mobile: header stacks vertically** — at `≤768px` the `header-content` flex direction switches to column, `.header-right` takes full width; fixes header cramping on phones
+- **Mobile: layer-header wraps** — at `≤768px` the layer header (title, badge, range selector) wraps gracefully; range selector drops to its own row with `margin-left: 0`
+
 ### Fixed
 
 **Recent Alerts — Append-Only Event Log**

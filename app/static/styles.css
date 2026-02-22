@@ -462,6 +462,49 @@ section.recent-events h2 {
     color: var(--text-muted);
     font-size: 0.8125rem;
     white-space: nowrap;
+    cursor: default;
+    border-bottom: 1px dotted var(--border-medium);
+}
+
+/* Direction arrow indicator on event rows */
+.event-direction {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.1rem 0.35rem;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+}
+
+.event-direction.recovery {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--color-ok);
+}
+
+.event-direction.degradation {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--color-fail);
+}
+
+.event-direction.warning {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--color-warn);
+}
+
+/* Color-coded event rows by new status */
+.event-item.ok {
+    border-left: 3px solid var(--color-ok);
+    padding-left: calc(var(--spacing-lg) - 3px);
+}
+
+.event-item.warn {
+    border-left: 3px solid var(--color-warn);
+    padding-left: calc(var(--spacing-lg) - 3px);
+}
+
+.event-item.fail {
+    border-left: 3px solid var(--color-fail);
+    padding-left: calc(var(--spacing-lg) - 3px);
 }
 
 /* ========================================
@@ -538,6 +581,18 @@ footer a:hover {
         font-size: 1.5rem;
     }
 
+    /* Stack header left/right vertically on mobile */
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+
+    .header-right {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
     .app-grid {
         grid-template-columns: 1fr;
     }
@@ -562,6 +617,17 @@ footer a:hover {
     .event-time {
         flex-basis: 100%;
         margin-top: var(--spacing-sm);
+    }
+
+    /* Stack layer header elements on mobile */
+    .layer-header {
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+    }
+
+    .chart-range-selector {
+        margin-left: 0;
+        width: 100%;
     }
 }
 

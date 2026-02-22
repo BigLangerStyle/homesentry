@@ -258,6 +258,7 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Migration wired into `init_database()` in `db.py` alongside existing migration chain
 - [x] `insert_event()` changed from `INSERT OR REPLACE` to plain `INSERT`
 - [x] Recent Alerts now shows full history: degradation and recovery events both visible
+- [x] UI Polish — chart gradient fills, Recent Alerts direction indicators + relative timestamps, footer v1.0.0, header subtitle sizing hierarchy, mobile header stacking
 
 ### Future Enhancements
 
