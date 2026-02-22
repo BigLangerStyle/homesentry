@@ -1,8 +1,8 @@
 # HomeSentry - Project Summary
 
-**Version:** 0.9.0  
+**Version:** 1.0.0  
 **Status:** Production Ready  
-**Last Updated:** February 18, 2026  
+**Last Updated:** February 21, 2026  
 **Target Platform:** Linux (Ubuntu/Debian) + Docker  
 **Primary Language:** Python 3.11+  
 
@@ -249,6 +249,22 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Parameterized SQL in `delete_old_metrics()` — replaced f-string SQL with parameterized queries for both `metrics_samples` and `service_status` DELETEs
 - [x] Specific exception types in `get_sleep_events()` — replaced bare `except:` with `except (json.JSONDecodeError, ValueError):`
 - [x] Version bump to 0.9.0 across all version-tracking files (main.py, CHANGELOG.md, PROJECT_SUMMARY.md, README.md)
+
+### Completed (v1.0.0) - Append-Only Event Log
+
+- [x] Removed `UNIQUE` constraint on `event_key` in `events` table via schema migration
+- [x] `migrate_to_v100()` in `models.py` — table recreation pattern, data preserved, indexes recreated
+- [x] `SCHEMA_VERSION` bumped to `"1.0.0"` in `models.py`
+- [x] Migration wired into `init_database()` in `db.py` alongside existing migration chain
+- [x] `insert_event()` changed from `INSERT OR REPLACE` to plain `INSERT`
+- [x] Recent Alerts now shows full history: degradation and recovery events both visible
+- [x] UI Polish — chart gradient fills, Recent Alerts direction indicators + relative timestamps, footer v1.0.0, header subtitle sizing hierarchy, mobile header stacking
+- [x] Command Center Redesign — header spine mark + HOMESENTRY wordmark + IBM Plex Sans font
+- [x] Header: dog emoji removed, subtitle → "System Observability", distinct bg + 1px accent divider
+- [x] Recent Alerts: vertical timeline connector + collapse to 8 with expand button
+- [x] Chart section: distinct tonal background (`--bg-trends`) + accent border-top separator
+- [x] Status strip: widened to 5px (WARN 6px), vivid color variants, WARN gets faint amber tint
+- [x] Card hover elevation: `translateY(-1px)` + box-shadow, 150ms transition
 
 ### Future Enhancements
 

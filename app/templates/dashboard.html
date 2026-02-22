@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HomeSentry Dashboard</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <!-- IBM Plex Sans for wordmark typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
     <!-- No meta refresh - JavaScript handles polling now -->
     <!-- Chart.js for historical trend charts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -23,20 +26,28 @@
             gap: 1rem;
             align-items: center;
         }
+        /* Tighten the subtitle stack under h1 */
+        .header-subtitle {
+            font-size: 0.9375rem;
+            margin-bottom: 0.125rem;
+        }
+        .last-refreshed {
+            font-size: 0.75rem;
+        }
         .config-link {
-            padding: 0.75rem 1.5rem;
-            background: var(--primary-color);
-            color: white;
+            padding: 0.5rem 1rem;
+            background: transparent;
+            color: var(--text-secondary);
             text-decoration: none;
             border-radius: 4px;
-            font-weight: 500;
-            transition: background-color 0.2s, transform 0.1s;
-            border: 2px solid var(--primary-color);
+            font-weight: 400;
+            font-size: 0.875rem;
+            transition: color 0.2s, border-color 0.2s;
+            border: 1px solid var(--border-medium);
         }
         .config-link:hover {
-            background: var(--primary-hover);
-            border-color: var(--primary-hover);
-            transform: translateY(-1px);
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
         }
     </style>
 </head>
@@ -44,8 +55,8 @@
     <header>
         <div class="header-content">
             <div class="header-left">
-                <h1>🐕‍🦺 HomeSentry</h1>
-                <p class="header-subtitle">Server Health Monitoring Dashboard</p>
+                <h1><span class="header-spine" aria-hidden="true"></span>HOMESENTRY</h1>
+                <p class="header-subtitle">System Observability</p>
                 <p class="last-refreshed" id="last-refreshed">Last refreshed: —</p>
             </div>
             <div class="header-right">
@@ -151,13 +162,22 @@
                             <span class="status-icon fail">🔴</span>
                         {% endif %}
                     </span>
+                    {% if event.new_status == 'OK' %}
+                        <span class="event-direction recovery">↓ Recovery</span>
+                    {% elif event.prev_status == 'WARN' and event.new_status == 'FAIL' %}
+                        <span class="event-direction degradation">↑ Degraded</span>
+                    {% elif event.new_status == 'WARN' %}
+                        <span class="event-direction warning">⚠ Warning</span>
+                    {% else %}
+                        <span class="event-direction degradation">↑ Failure</span>
+                    {% endif %}
                     <div class="event-content">
                         <span class="event-message">{{ event.message }}</span>
                         {% if event.prev_status %}
                         <span class="event-transition">{{ event.prev_status }} → {{ event.new_status }}</span>
                         {% endif %}
                     </div>
-                    <span class="event-time">{{ event.ts }}</span>
+                    <span class="event-time" data-ts="{{ event.ts }}" title="{{ event.ts }}">{{ event.ts }}</span>
                 </li>
                 {% endfor %}
             </ul>
@@ -168,11 +188,43 @@
     </main>
 
     <footer>
-        <p>HomeSentry v0.8.0 | <span id="footer-timestamp">{{ last_updated }}</span> |
+        <p>HomeSentry v1.0.0 | <span id="footer-timestamp">{{ last_updated }}</span> |
         <a href="/config">Configuration</a> |
         <a href="/docs" target="_blank">API Docs</a> |
         <a href="/healthz" target="_blank">Health Check</a></p>
     </footer>
+
+    <!-- Recent Alerts collapse: show 8, hide rest with expandable button -->
+    <script>
+    (function() {
+        var items = document.querySelectorAll(".events-list .event-item");
+        var SHOW_LIMIT = 8;
+        if (items.length <= SHOW_LIMIT) return;
+
+        // Hide items beyond limit
+        for (var i = SHOW_LIMIT; i < items.length; i++) {
+            items[i].style.display = "none";
+        }
+
+        // Create expand button
+        var hiddenCount = items.length - SHOW_LIMIT;
+        var btn = document.createElement("button");
+        btn.className = "events-expand-btn";
+        btn.textContent = "Show " + hiddenCount + " more";
+        var expanded = false;
+
+        btn.addEventListener("click", function() {
+            expanded = !expanded;
+            for (var i = SHOW_LIMIT; i < items.length; i++) {
+                items[i].style.display = expanded ? "" : "none";
+            }
+            btn.textContent = expanded ? "Show less" : "Show " + hiddenCount + " more";
+        });
+
+        var list = document.querySelector(".events-list");
+        list.parentNode.insertBefore(btn, list.nextSibling);
+    })();
+    </script>
 
     <!-- ============================================================
          DASHBOARD JAVASCRIPT
@@ -537,10 +589,10 @@
                     tickColor:  "#a6adc8",
                     titleColor: "#cdd6f4",
                     lineColors: [
-                        { border: "#89b4fa", background: "rgba(137,180,250,0.15)" },  // blue
-                        { border: "#a6e3a1", background: "rgba(166,227,161,0.15)" },  // green
-                        { border: "#f38ba8", background: "rgba(243,139,168,0.15)" },  // red
-                        { border: "#fab387", background: "rgba(250,179,135,0.15)" },  // peach
+                        { border: "#89b4fa", gradientTop: "rgba(137,180,250,0.35)", gradientBottom: "rgba(137,180,250,0.00)" },  // blue
+                        { border: "#a6e3a1", gradientTop: "rgba(166,227,161,0.35)", gradientBottom: "rgba(166,227,161,0.00)" },  // green
+                        { border: "#f38ba8", gradientTop: "rgba(243,139,168,0.35)", gradientBottom: "rgba(243,139,168,0.00)" },  // red
+                        { border: "#fab387", gradientTop: "rgba(250,179,135,0.35)", gradientBottom: "rgba(250,179,135,0.00)" },  // peach
                     ],
                 };
             }
@@ -549,10 +601,10 @@
                 tickColor:  "#6b7280",
                 titleColor: "#111827",
                 lineColors: [
-                    { border: "#2563eb", background: "rgba(37,99,235,0.10)" },
-                    { border: "#10b981", background: "rgba(16,185,129,0.10)" },
-                    { border: "#ef4444", background: "rgba(239,68,68,0.10)" },
-                    { border: "#f59e0b", background: "rgba(245,158,11,0.10)" },
+                    { border: "#2563eb", gradientTop: "rgba(37,99,235,0.25)",  gradientBottom: "rgba(37,99,235,0.00)"  },
+                    { border: "#10b981", gradientTop: "rgba(16,185,129,0.25)", gradientBottom: "rgba(16,185,129,0.00)" },
+                    { border: "#ef4444", gradientTop: "rgba(239,68,68,0.25)",  gradientBottom: "rgba(239,68,68,0.00)"  },
+                    { border: "#f59e0b", gradientTop: "rgba(245,158,11,0.25)", gradientBottom: "rgba(245,158,11,0.00)" },
                 ],
             };
         }
@@ -563,6 +615,13 @@
             var colors = chartColors();
             var c = colors.lineColors[colorIdx % colors.lineColors.length];
 
+            // Capture gradient stop colors for the backgroundColor callback closure.
+            // Chart.js 4.x supports a function for backgroundColor that receives a
+            // context with chart.ctx and chart.chartArea — use this to build a linear
+            // gradient that fades from line color at the top to transparent at baseline.
+            var gradientTop    = c.gradientTop;
+            var gradientBottom = c.gradientBottom;
+
             return {
                 type: "line",
                 data: {
@@ -571,7 +630,16 @@
                         label: label + (unit ? " (" + unit + ")" : ""),
                         data: values,
                         borderColor: c.border,
-                        backgroundColor: c.background,
+                        backgroundColor: function(context) {
+                            var chart     = context.chart;
+                            var ctx       = chart.ctx;
+                            var chartArea = chart.chartArea;
+                            if (!chartArea) return "transparent";
+                            var gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                            gradient.addColorStop(0, gradientTop);
+                            gradient.addColorStop(1, gradientBottom);
+                            return gradient;
+                        },
                         borderWidth: 2,
                         pointRadius: labels.length > 60 ? 0 : 3,
                         pointHoverRadius: 5,
@@ -715,7 +783,8 @@
                 var colors = chartColors();
                 var c = colors.lineColors[colorIdx % colors.lineColors.length];
                 chart.data.datasets[0].borderColor = c.border;
-                chart.data.datasets[0].backgroundColor = c.background;
+                // Re-apply gradient callback so theme changes take effect
+                chart.data.datasets[0].backgroundColor = config.data.datasets[0].backgroundColor;
                 chart.options.scales.x.ticks.color = colors.tickColor;
                 chart.options.scales.x.grid.color = colors.gridColor;
                 chart.options.scales.y.ticks.color = colors.tickColor;
@@ -804,6 +873,36 @@
             // Brief delay to let body class update first
             setTimeout(loadCharts, 50);
         });
+
+        // ---- Relative Timestamps for Recent Alerts ----
+
+        function relativeTime(tsString) {
+            // SQLite timestamps are UTC (no timezone suffix); append Z to parse correctly
+            var then = new Date(tsString.replace(" ", "T") + "Z");
+            var diffMs = Date.now() - then.getTime();
+            if (diffMs < 0) return tsString; // future timestamp fallback
+            var diffMins = Math.floor(diffMs / 60000);
+            if (diffMins < 1) return "just now";
+            if (diffMins < 60) return diffMins + "m ago";
+            var diffHrs = Math.floor(diffMins / 60);
+            if (diffHrs < 24) return diffHrs + "h ago";
+            return Math.floor(diffHrs / 24) + "d ago";
+        }
+
+        function applyRelativeTimestamps() {
+            var timeEls = document.querySelectorAll(".event-time[data-ts]");
+            for (var i = 0; i < timeEls.length; i++) {
+                var el = timeEls[i];
+                var ts = el.getAttribute("data-ts");
+                if (ts) {
+                    el.textContent = relativeTime(ts);
+                }
+            }
+        }
+
+        // Apply on load and refresh every minute so times stay current
+        document.addEventListener("DOMContentLoaded", applyRelativeTimestamps);
+        setInterval(applyRelativeTimestamps, 60000);
 
     })();
     </script>
