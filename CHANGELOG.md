@@ -5,8 +5,6 @@ All notable changes to HomeSentry will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
 ## [1.0.0] - 2026-02-21
 
 ### Added
@@ -530,6 +528,8 @@ Initial release establishing the foundation for HomeSentry with system monitorin
 
 ## Version History Summary
 
+- **v1.0.0** (Released 2026-02-21) - Production ready: append-only event log, command center redesign, UI polish
+- **v0.9.0** (Released 2026-02-21) - Code quality: parameterized SQL, specific exception handling
 - **v0.8.0** (Released 2026-02-17) - Polish release: docs catch-up, data retention, dashboard UX improvements
 - **v0.7.0** (Released 2026-02-16) - Historical charts: time-series visualization with Chart.js, 6h/24h/7d range selector
 - **v0.6.0** (Released 2026-02-13) - Sustained state checking, morning summary fixes, .env security cleanup
@@ -538,5 +538,3 @@ Initial release establishing the foundation for HomeSentry with system monitorin
 - **v0.3.0** (Released 2026-01-31) - Plugin architecture and app-specific modules
 - **v0.2.0** (Released 2026-01-27) - Infrastructure monitoring (Docker, SMART, RAID)
 - **v0.1.0** (Released 2026-01-25) - MVP with system monitoring, service checks, Discord alerts
-- **v0.9.0** (Future) - Authentication, API rate limiting, unit tests
-- **v1.0.0** (Future) - Multi-server support, mobile UI, production hardening

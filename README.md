@@ -1,6 +1,6 @@
 # HomeSentry
 
-**Your Server's Personal Watchdog** 🐕‍🦺
+**Self-hosted infrastructure monitoring for home servers.**
 
 A Python-based health monitoring dashboard for home servers that watches your infrastructure 24/7 and alerts you the moment something goes wrong.
 
@@ -19,27 +19,22 @@ A Python-based health monitoring dashboard for home servers that watches your in
 
 HomeSentry is a self-hosted monitoring solution designed specifically for home lab environments. It continuously monitors your server's health and sends Discord notifications when issues are detected—before they become disasters.
 
-Think of it as your server's guardian angel: quiet when everything's fine, loud when it's not.
-
 ### Key Features
 
-✅ **Available Now (v0.9.0):**
+✅ **Available Now (v1.0.0):**
 - **System Monitoring** - Real-time CPU, RAM, and disk usage tracking
 - **Service Checks** - HTTP health checks for Plex, Jellyfin, Pi-hole, and other web services
 - **Docker Monitoring** - Container health, restart counts, and resource usage
 - **SMART Health** - Hard drive health monitoring with predictive failure detection
 - **RAID Status** - Track RAID array health, disk status, and rebuild progress
-- **Smart Alerts** - Discord webhooks with sustained state checking (no spam from transient flaps!)
-- **Web Dashboard** - Clean, responsive UI showing current status at a glance
+- **App Module Monitoring** - Deep integration with Jellyfin, Plex, Home Assistant, qBittorrent, Pi-hole
+- **Smart Alerts** - Discord webhooks with sustained state checking (no spam from transient flaps)
+- **Full Alert History** - Append-only event log shows both degradation and recovery events
+- **Command Center Dashboard** - Polished UI with dark mode, responsive layout, and chart gradients
 - **Configuration UI** - Web-based settings management with module toggles
 - **Historical Charts** - Time-series visualization with Chart.js, 6h/24h/7d range selector
 - **Autonomous Operation** - Background scheduler runs 24/7, alerts automatically
-- **Historical Data** - SQLite database tracks all metrics over time
-
-🔮 **Coming Soon (v1.0.0):**
-- **Authentication** - Login and access control
-- **Mobile-responsive UI** - Optimised layout for phones and tablets
-- **Multi-server support** - Monitor more than one machine
+- **Data Retention** - Nightly cleanup keeps database lean (configurable retention window)
 
 ---
 
@@ -98,13 +93,15 @@ Your data never leaves your network unless you configure it to (via Discord aler
    # Discord webhook for alerts
    DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
    
-   # Services to monitor
-   PLEX_URL=http://localhost:32400
-   JELLYFIN_URL=http://localhost:8096
+   # App module URLs
+   PLEX_API_URL=http://localhost:32400
+   PLEX_API_TOKEN=your_plex_token
+   JELLYFIN_API_URL=http://localhost:8096
+   JELLYFIN_API_KEY=your_jellyfin_api_key
    
    # Thresholds
-   DISK_FREE_PERCENT_WARN=15
-   DISK_FREE_GB_WARN=50
+   DISK_WARN_PERCENT=85
+   DISK_FAIL_PERCENT=95
    ```
 
 3. **Start HomeSentry:**
@@ -170,21 +167,17 @@ Each collector is self-contained and failure-resistant—if one fails, the other
 | `DISCORD_WEBHOOK_URL` | Discord webhook for alerts | *(required)* |
 | `POLL_INTERVAL` | Seconds between checks | `60` |
 | `SMART_POLL_INTERVAL` | Seconds between SMART checks | `600` |
-| `PLEX_URL` | Plex server URL | - |
-| `JELLYFIN_URL` | Jellyfin server URL | - |
-| `DISK_FREE_PERCENT_WARN` | Disk free % warning threshold | `15` |
-| `DISK_FREE_GB_WARN` | Disk free GB warning threshold | `50` |
-| `CONTAINER_RESTART_THRESHOLD` | Restart count warning | `5` |
+| `JELLYFIN_API_URL` | Jellyfin server URL | - |
+| `JELLYFIN_API_KEY` | Jellyfin API key | - |
+| `PLEX_API_URL` | Plex server URL | - |
+| `PLEX_API_TOKEN` | Plex authentication token | - |
+| `DISK_WARN_PERCENT` | Disk usage % warning threshold | `85` |
+| `DISK_FAIL_PERCENT` | Disk usage % critical threshold | `95` |
+| `METRICS_RETENTION_DAYS` | Days of metrics history to keep | `30` |
 
-### Monitored Services
+### Tip: Use the Setup Wizard
 
-HomeSentry can monitor any HTTP service. Add URLs to `.env`:
-
-```ini
-PLEX_URL=http://localhost:32400
-JELLYFIN_URL=http://localhost:8096
-PIHOLE_URL=http://localhost:80
-```
+Run `scripts/setup.sh` for an interactive TUI installer that auto-detects running services and generates your `.env` automatically — no manual editing required.
 
 ---
 
@@ -401,10 +394,19 @@ If you prefer running without Docker:
 - [x] Specific exception handling in `get_sleep_events()` — replaced bare `except:` with specific types
 - [x] Version bump to 0.9.0 across all tracking files
 
-### v1.0.0 (Future)
+### v1.0.0 (February 21, 2026) ✅ Shipped
+- [x] Append-only event log — Recent Alerts now shows full history of both degradations and recoveries
+- [x] Schema migration v1.0.0 — removed UNIQUE constraint from `event_key`, data preserved
+- [x] Command Center redesign — HOMESENTRY wordmark, IBM Plex Sans, spine mark, System Observability subtitle
+- [x] Chart gradient fills — canvas linear gradient via Chart.js backgroundColor callback
+- [x] Recent Alerts polish — direction badges (↓ Recovery / ↑ Failure), relative timestamps, vertical timeline
+- [x] Status strip improvements — wider borders, vivid colors, WARN amber tint
+- [x] Card hover elevation — translateY(-1px) + box-shadow lift at 150ms
+
+### Post-1.0 (Unscheduled)
 - [ ] Authentication
-- [ ] Mobile-responsive UI
 - [ ] Multi-server support
+- [ ] Real-time WebSocket updates
 
 ---
 
@@ -465,4 +467,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**Remember**: HomeSentry is your server's watchdog. Set it up once, then relax knowing you'll be alerted if anything goes wrong. 🐕‍🦺
+**HomeSentry** — set it up once, then relax knowing you'll be alerted if anything goes wrong.

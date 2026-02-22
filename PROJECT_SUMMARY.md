@@ -268,17 +268,14 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 
 ### Future Enhancements
 
-**v1.0.0 - Production Ready (formerly v0.9.0 Security & Reliability)**
+**Post-1.0 (Unscheduled)**
 
 - [ ] Authentication/authorization
 - [ ] API rate limiting
 - [ ] Unit test coverage > 80%
-
-**v1.0.0 - Production Ready**
-
 - [ ] Multi-server support
-- [ ] Mobile-responsive UI
-- [ ] Production hardening and final polish
+- [ ] Real-time WebSocket updates
+- [ ] Mobile app
 
 
 
@@ -638,21 +635,21 @@ SMART_POLL_INTERVAL=600       # SMART checks (seconds)
 
 
 
-# Service URLs
+# App Module URLs (use *_API_URL naming)
 
-PLEX_URL=http://localhost:32400
+PLEX_API_URL=http://localhost:32400
 
-JELLYFIN_URL=http://localhost:8096
+JELLYFIN_API_URL=http://localhost:8096
 
-PIHOLE_URL=http://localhost:80
+PIHOLE_API_URL=http://localhost:80
 
 
 
 # Thresholds
 
-DISK_FREE_PERCENT_WARN=15
+DISK_WARN_PERCENT=85
 
-DISK_FREE_GB_WARN=50
+DISK_FAIL_PERCENT=95
 
 CONTAINER_RESTART_THRESHOLD=5
 
@@ -716,9 +713,7 @@ SERVICE_DOWN_WINDOW=120       # Seconds before alerting
 
 - No authentication (dashboard is publicly accessible if exposed)
 
-- No historical charts (data is stored but not visualized)
-
-- Basic HTML UI (no real-time updates, requires refresh)
+- Basic HTML UI (no real-time updates, requires manual refresh)
 
 - English only
 
@@ -726,15 +721,13 @@ SERVICE_DOWN_WINDOW=120       # Seconds before alerting
 
 ### Future Improvements:
 
-- Multi-server support (v1.0+)
+- Multi-server support (post-1.0)
 
-- Authentication/authorization (v1.0+)
+- Authentication/authorization (post-1.0)
 
-- Historical data visualization (v1.0+)
+- Real-time WebSocket updates (post-1.0)
 
-- Real-time WebSocket updates (v1.5+)
-
-- Mobile app (v2.0+)
+- Mobile app (post-1.0)
 
 
 
@@ -770,7 +763,7 @@ SERVICE_DOWN_WINDOW=120       # Seconds before alerting
 
 ### Future:
 
-- Built-in authentication (v1.0)
+- Built-in authentication (post-1.0)
 
 - API keys for programmatic access
 
