@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HomeSentry Dashboard</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <!-- IBM Plex Sans for wordmark typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
     <!-- No meta refresh - JavaScript handles polling now -->
     <!-- Chart.js for historical trend charts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -32,19 +35,19 @@
             font-size: 0.75rem;
         }
         .config-link {
-            padding: 0.75rem 1.5rem;
-            background: var(--primary-color);
-            color: white;
+            padding: 0.5rem 1rem;
+            background: transparent;
+            color: var(--text-secondary);
             text-decoration: none;
             border-radius: 4px;
-            font-weight: 500;
-            transition: background-color 0.2s, transform 0.1s;
-            border: 2px solid var(--primary-color);
+            font-weight: 400;
+            font-size: 0.875rem;
+            transition: color 0.2s, border-color 0.2s;
+            border: 1px solid var(--border-medium);
         }
         .config-link:hover {
-            background: var(--primary-hover);
-            border-color: var(--primary-hover);
-            transform: translateY(-1px);
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
         }
     </style>
 </head>
@@ -52,8 +55,8 @@
     <header>
         <div class="header-content">
             <div class="header-left">
-                <h1>🐕‍🦺 HomeSentry</h1>
-                <p class="header-subtitle">Server Health Monitoring Dashboard</p>
+                <h1><span class="header-spine" aria-hidden="true"></span>HOMESENTRY</h1>
+                <p class="header-subtitle">System Observability</p>
                 <p class="last-refreshed" id="last-refreshed">Last refreshed: —</p>
             </div>
             <div class="header-right">
@@ -190,6 +193,38 @@
         <a href="/docs" target="_blank">API Docs</a> |
         <a href="/healthz" target="_blank">Health Check</a></p>
     </footer>
+
+    <!-- Recent Alerts collapse: show 8, hide rest with expandable button -->
+    <script>
+    (function() {
+        var items = document.querySelectorAll(".events-list .event-item");
+        var SHOW_LIMIT = 8;
+        if (items.length <= SHOW_LIMIT) return;
+
+        // Hide items beyond limit
+        for (var i = SHOW_LIMIT; i < items.length; i++) {
+            items[i].style.display = "none";
+        }
+
+        // Create expand button
+        var hiddenCount = items.length - SHOW_LIMIT;
+        var btn = document.createElement("button");
+        btn.className = "events-expand-btn";
+        btn.textContent = "Show " + hiddenCount + " more";
+        var expanded = false;
+
+        btn.addEventListener("click", function() {
+            expanded = !expanded;
+            for (var i = SHOW_LIMIT; i < items.length; i++) {
+                items[i].style.display = expanded ? "" : "none";
+            }
+            btn.textContent = expanded ? "Show less" : "Show " + hiddenCount + " more";
+        });
+
+        var list = document.querySelector(".events-list");
+        list.parentNode.insertBefore(btn, list.nextSibling);
+    })();
+    </script>
 
     <!-- ============================================================
          DASHBOARD JAVASCRIPT

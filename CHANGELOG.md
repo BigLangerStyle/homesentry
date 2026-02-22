@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Command Center Redesign — Header Identity + Dashboard Polish**
+- **Header spine mark** — `4px` tall vertical accent bar (`#4a9ead` light / `#5ba8b8` dark) immediately left of wordmark; no animation or glow
+- **HOMESENTRY wordmark** — `<h1>` now uppercase via CSS, IBM Plex Sans (500 weight, 0.5px letter-spacing) with Inter / system-ui fallback; Google Fonts preconnect in `<head>`
+- **Header identity update** — dog emoji removed; subtitle changed to "System Observability"; header has distinct slightly-darker background (`--bg-header`) and `1px` bottom divider at low-opacity accent color
+- **Recent Alerts: vertical timeline connector** — faint `1px` vertical line connects event indicator dots (22% opacity, `::after` pseudo-element on each non-last `.event-item`)
+- **Recent Alerts: collapse to 8** — JS-injected collapse: only first 8 items visible by default; "Show X more" button below list toggles remainder; count is dynamic
+- **Chart section tonal shift** — `.trends-layer` uses `--bg-trends` variable (slightly darker than `--bg-card`) and a `1px` accent-color top border, reinforcing the analytical-view separation from status cards
+- **Status strip: wider + more saturated** — `border-left` widened from `4px` to `5px` on status and app cards; OK/WARN/FAIL colors use more vivid variants (`--color-ok-vivid`, `--color-warn-vivid`, `--color-fail-vivid`)
+- **WARN structural distinction** — WARN cards get `6px` border-left (vs `5px` for OK/FAIL) plus a faint amber background tint (`--bg-warn-tint`), making WARN structurally different from OK beyond color alone
+- **Card hover elevation** — `.status-card:hover` and `.app-card:hover` lift `1px` with `box-shadow: 0 4px 12px rgba(0,0,0,0.12)`; dark mode uses higher shadow opacity; transition `150ms` for snappy feel
+- **Config link de-emphasized** — moved from primary-colored filled button to a light utility border button; reads as a control rather than a CTA
+
 **UI Polish — v1.0.0 Dashboard Improvements**
 - **Chart gradient fills** — replaced flat `rgba` fill with a canvas linear gradient (line color at 35% opacity at top → transparent at baseline) using Chart.js 4.x `backgroundColor` callback pattern; gradient correctly re-renders on dark/light mode toggle
 - **Recent Alerts direction indicators** — each alert row now shows a colored direction badge: `↓ Recovery` (green) for OK transitions, `↑ Failure` / `↑ Degraded` (red) for degradation, `⚠ Warning` (amber) for WARN state; rows also have a matching left-border color accent

@@ -47,6 +47,24 @@
 
     /* Shadows (intensify in dark mode) */
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    /* Command center accent — desaturated teal/cool cyan */
+    --accent-spine: #4a9ead;
+    --accent-spine-border: rgba(74, 158, 173, 0.25);
+
+    /* Header background (slightly darker than main bg) */
+    --bg-header: #f0f2f5;
+
+    /* Trends section background (tonal shift from card bg) */
+    --bg-trends: #eff1f4;
+
+    /* Status strip colors — slightly more saturated */
+    --color-ok-vivid: #0ea472;
+    --color-warn-vivid: #e8960a;
+    --color-fail-vivid: #e53030;
+
+    /* WARN card tint */
+    --bg-warn-tint: rgba(245, 158, 11, 0.03);
 }
 
 /* Dark Mode Overrides */
@@ -67,6 +85,17 @@ body.dark-mode {
 
     --bg-app-metric: rgba(255, 255, 255, 0.05);
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+    --accent-spine: #5ba8b8;
+    --accent-spine-border: rgba(91, 168, 184, 0.25);
+    --bg-header: #181825;
+    --bg-trends: #17172a;
+
+    --color-ok-vivid: #0ea472;
+    --color-warn-vivid: #e8960a;
+    --color-fail-vivid: #e53030;
+
+    --bg-warn-tint: rgba(245, 158, 11, 0.04);
 }
 
 /* Reset and Base Styles */
@@ -91,19 +120,37 @@ body {
    ======================================== */
 
 header {
-    background: var(--bg-primary);
+    background: var(--bg-header);
     padding: var(--spacing-lg) var(--spacing-xl);
     text-align: center;
     box-shadow: var(--shadow-sm);
+    border-bottom: 1px solid var(--accent-spine-border);
     position: sticky;
     top: 0;
     z-index: 100;
 }
 
 header h1 {
+    font-family: 'IBM Plex Sans', Inter, system-ui, sans-serif;
     font-size: 2rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
     margin-bottom: 0.25rem;
     color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Structural spine mark to left of wordmark */
+.header-spine {
+    display: inline-block;
+    width: 4px;
+    height: 1.15em;
+    background: var(--accent-spine);
+    border-radius: 2px;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
 
 .header-subtitle {
@@ -205,19 +252,14 @@ main {
     border-radius: var(--radius-md);
     background: var(--bg-secondary);
     border: 1px solid var(--border-light);
-    border-left: 4px solid var(--color-unknown);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left: 5px solid var(--color-unknown);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.app-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* App Card status-colored left borders */
-.app-card.ok    { border-left-color: var(--color-ok); }
-.app-card.warn  { border-left-color: var(--color-warn); }
-.app-card.fail  { border-left-color: var(--color-fail); }
+/* App Card status-colored left borders — vivid */
+.app-card.ok    { border-left-color: var(--color-ok-vivid); }
+.app-card.warn  { border-left-color: var(--color-warn-vivid); border-left-width: 6px; background-color: var(--bg-warn-tint); }
+.app-card.fail  { border-left-color: var(--color-fail-vivid); }
 .app-card.unknown { border-left-color: var(--color-unknown); }
 
 /* App Card Header: status icon + title */
@@ -327,23 +369,28 @@ main {
     position: relative;
     padding: var(--spacing-lg);
     border-radius: var(--radius-md);
-    border-left: 4px solid var(--color-unknown);
+    border-left: 5px solid var(--color-unknown);
     background: var(--bg-secondary);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
     overflow: hidden;
 }
 
-.status-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.status-card:hover,
+.app-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-/* Status Card Color Variants */
-.status-card.ok      { border-left-color: var(--color-ok); }
-.status-card.warn    { border-left-color: var(--color-warn); }
-.status-card.fail    { border-left-color: var(--color-fail); }
-.status-card.unknown { border-left-color: var(--color-unknown); }
+body.dark-mode .status-card:hover,
+body.dark-mode .app-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
 
+/* Status Card Color Variants — vivid, wider strip */
+.status-card.ok      { border-left-color: var(--color-ok-vivid); }
+.status-card.warn    { border-left-color: var(--color-warn-vivid); border-left-width: 6px; background-color: var(--bg-warn-tint); }
+.status-card.fail    { border-left-color: var(--color-fail-vivid); }
+.status-card.unknown { border-left-color: var(--color-unknown); }
 /* Status Indicator Dot */
 .status-indicator {
     position: absolute;
@@ -407,20 +454,6 @@ section.recent-events h2 {
     color: var(--text-primary);
     border-bottom: 2px solid var(--border-light);
     padding-bottom: var(--spacing-sm);
-}
-
-.events-list {
-    list-style: none;
-    margin-top: var(--spacing-lg);
-}
-
-.event-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-lg);
-    border-bottom: 1px solid var(--border-light);
-    transition: background 0.2s ease;
 }
 
 .event-item:last-child {
@@ -579,6 +612,8 @@ footer a:hover {
 @media (max-width: 768px) {
     header h1 {
         font-size: 1.5rem;
+        display: inline-flex;
+        align-items: center;
     }
 
     /* Stack header left/right vertically on mobile */
@@ -638,6 +673,8 @@ footer a:hover {
 
     header h1 {
         font-size: 1.25rem;
+        display: inline-flex;
+        align-items: center;
     }
 
     .layer-header h2 {
@@ -661,9 +698,10 @@ footer a:hover {
    Historical Trends — Chart Section
    ======================================== */
 
-/* Trends layer: green top-border accent to distinguish from app/infra layers */
+/* Trends layer: distinct tonal background to reinforce "analytical view vs status view" */
 .trends-layer {
-    border-top: 3px solid var(--color-ok);
+    background-color: var(--bg-trends);
+    border-top: 1px solid var(--accent-spine-border);
 }
 
 .trends-badge {
@@ -779,6 +817,62 @@ body.dark-mode .chart-empty-state {
 
 body.dark-mode .chart-empty-title {
     color: var(--text-secondary);
+}
+
+/* ========================================
+   Recent Alerts: Vertical Timeline Connector
+   ======================================== */
+
+/* Wrap the indicator and connector together */
+.events-list {
+    list-style: none;
+    margin-top: var(--spacing-lg);
+}
+
+/* Position event-item relatively so connector can anchor to indicator */
+.event-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-light);
+    transition: background 0.2s ease;
+    position: relative;
+}
+
+/* Vertical connector line: runs from bottom of this item's indicator to top of next */
+.event-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: calc(var(--spacing-lg) + 0.75rem); /* align with center of indicator (emoji ~1.5rem wide, half = 0.75rem) */
+    top: calc(var(--spacing-lg) + 1.5rem);   /* below the indicator icon */
+    bottom: 0;
+    width: 1px;
+    background: var(--border-medium);
+    opacity: 0.22;
+}
+
+/* Events expand/collapse button */
+.events-expand-btn {
+    display: block;
+    width: 100%;
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: none;
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.events-expand-btn:hover {
+    border-color: var(--accent-spine);
+    color: var(--accent-spine);
+    background: var(--bg-secondary);
 }
 
 /* ========================================

@@ -259,6 +259,12 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] `insert_event()` changed from `INSERT OR REPLACE` to plain `INSERT`
 - [x] Recent Alerts now shows full history: degradation and recovery events both visible
 - [x] UI Polish — chart gradient fills, Recent Alerts direction indicators + relative timestamps, footer v1.0.0, header subtitle sizing hierarchy, mobile header stacking
+- [x] Command Center Redesign — header spine mark + HOMESENTRY wordmark + IBM Plex Sans font
+- [x] Header: dog emoji removed, subtitle → "System Observability", distinct bg + 1px accent divider
+- [x] Recent Alerts: vertical timeline connector + collapse to 8 with expand button
+- [x] Chart section: distinct tonal background (`--bg-trends`) + accent border-top separator
+- [x] Status strip: widened to 5px (WARN 6px), vivid color variants, WARN gets faint amber tint
+- [x] Card hover elevation: `translateY(-1px)` + box-shadow, 150ms transition
 
 ### Future Enhancements
 
