@@ -56,17 +56,21 @@ def discover_available_modules() -> List[Type[AppModule]]:
                         )
                         continue
                     
-                    if not obj.CONTAINER_NAMES:
-                        logger.warning(
-                            f"Module {name} in {file_path.name} has no CONTAINER_NAMES, skipping"
+                    # Allow modules with no CONTAINER_NAMES — they may be bare-metal only.
+                    # module_runner.py handles routing: bare-metal flag -> run without container,
+                    # no containers found -> skip. Discovery should not gate on this.
+                    if obj.CONTAINER_NAMES:
+                        logger.info(
+                            f"Discovered module: {obj.APP_DISPLAY_NAME or obj.APP_NAME} "
+                            f"(containers: {', '.join(obj.CONTAINER_NAMES)})"
                         )
-                        continue
+                    else:
+                        logger.info(
+                            f"Discovered module: {obj.APP_DISPLAY_NAME or obj.APP_NAME} "
+                            f"(bare-metal only)"
+                        )
                     
                     modules.append(obj)
-                    logger.info(
-                        f"Discovered module: {obj.APP_DISPLAY_NAME or obj.APP_NAME} "
-                        f"(containers: {', '.join(obj.CONTAINER_NAMES)})"
-                    )
         
         except Exception as e:
             logger.error(

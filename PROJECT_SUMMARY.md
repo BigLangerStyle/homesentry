@@ -1,8 +1,8 @@
 # HomeSentry - Project Summary
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Production Ready  
-**Last Updated:** February 21, 2026  
+**Last Updated:** February 27, 2026  
 **Target Platform:** Linux (Ubuntu/Debian) + Docker  
 **Primary Language:** Python 3.11+  
 
@@ -265,6 +265,15 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Chart section: distinct tonal background (`--bg-trends`) + accent border-top separator
 - [x] Status strip: widened to 5px (WARN 6px), vivid color variants, WARN gets faint amber tint
 - [x] Card hover elevation: `translateY(-1px)` + box-shadow, 150ms transition
+
+### Completed (v1.1.0) - Mitch Discord Bot Module
+
+- [x] New `app/collectors/modules/mitch.py` — bare-metal systemd service monitoring
+- [x] Health endpoint: `http://localhost:8001/health` — Discord connectivity, Ollama AI responsiveness, uptime, memory, DB size
+- [x] `validate_config()` enforces `MITCH_BARE_METAL=true` — module refuses to run without it
+- [x] Dashboard card metrics: `discord_connected`, `ollama_responsive`, `uptime_seconds`, `memory_mb`
+- [x] Updated `APP_PREFIXES`, `APP_DISPLAY_NAMES`, `APP_CARD_METRICS` in `main.py`
+- [x] Added Mitch config block to `.env.example`
 
 ### Future Enhancements
 
