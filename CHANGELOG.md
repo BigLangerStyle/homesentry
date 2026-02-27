@@ -5,6 +5,20 @@ All notable changes to HomeSentry will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-27
+
+### Added
+
+- **Mitch Discord Bot module** — bare-metal systemd service monitoring via `http://localhost:8001/health`
+  - Tracks Discord connectivity (`discord_connected`), Ollama AI responsiveness (`ollama_responsive`), uptime, memory usage, and database size
+  - `validate_config()` enforces `MITCH_BARE_METAL=true` — module refuses to run without it
+  - Returns `{"status": "unreachable"}` on connection failure for clear dashboard state
+  - Added `"mitch"` to `APP_PREFIXES`, `APP_DISPLAY_NAMES`, `APP_CARD_METRICS` in `main.py`
+  - Added Mitch config block to `.env.example` with full threshold documentation
+
+### Fixed
+
+- **Bare-metal module discovery** — `discover_available_modules()` in `app/collectors/modules/__init__.py` was incorrectly filtering out modules with empty `CONTAINER_NAMES`, silently preventing bare-metal-only modules from loading; fixed to allow modules through discovery regardless of container name list
 ## [1.0.0] - 2026-02-21
 
 ### Added
