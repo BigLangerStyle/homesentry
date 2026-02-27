@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 # Known app module prefixes — used to group app metrics by module
-APP_PREFIXES = ["plex", "jellyfin", "pihole", "homeassistant", "qbittorrent"]
+APP_PREFIXES = ["plex", "jellyfin", "pihole", "homeassistant", "qbittorrent", "mitch"]
 
 # Human-friendly display names for each app module
 APP_DISPLAY_NAMES = {
@@ -64,6 +64,7 @@ APP_DISPLAY_NAMES = {
     "pihole": "Pi-hole",
     "homeassistant": "Home Assistant",
     "qbittorrent": "qBittorrent",
+    "mitch": "Mitch Bot",
 }
 
 # Which metrics to show on each app's dashboard card (priority order)
@@ -73,6 +74,7 @@ APP_CARD_METRICS = {
     "pihole": ["percent_blocked", "queries_blocked_today", "active_clients", "blocklist_size"],
     "homeassistant": ["entity_count", "automation_count", "response_time_ms"],
     "qbittorrent": ["download_speed_mbps", "upload_speed_mbps", "active_torrents", "disk_free_gb"],
+    "mitch": ["discord_connected", "ollama_responsive", "uptime_seconds", "memory_mb"],
 }
 
 # Disk mount prefixes that represent container-internal paths, not real host disks
