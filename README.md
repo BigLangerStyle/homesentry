@@ -21,13 +21,13 @@ HomeSentry is a self-hosted monitoring solution designed specifically for home l
 
 ### Key Features
 
-✅ **Available Now (v1.0.0):**
+✅ **Available Now (v1.1.0):**
 - **System Monitoring** - Real-time CPU, RAM, and disk usage tracking
 - **Service Checks** - HTTP health checks for Plex, Jellyfin, Pi-hole, and other web services
 - **Docker Monitoring** - Container health, restart counts, and resource usage
 - **SMART Health** - Hard drive health monitoring with predictive failure detection
 - **RAID Status** - Track RAID array health, disk status, and rebuild progress
-- **App Module Monitoring** - Deep integration with Jellyfin, Plex, Home Assistant, qBittorrent, Pi-hole
+- **App Module Monitoring** - Deep integration with Jellyfin, Plex, Home Assistant, qBittorrent, Pi-hole, Mitch Discord Bot
 - **Smart Alerts** - Discord webhooks with sustained state checking (no spam from transient flaps)
 - **Full Alert History** - Append-only event log shows both degradation and recovery events
 - **Command Center Dashboard** - Polished UI with dark mode, responsive layout, and chart gradients
