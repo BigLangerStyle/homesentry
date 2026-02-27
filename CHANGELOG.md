@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `"mitch"` to `APP_PREFIXES`, `APP_DISPLAY_NAMES`, `APP_CARD_METRICS` in `main.py`
   - Added Mitch config block to `.env.example` with full threshold documentation
 
+### Fixed
+
+- **Bare-metal module discovery** — `discover_available_modules()` in `app/collectors/modules/__init__.py` was incorrectly filtering out modules with empty `CONTAINER_NAMES`, silently preventing bare-metal-only modules from loading; fixed to allow modules through discovery regardless of container name list
+
 ## [1.0.0] - 2026-02-21
 
 ### Added
