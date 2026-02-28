@@ -319,6 +319,15 @@ def determine_metric_status(
     - HOMEASSISTANT_ENTITY_COUNT_WARN=500
     - HOMEASSISTANT_ENTITY_COUNT_FAIL=1000
     
+    By default, thresholds fire when value >= threshold ("warn above" behavior),
+    which is appropriate for metrics like CPU%, memory, disk, etc.
+    
+    For metrics that should warn when LOW (e.g., uptime_seconds — a low value
+    means the service restarted recently), add a companion _warn_below or
+    _fail_below key to invert the comparison direction:
+    - MITCH_UPTIME_SECONDS_WARN=3600
+    - MITCH_UPTIME_SECONDS_WARN_BELOW=true   → WARN when uptime < 3600
+    
     Args:
         app_name: Module app name
         metric_name: Metric name
@@ -335,23 +344,37 @@ def determine_metric_status(
     # Look for threshold config
     warn_key = f"{metric_name}_warn"
     fail_key = f"{metric_name}_fail"
+    warn_below_key = f"{metric_name}_warn_below"
+    fail_below_key = f"{metric_name}_fail_below"
     
     warn_threshold = config.get(warn_key)
     fail_threshold = config.get(fail_key)
+    warn_below = config.get(warn_below_key, False)
+    fail_below = config.get(fail_below_key, False)
     
     # Check FAIL threshold first (more severe)
     if fail_threshold is not None:
         try:
-            if isinstance(fail_threshold, (int, float)) and value >= fail_threshold:
-                return 'FAIL'
+            threshold = float(fail_threshold)
+            if fail_below:
+                if value < threshold:
+                    return 'FAIL'
+            else:
+                if value >= threshold:
+                    return 'FAIL'
         except (ValueError, TypeError):
             pass
     
     # Check WARN threshold
     if warn_threshold is not None:
         try:
-            if isinstance(warn_threshold, (int, float)) and value >= warn_threshold:
-                return 'WARN'
+            threshold = float(warn_threshold)
+            if warn_below:
+                if value < threshold:
+                    return 'WARN'
+            else:
+                if value >= threshold:
+                    return 'WARN'
         except (ValueError, TypeError):
             pass
     
