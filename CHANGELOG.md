@@ -5,6 +5,15 @@ All notable changes to HomeSentry will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-02-28
+
+### Fixed
+
+- **Mitch uptime threshold direction** — `determine_metric_status()` in `module_runner.py` always used `>=` comparison, causing `MITCH_UPTIME_SECONDS_WARN=3600` to fire when uptime *exceeded* 3600 seconds (i.e., always after the first hour) instead of when it was *below* 3600 (recent restart). Fixed by adding generic `_warn_below` / `_fail_below` companion config keys that invert the comparison direction for any metric that should alert when low
+  - Added `MITCH_UPTIME_SECONDS_WARN_BELOW=true` to `.env.example` to activate the inversion
+  - All existing `>=` thresholds (memory, CPU, disk, etc.) are unaffected — no regression
+  - Pattern is generic: any module can use `<METRIC>_warn_below=true` for "warn when low" behavior
+
 ## [1.1.0] - 2026-02-27
 
 ### Added
