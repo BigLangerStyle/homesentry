@@ -275,6 +275,13 @@ HomeSentry is a self-hosted health monitoring dashboard for home servers. It's d
 - [x] Updated `APP_PREFIXES`, `APP_DISPLAY_NAMES`, `APP_CARD_METRICS` in `main.py`
 - [x] Added Mitch config block to `.env.example`
 
+### Completed (v1.1.1) - Mitch Uptime Threshold Fix
+
+- [x] Fixed inverted uptime threshold comparison in `determine_metric_status()` — was firing WARN when uptime >= 3600 (always after first hour) instead of < 3600 (recent restart)
+- [x] Added generic `_warn_below` / `_fail_below` companion config key support to `module_runner.py` — inverts comparison direction for any metric that should alert when low
+- [x] Added `MITCH_UPTIME_SECONDS_WARN_BELOW=true` to `.env.example` to activate inversion
+- [x] Updated `mitch.py` docstring to document the `_warn_below` pattern
+
 ### Future Enhancements
 
 **Post-1.0 (Unscheduled)**

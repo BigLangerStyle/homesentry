@@ -11,7 +11,13 @@ Configuration:
     MITCH_API_URL: Health endpoint base URL (required)
     MITCH_BARE_METAL: Must be 'true' — module refuses to run without it (required)
     MITCH_TIMEOUT: API timeout in seconds (default: 5)
-    MITCH_UPTIME_SECONDS_WARN: Warn if uptime below this value (default: 3600)
+    MITCH_UPTIME_SECONDS_WARN: Warn if uptime is BELOW this value (seconds). A low
+        uptime means the bot restarted recently. Requires the companion key
+        MITCH_UPTIME_SECONDS_WARN_BELOW=true to invert the comparison direction in
+        determine_metric_status(). Without that key, the comparison would be >=
+        (warn when high), which is the opposite of what we want for uptime.
+    MITCH_UPTIME_SECONDS_WARN_BELOW: Set to 'true' to invert the uptime_seconds
+        threshold — WARN when uptime < threshold instead of >= threshold.
     MITCH_MEMORY_MB_WARN: Warning threshold for memory usage MB (default: 400)
     MITCH_MEMORY_MB_FAIL: Critical threshold for memory usage MB (default: 800)
     MITCH_DATABASE_SIZE_MB_WARN: Warning threshold for database size MB (default: 50)
@@ -21,6 +27,8 @@ Example:
     MITCH_API_URL=http://localhost:8001
     MITCH_BARE_METAL=true
     MITCH_TIMEOUT=5
+    MITCH_UPTIME_SECONDS_WARN=3600
+    MITCH_UPTIME_SECONDS_WARN_BELOW=true
     MITCH_MEMORY_MB_WARN=400
     MITCH_MEMORY_MB_FAIL=800
 """
